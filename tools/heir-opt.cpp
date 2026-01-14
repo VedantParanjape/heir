@@ -95,6 +95,7 @@
 #include "lib/Transforms/ShapeInference/ShapeInference.h"
 #include "lib/Transforms/SplitPreprocessing/SplitPreprocessing.h"
 #include "lib/Transforms/StraightLineVectorizer/StraightLineVectorizer.h"
+#include "lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.h"
 #include "lib/Transforms/TensorLinalgToAffineLoops/TensorLinalgToAffineLoops.h"
 #include "lib/Transforms/TensorToScalars/TensorToScalars.h"
 #include "lib/Transforms/UnusedMemRef/UnusedMemRef.h"
@@ -289,6 +290,7 @@ int main(int argc, char** argv) {
   registerOperationBalancerPasses();
   registerPopulateScalePasses();
   registerStraightLineVectorizerPasses();
+  registerRecursiveCallVectorizationPasses();
   registerUnusedMemRefPasses();
   registerValidateNoisePasses();
   registerOptimizeRelinearizationPasses();

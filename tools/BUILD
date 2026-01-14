@@ -144,6 +144,7 @@ cc_binary(
         "@heir//lib/Transforms/ShapeInference",
         "@heir//lib/Transforms/SplitPreprocessing",
         "@heir//lib/Transforms/StraightLineVectorizer",
+        "@heir//lib/Transforms/RecursiveCallVectorization",
         "@heir//lib/Transforms/TensorLinalgToAffineLoops",
         "@heir//lib/Transforms/TensorToScalars",
         "@heir//lib/Transforms/UnusedMemRef",
