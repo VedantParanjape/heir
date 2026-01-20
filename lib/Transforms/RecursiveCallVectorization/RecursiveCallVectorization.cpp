@@ -28,48 +28,151 @@ namespace heir {
 #define GEN_PASS_DEF_RECURSIVECALLVECTORIZATION
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.h.inc"
 
-static void findBiscottiAttributes(Value operand, StringRef attrName) {
+typedef struct recursiveProgramInfo_ {
+  SmallVector<std::pair<Operation*, int>> baseConditions;
+  SmallVector<std::pair<Operation*, int>> recursiveCalls;
+  SmallVector<std::pair<Value*, int>> progressArguments;
+  SmallVector<std::pair<Value, int>> staticArgumentValues;
+  Operation* call;
+} recursiveProgramInfo;
+DenseMap<Operation*, recursiveProgramInfo> biscottiCalls;
+
+static func::FuncOp getEnclosingFunction(Operation* op) {
+  auto callOp = dyn_cast<func::CallOp>(op);
+  if (!callOp)
+    return nullptr;
+
+  auto callee = callOp.getCalleeAttr();
+  auto funcOp = SymbolTable::lookupNearestSymbolFrom<func::FuncOp>(callOp, callee);
+
+  return funcOp;
+}
+
+static bool findBiscottiAttribute(Value op, StringRef attrName, int &outValue) {
   FailureOr<Attribute> attr =
-      findAttributeAssociatedWith(operand, attrName);
+      findAttributeAssociatedWith(op, attrName);
 
   if (succeeded(attr)) {
-    llvm::outs() << "Operand: " << operand << "\n";
-    llvm::outs() << "Found attribute: " << attrName << ": " << attr.value() << "\n";
+    llvm::outs() << "Operand: " << op << "\n"
+                 << " Found attribute: " << attrName 
+                 << ": " << attr.value() << "\n";
 
-    if (auto intAttr = dyn_cast<IntegerAttr>(attr.value())) {
-      int64_t value = intAttr.getInt();
-    }
-  } else {
-    // llvm::outs() << "No attribute found\n";
+    if (auto intAttr = dyn_cast<IntegerAttr>(attr.value()))
+      outValue = intAttr.getInt();
+
+    return true;
+  }
+
+  outValue = -1;
+  return false;
+}
+
+static bool findBiscottiAttributeOnOps(Operation* op, StringRef attrName, int &outValue) {
+  if (auto attr = op->getAttrOfType<IntegerAttr>(attrName)) {
+    int outValue = attr.getInt();
+    llvm::outs() << "Operation: " << *op << "\n"
+                 << " Found attribute on Ops: " << attrName 
+                 << ": " << outValue << "\n";
+
+    return true;
+  }
+
+  outValue = -1;
+  return false;
+}
+
+static void printRecursiveAttributes(recursiveProgramInfo *rpi) {
+  llvm::outs() << "Recursive Call Info for call: " << *(rpi->call) << "\n";
+
+  llvm::outs() << " Progress Arguments:\n";
+  for (auto pa : rpi->progressArguments) {
+    llvm::outs() << "  Arg: " << *(pa.first) << " at index " << pa.second << "\n";
+  }
+
+  llvm::outs() << " Static Argument Values:\n";
+  for (auto sa : rpi->staticArgumentValues) {
+    llvm::outs() << "  Value: " << sa.first << " at index " << sa.second << "\n";
+  }
+
+  llvm::outs() << " Recursive Calls:\n";
+  for (auto rc : rpi->recursiveCalls) {
+    llvm::outs() << "  Call: " << *(rc.first) << " at index " << rc.second << "\n";
+  }
+
+  llvm::outs() << " Base Conditions:\n";
+  for (auto bc : rpi->baseConditions) {
+    llvm::outs() << "  Op: " << *(bc.first) << " at index " << bc.second << "\n";
   }
 }
 
-bool tryVectorizeRecursiveBlock(Block* block, Dialect* dialect) {
-  llvm::outs() << "Analyzing block for recursive functions...\n";
-  graph::Graph<Operation*> graph;
-  for (auto& op : block->getOperations()) {
-    // if (!op.hasTrait<OpTrait::Elementwise>()) {
-    //   continue;
-    // }
-
-    if (dialect && op.getDialect() != dialect) {
+static void buildRecursiveAttributes(Block* block, Dialect* dialect) {
+  for (auto &op : block->getOperations()) {
+    if (dialect && op.getDialect() != dialect)
       continue;
-    }
-  
-    for (auto operand : op.getOperands()) {
-      findBiscottiAttributes(operand, "biscotti.call");
-      findBiscottiAttributes(operand, "biscotti.progress_args");
-      findBiscottiAttributes(operand, "biscotti.base_condition");
-      findBiscottiAttributes(operand, "biscotti.recursive_call");
-    }
 
-    // for (auto result : op.getResults()) {
-    //   FailureOr<Attribute> attr =
-    //       findAttributeAssociatedWith(result, "my_dialect.my_attr");
-    //   if (succeeded(attr)) {
-    //   }
-    // }
+    if (!isa<func::CallOp>(op))
+      continue;
+
+    int attrValue;
+    if (findBiscottiAttribute(op.getResult(0), "biscotti.call", attrValue) && biscottiCalls.find(&op) == biscottiCalls.end()) {
+      recursiveProgramInfo call;
+      call.call = &op;
+      biscottiCalls[&op] = call;
+    }
   }
+
+  for (auto &calls: biscottiCalls) {
+    Operation* op = calls.first;
+    recursiveProgramInfo &recursiveProgramInfo = calls.second;
+    
+    func::FuncOp funcOp = getEnclosingFunction(op);
+    if (!funcOp)
+      continue;
+    
+    for (auto argOps: funcOp.getArguments()) {
+      int attrValue;
+      if (findBiscottiAttribute(argOps, "biscotti.progress_argument", attrValue)) {
+        recursiveProgramInfo.progressArguments.push_back({&argOps, attrValue});
+        recursiveProgramInfo.staticArgumentValues.push_back({op->getOperand(attrValue), attrValue});
+      }
+    }
+  }
+
+  for (auto &calls: biscottiCalls) {
+    Operation *op = calls.first;
+    recursiveProgramInfo &recursiveProgramInfo = calls.second;
+
+    func::FuncOp funcOp = getEnclosingFunction(op);
+    if (!funcOp)
+      continue;
+    
+    funcOp.walk([&](Operation *calledOp) {
+      auto call = dyn_cast<func::CallOp>(calledOp);
+      if (!call)
+        return;
+
+      int attrValue;
+      if (findBiscottiAttribute(call->getResult(0), "biscotti.recursive_call", attrValue)) {
+        recursiveProgramInfo.recursiveCalls.push_back({calledOp, attrValue});
+      }
+    });
+
+    funcOp.walk([&](Operation *baseOp) {
+      int attrValue;
+      if (findBiscottiAttributeOnOps(baseOp, "biscotti.base_condition", attrValue)) {
+        recursiveProgramInfo.baseConditions.push_back({baseOp, attrValue});
+      }
+    });
+  }
+
+  for (auto &calls: biscottiCalls) {
+    printRecursiveAttributes(&calls.second);
+  }
+}
+
+
+bool tryVectorizeRecursiveBlock(Block* block, Dialect* dialect) {
+  buildRecursiveAttributes(block, dialect);
 
   return false;
 }
