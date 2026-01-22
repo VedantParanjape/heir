@@ -1,4 +1,5 @@
 func.func @fib(%n : i32 { biscotti.progress_argument = 0 }) -> i32 {
+    // 6
     %c0 = arith.constant 0 : i32
     %c1 = arith.constant 1 : i32
     %c2 = arith.constant 2 : i32
@@ -26,7 +27,9 @@ func.func @fib(%n : i32 { biscotti.progress_argument = 0 }) -> i32 {
 
 func.func @main() -> i32 {
     %n = arith.constant 6 : i32
+    %n2 = arith.constant 10 : i32
     %result = call @fib(%n) { biscotti.call = 0 } : (i32) -> i32 
+    %result2 = call @fib(%n2) { biscotti.call = 0 } : (i32) -> i32 
     return %result : i32
 }
 
