@@ -18,9 +18,12 @@
 #include "mlir/include/mlir/IR/OpDefinition.h"           // from @llvm-project
 #include "mlir/include/mlir/IR/ValueRange.h"             // from @llvm-project
 #include "mlir/include/mlir/IR/Visitors.h"               // from @llvm-project
+#include "mlir/include/mlir/Pass/PassManager.h"            // from @llvm-project
 #include "mlir/include/mlir/Transforms/Inliner.h"         // from @llvm-project
+#include "mlir/include/mlir/Transforms/Passes.h"           // from @llvm-project
 #include "mlir/include/mlir/Transforms/RegionUtils.h"     // from @llvm-project
 #include "mlir/include/mlir/Transforms/InliningUtils.h"   // from @llvm-project
+#include "mlir/include/mlir/Transforms/WalkPatternRewriteDriver.h"  // from @llvm-project
 #include "mlir/include/mlir/Transforms/GreedyPatternRewriteDriver.h" // from @llvm-project
 
 #define DEBUG_TYPE "recursive-call-vectorization"
@@ -109,7 +112,56 @@ static void printRecursiveAttributes(recursiveProgramInfo *rpi) {
   }
 }
 
-static void buildRecursiveAttributes(Block* block, Dialect* dialect) {
+static Operation* insertConstantAtTop(func::FuncOp &funcOp, Operation *ConstantOp) {
+  Block &entryBlock = funcOp.front();
+  OpBuilder builder(&entryBlock, entryBlock.begin());
+
+  Operation *clonedConstantOp = builder.clone(*ConstantOp);
+  return clonedConstantOp;
+}
+
+struct RecursiveCallVectorization
+    : impl::RecursiveCallVectorizationBase<RecursiveCallVectorization> {
+  using RecursiveCallVectorizationBase::RecursiveCallVectorizationBase;
+
+  void foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx);
+  void buildRecursiveAttributes(Block* block, Dialect* dialect);
+  void buildRecursiveCallTree(Block* block, Dialect* dialect);
+  bool tryVectorizeRecursiveBlock(Block* block, Dialect* dialect);
+
+  void runOnOperation() override {
+    Dialect* mlirDialect = getContext().getLoadedDialect(dialect);
+
+    getOperation()->walk<WalkOrder::PreOrder>([&](Block* block) {
+      if (tryVectorizeRecursiveBlock(block, mlirDialect)) {
+        sortTopologically(block);
+      }
+    });
+  }
+};
+
+void RecursiveCallVectorization::foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx) {
+    RewritePatternSet patterns(ctx);
+    // for (auto *dialect : ctx->getLoadedDialects())
+    //   llvm::outs() << dialect->getNamespace() << "\n";
+
+    for (auto *dialect : ctx->getLoadedDialects())
+      dialect->getCanonicalizationPatterns(patterns);
+    for (RegisteredOperationName op : ctx->getRegisteredOperations())
+      op.getCanonicalizationPatterns(patterns, ctx);
+
+    // fold constants and apply canonicalization patterns
+    GreedyRewriteConfig config;
+    // Makes compilation faster, but may miss some patterns.
+    config.setUseTopDownTraversal();
+    (void)applyPatternsGreedily(funcOp, std::move(patterns), config);
+
+    // Call DCE for the simplification
+    IRRewriter rewriter(funcOp.getContext());
+    (void)mlir::eraseUnreachableBlocks(rewriter, funcOp.getOperation()->getRegions());
+}
+
+void RecursiveCallVectorization::buildRecursiveAttributes(Block* block, Dialect* dialect) {
   for (auto &op : block->getOperations()) {
     if (dialect && op.getDialect() != dialect)
       continue;
@@ -174,33 +226,7 @@ static void buildRecursiveAttributes(Block* block, Dialect* dialect) {
   }
 }
 
-static void insertConstantAtTop(func::FuncOp &funcOp, Operation *ConstantOp) {
-  Block &entryBlock = funcOp.front();
-  OpBuilder builder(&entryBlock, entryBlock.begin());
-
-  Operation *clonedConstantOp = builder.clone(*ConstantOp);
-  funcOp.getArgument(0).replaceAllUsesWith(clonedConstantOp->getResult(0));
-}
-
-void foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx) {
-    RewritePatternSet patterns(ctx);
-    for (auto *dialect : ctx->getLoadedDialects())
-      dialect->getCanonicalizationPatterns(patterns);
-    for (RegisteredOperationName op : ctx->getRegisteredOperations())
-      op.getCanonicalizationPatterns(patterns, ctx);
-
-    // fold constants and apply canonicalization patterns
-    GreedyRewriteConfig config;
-    // Makes compilation faster, but may miss some patterns.
-    config.setUseTopDownTraversal();
-    (void)applyPatternsGreedily(funcOp, std::move(patterns), config);
-
-    // Call DCE for the simplification
-    IRRewriter rewriter(funcOp.getContext());
-    (void)mlir::eraseUnreachableBlocks(rewriter, funcOp.getOperation()->getRegions());
-}
-
-static void buildRecursiveCallTree(Block* block, Dialect* dialect) {
+void RecursiveCallVectorization::buildRecursiveCallTree(Block* block, Dialect* dialect) {
   for (auto &calls: biscottiCalls) {
     Operation *op = calls.first;
     recursiveProgramInfo &recursiveProgramInfo = calls.second;
@@ -208,34 +234,24 @@ static void buildRecursiveCallTree(Block* block, Dialect* dialect) {
     func::FuncOp funcOp = getEnclosingFunction(op);
     if (!funcOp)
       continue;
-    
+
     func::FuncOp funcOpCloned = funcOp.clone();
-    insertConstantAtTop(funcOpCloned, recursiveProgramInfo.staticArgumentValues[0].first);
+    // funcOpCloned.setName(funcOp.getName().str() + "_clone");
+
+    for (auto knownValue: recursiveProgramInfo.staticArgumentValues) {
+      Operation *newConstant = insertConstantAtTop(funcOpCloned, knownValue.first);
+      funcOpCloned.getArgument(knownValue.second).replaceAllUsesWith(newConstant->getResult(0));
+    }
     foldAllOpsInFunc(funcOpCloned, funcOp.getContext());
     funcOpCloned.dump();
   }
 }
 
-bool tryVectorizeRecursiveBlock(Block* block, Dialect* dialect) {
+bool RecursiveCallVectorization::tryVectorizeRecursiveBlock(Block* block, Dialect* dialect) {
   buildRecursiveAttributes(block, dialect);
   buildRecursiveCallTree(block, dialect);
   return false;
 }
-
-struct RecursiveCallVectorization
-    : impl::RecursiveCallVectorizationBase<RecursiveCallVectorization> {
-  using RecursiveCallVectorizationBase::RecursiveCallVectorizationBase;
-  
-  void runOnOperation() override {
-    Dialect* mlirDialect = getContext().getLoadedDialect(dialect);
-
-    getOperation()->walk<WalkOrder::PreOrder>([&](Block* block) {
-      if (tryVectorizeRecursiveBlock(block, mlirDialect)) {
-        sortTopologically(block);
-      }
-    });
-  }
-};
 
 }  // namespace heir
 }  // namespace mlir
