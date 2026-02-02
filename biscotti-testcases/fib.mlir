@@ -15,8 +15,7 @@ func.func @fib(%i_cipher : !ctxt, %n : !val { biscotti.progress_argument = 1 }) 
     
 ^recursive:
     // Calculate fib(n-1)
-    %c1_cipher = secret.conceal %c1 : !val -> !ctxt
-    %i_cipher_minus_1 = secret.generic(%i_cipher: !ctxt, %c1_cipher: !ctxt) {
+    %i_cipher_minus_1 = secret.generic(%i_cipher: !ctxt, %c1: !val) {
         ^bb0(%X: !val, %Y: !val):
             %0 = arith.subi %X, %Y : !val
             secret.yield %0 : !val
@@ -25,8 +24,7 @@ func.func @fib(%i_cipher : !ctxt, %n : !val { biscotti.progress_argument = 1 }) 
     %fib_n_minus_1 = call @fib(%i_cipher_minus_1, %n_minus_1) { biscotti.recursive_call = 0 } : (!ctxt, !val) -> !ctxt
     
     // Calculate fib(n-2)
-    %c2_cipher = secret.conceal %c2 : !val -> !ctxt
-    %i_cipher_minus_2 = secret.generic(%i_cipher: !ctxt, %c2_cipher: !ctxt) {
+    %i_cipher_minus_2 = secret.generic(%i_cipher: !ctxt, %c2: !val) {
         ^bb0(%X: !val, %Y: !val):
             %0 = arith.subi %X, %Y : !val
             secret.yield %0 : !val
