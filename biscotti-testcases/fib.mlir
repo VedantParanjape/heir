@@ -44,7 +44,7 @@ func.func @fib(%i_cipher : !ctxt, %n : !val { biscotti.progress_argument = 1 }) 
 func.func @main(%input_fib: !ctxt) -> !ctxt {
     %n = arith.constant 6 : i32
     %result = call @fib(%input_fib, %n) { biscotti.call = 0 } : (!ctxt, !val) -> !ctxt 
-    // %n2 = arith.constant 10 : i32
-    // %result2 = call @fib(%input_fib, %n2) { biscotti.call = 0 } : (!ctxt, !val) -> !ctxt
+    %n2 = arith.constant -1 : i32
+    %result2 = call @fib(%input_fib, %n2) { biscotti.call = 0 } : (!ctxt, !val) -> !ctxt
     return %result : !ctxt
 }
