@@ -3,7 +3,7 @@
 
 include "mlir/Pass/PassBase.td"
 
-def RecursiveCallVectorization : Pass<"recursive-call-vectorization"> {
+def RecursiveCallVectorization : Pass<"recursive-call-vectorization", "ModuleOp"> {
   let summary = "A vectorizer for bounded recursive programs.";
   let description = [{
   This pass resolves a bounded recursive call tree and vectorizes the tree levels that
