@@ -43,13 +43,23 @@ typedef struct recursiveProgramInfo_ {
 } recursiveProgramInfo;
 DenseMap<Operation*, recursiveProgramInfo> biscottiCalls;
 
-static func::FuncOp getEnclosingFunction(Operation* op) {
-  auto callOp = dyn_cast<func::CallOp>(op);
-  if (!callOp)
-    return nullptr;
+typedef struct recursiveProgramNode_ {
+  func::FuncOp parent;
+  SmallVector<std::pair<Operation*, int>> staticArgumentValues;
+  SmallVector<recursiveProgramNode_*> children;
+} recursiveProgramNode;
+std::queue<std::pair<Operation*, recursiveProgramNode*>> workQueue;
 
-  auto callee = callOp.getCalleeAttr();
-  auto funcOp = SymbolTable::lookupNearestSymbolFrom<func::FuncOp>(callOp, callee);
+static func::FuncOp getEnclosingFunction(Operation* op, ModuleOp &module) {
+  auto callOp = dyn_cast<func::CallOp>(op);
+  if (!callOp) {
+    llvm::errs() << "Error: Operation is not a func::CallOp\n";
+    return nullptr;
+  }
+
+  SymbolTable symTab(module);
+  auto callee = callOp.getCallee();
+  auto funcOp = symTab.lookup<func::FuncOp>(callee);
 
   return funcOp;
 }
@@ -112,6 +122,54 @@ static void printRecursiveAttributes(recursiveProgramInfo *rpi) {
   }
 }
 
+static void indent(unsigned level) {
+  for (unsigned i = 0; i < level; ++i)
+    llvm::outs() << "  ";
+}
+
+// TODO: Rework this function (mainly clean it up)
+static void prettyPrintRecursiveProgramTree(
+  recursiveProgramNode *node,
+  unsigned indentLevel = 0) {
+
+  if (!node)
+    return;
+
+  indent(indentLevel);
+
+  // Print function name
+  if (node->parent) {
+    llvm::outs() << "func @" << node->parent.getSymName();
+  } else {
+    llvm::outs() << "<null func>";
+  }
+
+  // Print static arguments
+  if (!node->staticArgumentValues.empty()) {
+    llvm::outs() << " [static args: ";
+    bool first = true;
+    for (auto &[op, _] : node->staticArgumentValues) {
+      if (!first)
+        llvm::outs() << ", ";
+      first = false;
+
+      if (op) {
+        llvm::outs() << *op;
+      } else {
+        llvm::outs() << "<unknown-op>";
+      }
+    }
+    llvm::outs() << "]";
+  }
+
+  llvm::outs() << "\n";
+
+  // Recurse into children
+  for (recursiveProgramNode *child : node->children) {
+    prettyPrintRecursiveProgramTree(child, indentLevel + 1);
+  }
+}
+
 static Operation* insertConstantAtTop(func::FuncOp &funcOp, Operation *ConstantOp) {
   Block &entryBlock = funcOp.front();
   OpBuilder builder(&entryBlock, entryBlock.begin());
@@ -126,7 +184,7 @@ struct RecursiveCallVectorization
 
   void foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx);
   void buildRecursiveAttributes(Block* block, Dialect* dialect);
-  void buildRecursiveCallTree(Block* block, Dialect* dialect);
+  void buildRecursiveCallTree(Operation *op, recursiveProgramInfo &recursiveProgramInfo);
   bool tryVectorizeRecursiveBlock(Block* block, Dialect* dialect);
 
   void runOnOperation() override {
@@ -180,8 +238,9 @@ void RecursiveCallVectorization::buildRecursiveAttributes(Block* block, Dialect*
   for (auto &calls: biscottiCalls) {
     Operation* op = calls.first;
     recursiveProgramInfo &recursiveProgramInfo = calls.second;
-    
-    func::FuncOp funcOp = getEnclosingFunction(op);
+
+    ModuleOp parentModule = op->getParentOfType<ModuleOp>();    
+    func::FuncOp funcOp = getEnclosingFunction(op, parentModule);
     if (!funcOp)
       continue;
     
@@ -198,7 +257,8 @@ void RecursiveCallVectorization::buildRecursiveAttributes(Block* block, Dialect*
     Operation *op = calls.first;
     recursiveProgramInfo &recursiveProgramInfo = calls.second;
 
-    func::FuncOp funcOp = getEnclosingFunction(op);
+    ModuleOp parentModule = op->getParentOfType<ModuleOp>();    
+    func::FuncOp funcOp = getEnclosingFunction(op, parentModule);
     if (!funcOp)
       continue;
     
@@ -226,30 +286,80 @@ void RecursiveCallVectorization::buildRecursiveAttributes(Block* block, Dialect*
   }
 }
 
-void RecursiveCallVectorization::buildRecursiveCallTree(Block* block, Dialect* dialect) {
-  for (auto &calls: biscottiCalls) {
-    Operation *op = calls.first;
-    recursiveProgramInfo &recursiveProgramInfo = calls.second;
+void RecursiveCallVectorization::buildRecursiveCallTree(Operation *rootOp, recursiveProgramInfo &recursiveProgramInfo) {
+  recursiveProgramNode *root = new recursiveProgramNode();
+  root->staticArgumentValues = recursiveProgramInfo.staticArgumentValues;
+  workQueue.push({rootOp, root});
 
-    func::FuncOp funcOp = getEnclosingFunction(op);
-    if (!funcOp)
-      continue;
+  while (!workQueue.empty()) {
+    llvm::outs() << "== Processing node in recursive call tree...\n";
+    // Pop a node to be processed.
+    Operation *op = workQueue.front().first;
+    recursiveProgramNode *currentNode = workQueue.front().second;
+    workQueue.pop();
+    llvm::outs() << *op << "\n";
+    
+    // Essentially we have a recursive function callOp here.
+    ModuleOp parentModule = rootOp->getParentOfType<ModuleOp>();
+    func::FuncOp funcOp = getEnclosingFunction(op, parentModule);
+    if (!funcOp) {
+      llvm::outs() << "Error: Could not find enclosing function for operation.\n";
+      return;
+    }
 
+    // llvm::outs() << "== Processing recursive function: " << funcOp.getName() << "\n";
+    // Clone the funcOp to specialise it.
     func::FuncOp funcOpCloned = funcOp.clone();
     // funcOpCloned.setName(funcOp.getName().str() + "_clone");
 
-    for (auto knownValue: recursiveProgramInfo.staticArgumentValues) {
+    // Insert the constant arguments into the cloned function.
+    // Then replace uses of the arguments with these constants.
+    for (auto knownValue: currentNode->staticArgumentValues) {
       Operation *newConstant = insertConstantAtTop(funcOpCloned, knownValue.first);
       funcOpCloned.getArgument(knownValue.second).replaceAllUsesWith(newConstant->getResult(0));
     }
+
+    // Perform Constant Op propagation + Op folding + DCE.
     foldAllOpsInFunc(funcOpCloned, funcOp.getContext());
-    funcOpCloned.dump();
+    // funcOpCloned.dump();
+
+    currentNode->parent = funcOpCloned;
+
+    // analyse the cloned function for further recursive calls.
+    // find static argument values for each recursive call.
+    // add the recursive calls as children to the current node and add to process queue.
+    funcOpCloned.walk([&](Operation *calledOp) {
+      auto call = dyn_cast<func::CallOp>(calledOp);
+      if (!call)
+        return;
+
+      int attrValue;
+      if (findBiscottiAttribute(call->getResult(0), "biscotti.recursive_call", attrValue)) {
+        recursiveProgramNode *childNode = new recursiveProgramNode();
+        
+        for (auto progressArg : recursiveProgramInfo.progressArguments) {
+          int attrValue = progressArg.second;
+          // TODO: Add a check calledOp->getOperand(attrValue).getDefiningOp() is actually a constant.
+          childNode->staticArgumentValues.push_back({calledOp->getOperand(attrValue).getDefiningOp(), attrValue});
+        }
+        currentNode->children.push_back(childNode);
+        workQueue.push({calledOp, childNode});
+      }
+    });
   }
+
+  prettyPrintRecursiveProgramTree(root);
 }
 
 bool RecursiveCallVectorization::tryVectorizeRecursiveBlock(Block* block, Dialect* dialect) {
   buildRecursiveAttributes(block, dialect);
-  buildRecursiveCallTree(block, dialect);
+  for (auto &calls: biscottiCalls) {
+    Operation *op = calls.first;
+    recursiveProgramInfo &recursiveProgramInfo = calls.second;
+
+    buildRecursiveCallTree(op, recursiveProgramInfo);
+  }
+
   return false;
 }
 
