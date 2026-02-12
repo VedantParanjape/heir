@@ -113,6 +113,7 @@ cc_binary(
         "@heir//lib/Transforms/ConvertSecretInsertToStaticInsert",
         "@heir//lib/Transforms/ConvertSecretWhileToStaticFor",
         "@heir//lib/Transforms/ConvertToCiphertextSemantics",
+        "@heir//lib/Transforms/CoyoteVectorizer",
         "@heir//lib/Transforms/DropUnitDims",
         "@heir//lib/Transforms/ElementwiseToAffine",
         "@heir//lib/Transforms/EmitCInterface",
