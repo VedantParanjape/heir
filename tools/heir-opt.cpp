@@ -79,6 +79,7 @@
 #include "lib/Transforms/ConvertSecretInsertToStaticInsert/ConvertSecretInsertToStaticInsert.h"
 #include "lib/Transforms/ConvertSecretWhileToStaticFor/ConvertSecretWhileToStaticFor.h"
 #include "lib/Transforms/ConvertToCiphertextSemantics/ConvertToCiphertextSemantics.h"
+#include "lib/Transforms/CoyoteVectorizer/CoyoteVectorizer.h"
 #include "lib/Transforms/DropUnitDims/DropUnitDims.h"
 #include "lib/Transforms/ElementwiseToAffine/ElementwiseToAffine.h"
 #include "lib/Transforms/EmitCInterface/EmitCInterface.h"
@@ -314,6 +315,7 @@ int main(int argc, char** argv) {
   registerConvertSecretExtractToStaticExtractPasses();
   registerConvertSecretInsertToStaticInsertPasses();
   registerConvertToCiphertextSemanticsPasses();
+  registerCoyoteVectorizerPasses();
   registerDropUnitDims();
   registerAnnotateModulePasses();
   registerAnnotateSecretnessPasses();
