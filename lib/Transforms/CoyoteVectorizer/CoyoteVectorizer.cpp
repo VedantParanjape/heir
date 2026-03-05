@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "GraphUtils.h"
+#include "SimulatedAnnealing.h"
 #include "lib/Dialect/Secret/IR/SecretDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
 #include "lib/Utils/Graph/Graph.h"
@@ -26,6 +27,7 @@
 #include "llvm/include/llvm/ADT/DenseSet.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/EquivalenceClasses.h"    // from @llvm-project
 #include "llvm/include/llvm/ADT/SetVector.h"             // from @llvm-project
+#include "llvm/include/llvm/ADT/SmallSet.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/SmallVector.h"           // from @llvm-project
 #include "mlir/include/mlir/Dialect/Arith/IR/Arith.h"    // from @llvm-project
 #include "mlir/include/mlir/Dialect/Func/IR/FuncOps.h"   // from @llvm-project
@@ -41,118 +43,6 @@ namespace heir {
 
 #define GEN_PASS_DEF_COYOTEVECTORIZER
 #include "lib/Transforms/CoyoteVectorizer/CoyoteVectorizer.h.inc"
-
-/// Assigns topological epochs to graph nodes
-/// Python reference: schedule_graph.py:56-112 (grade_nx_graph)
-///
-/// Algorithm:
-/// 1. Clear existing epoch assignments
-/// 2. Assign input_groups to epochs 0, 1, 2, ...
-/// 3. Topologically visit nodes, setting epoch = max(predecessor epochs) + 1
-/// 4. Assign output_groups to epochs (max_epoch + 1), (max_epoch + 2), ...
-class EpochAssigner {
- public:
-  using Node = SubCircuitNode;
-
-  /// Assign epochs to all nodes in the graph
-  /// Returns (input_epochs, output_epochs) sets
-  std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> assignEpochs(
-      CircuitGraph& graph,
-      llvm::ArrayRef<llvm::SmallVector<Operation*>> inputGroups,
-      llvm::ArrayRef<llvm::SmallVector<Operation*>> outputGroups) {
-    llvm::DenseSet<int64_t> inputEpochs, outputEpochs;
-
-    // Helper: find node containing a specific operation
-    auto nodeOf = [&](Operation* op) -> Node {
-      for (auto& nodePtr : graph.getVertices()) {
-        if (nodePtr->operations.count(op)) {
-          return nodePtr;
-        }
-      }
-      llvm::outs() << "Warning: Operation " << *op
-                   << " not found in any graph node\n";
-      return nullptr;
-    };
-
-    // Step 1: Clear existing epoch assignments
-    for (const Node& nodePtr : graph.getVertices()) {
-      nodePtr->epoch = -1;
-    }
-
-    // Step 2: Assign input groups to epochs 0, 1, 2, ...
-    for (size_t i = 0; i < inputGroups.size(); ++i) {
-      for (auto* op : inputGroups[i]) {
-        Node node = nodeOf(op);
-        if (node) {
-          node->epoch = i;
-          inputEpochs.insert(i);
-          llvm::outs() << "Op " << *op << " assigned to input epoch "
-                       << node->epoch << "\n";
-        }
-      }
-    }
-
-    // Build output node set for fast lookup during epoch assignment
-    std::unordered_set<Node> outputNodes;
-    for (const auto& group : outputGroups) {
-      for (auto* op : group) {
-        if (Node node = nodeOf(op)) outputNodes.insert(node);
-      }
-    }
-
-    // Step 3: Topologically sort all nodes
-    auto topoOrder = graph.topologicalSort();
-    assert(succeeded(topoOrder) && "CircuitGraph has a cycle");
-
-    // Step 4: Iterate in topo order, assigning epoch = max(pred epochs) + 1
-    // Skip nodes already pinned (input groups) and output nodes (assigned
-    // later)
-    for (Node node : *topoOrder) {
-      if (node->epoch != -1) continue;        // already pinned (input group)
-      if (outputNodes.count(node)) continue;  // will be pinned in step 5
-
-      int64_t maxPredEpoch = -1;
-      for (Node pred : graph.edgesInto(node)) {
-        if (pred->epoch != -1)
-          maxPredEpoch = std::max(maxPredEpoch, pred->epoch);
-      }
-      node->epoch = maxPredEpoch + 1;
-      llvm::outs() << "Op " << *node->operations[0]
-                   << " assigned to topoOrder epoch " << node->epoch << "\n";
-    }
-
-    // Step 5: Find max epoch and assign output groups
-    int64_t maxEpoch = -1;
-    for (auto& nodePtr : graph.getVertices()) {
-      if (nodePtr->epoch > maxEpoch) {
-        maxEpoch = nodePtr->epoch;
-      }
-    }
-
-    for (size_t i = 0; i < outputGroups.size(); ++i) {
-      for (auto* op : outputGroups[i]) {
-        Node node = nodeOf(op);
-        if (node) {
-          node->epoch = maxEpoch + 1 + i;
-          outputEpochs.insert(maxEpoch + 1 + i);
-          llvm::outs() << "Op " << *op << " assigned to output epoch "
-                       << node->epoch << "\n";
-        }
-      }
-    }
-
-    return {inputEpochs, outputEpochs};
-  }
-};
-
-/// Standalone function wrapper for easier integration
-std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> gradeGraph(
-    CircuitGraph& graph,
-    llvm::ArrayRef<llvm::SmallVector<Operation*>> inputGroups,
-    llvm::ArrayRef<llvm::SmallVector<Operation*>> outputGroups) {
-  EpochAssigner assigner;
-  return assigner.assignEpochs(graph, inputGroups, outputGroups);
-}
 
 /// Identify input/output operation groups
 ///
@@ -253,6 +143,36 @@ class ColumnAssigner {
     assignFinalColumns();
   }
 
+  /// Print column assignments to llvm::errs() for debugging.
+  void printColumns() const {
+    // Collect nodes grouped by column, sorted by epoch within each column.
+    std::map<int64_t, std::vector<SubCircuitNodeImpl*>> byColumn;
+    for (auto& nodePtr : graph.getVertices())
+      byColumn[nodePtr->column].push_back(nodePtr.get());
+    llvm::errs() << "=== Column Assignments (" << byColumn.size()
+                 << " columns) ===\n";
+    for (auto& [col, nodes] : byColumn) {
+      llvm::errs() << "  col " << col << ":\n";
+      // Sort by epoch for a consistent print order.
+      auto sorted = nodes;
+      std::sort(sorted.begin(), sorted.end(),
+                [](SubCircuitNodeImpl* a, SubCircuitNodeImpl* b) {
+                  return a->epoch < b->epoch;
+                });
+      for (auto* node : sorted) {
+        llvm::errs() << "    epoch=" << node->epoch
+                     << "  ops=" << node->operations.size() << " [";
+        bool first = true;
+        for (auto* op : node->operations) {
+          if (!first) llvm::errs() << ", ";
+          op->print(llvm::errs());
+          first = false;
+        }
+        llvm::errs() << "]\n";
+      }
+    }
+  }
+
  private:
   /// Process bipartite matching between two epochs using MCMF-based
   /// max-weight matching (replaces greedy BipartiteGraph::maxWeightMatching).
@@ -351,33 +271,73 @@ class ColumnAssigner {
     return sets;
   }
 
-  /// Limit number of columns to maxLanes
-  /// Python: disjoint_set.py:28-88 (limit_classes)
+  /// Limit number of columns to maxLanes using DSatur graph coloring.
+  ///
+  /// Epoch-disjoint constraint maps exactly to graph coloring:
+  ///   - Nodes  = column indices (0..N-1)
+  ///   - Edges  = conflict: columns i and j share a node from the same epoch
+  ///   - Colors = bins (we want ≤ K colors)
+  ///
+  /// After DSatur we have M ≤ K color classes.  We then do a balanced split
+  /// (peel one element off the largest class, repeat until K bins) to reach
+  /// exactly K bins.  Splitting within a class is always safe: same-class
+  /// nodes come from different epochs, so any sub-partition is epoch-disjoint.
   void limitColumns() {
     auto columnSets = getColumnSets();
-    if (columnSets.size() <= maxLanes) {
-      return;  // Already within limit
+    if (columnSets.size() <= maxLanes) return;
+
+    size_t N = columnSets.size();
+    size_t K = maxLanes;
+
+    // Step 1: Build conflict graph.
+    // Columns i and j conflict if they share a node from the same epoch —
+    // merging them would put same-epoch nodes in the same lane (illegal).
+    graph::UndirectedGraph<size_t> conflictGraph;
+    for (size_t i = 0; i < N; ++i) conflictGraph.addVertex(i);
+
+    // Map epoch → list of column indices containing nodes from that epoch.
+    llvm::DenseMap<int64_t, llvm::SmallVector<size_t, 4>> epochToCols;
+    for (size_t i = 0; i < N; ++i) {
+      llvm::SmallSet<int64_t, 4> seen;
+      for (auto* node : columnSets[i])
+        if (seen.insert(node->epoch).second)
+          epochToCols[node->epoch].push_back(i);
+    }
+    for (auto& [epoch, cols] : epochToCols)
+      for (size_t a = 0; a < cols.size(); ++a)
+        for (size_t b = a + 1; b < cols.size(); ++b)
+          conflictGraph.addEdge(cols[a], cols[b]);
+
+    // Step 2: DSatur graph coloring → epoch-disjoint color assignment.
+    graph::GreedyGraphColoring<size_t> coloring;
+    auto colorMap = coloring.color(conflictGraph);  // column_idx → color
+
+    // Group column indices by color.
+    std::map<int, std::vector<size_t>> colorClasses;
+    for (size_t i = 0; i < N; ++i) colorClasses[colorMap[i]].push_back(i);
+
+    // Step 3: Balanced split to reach exactly K bins.
+    // colorClasses has M ≤ K classes.  Split the largest ones until K bins.
+    // Splitting within a class is safe: same-class nodes have no epoch
+    // conflicts, so any sub-partition remains epoch-disjoint.
+    std::vector<std::vector<size_t>> bins;
+    for (auto& [color, cols] : colorClasses) bins.push_back(cols);
+
+    while (bins.size() < K) {
+      auto it = std::max_element(
+          bins.begin(), bins.end(),
+          [](const auto& a, const auto& b) { return a.size() < b.size(); });
+      if (it->size() <= 1) break;  // can't split singletons
+      bins.push_back({it->back()});
+      it->pop_back();
     }
 
-    // Merge columns to reduce count
-    // Simple strategy: merge smallest columns
-    // TODO: Implement Python's sophisticated chunk allocation
-    while (columnSets.size() > maxLanes) {
-      // Find two smallest columns and merge them
-      std::sort(
-          columnSets.begin(), columnSets.end(),
-          [](const auto& a, const auto& b) { return a.size() < b.size(); });
-
-      auto& smallest = columnSets[0];
-      auto& second = columnSets[1];
-
-      // Merge smallest into second
-      for (SubCircuitNodeImpl* node : smallest) {
-        columns.unionSets(node, *second.begin());
-      }
-
-      // Remove smallest from list
-      columnSets.erase(columnSets.begin());
+    // Step 4: Merge all column-sets within the same bin.
+    for (auto& bin : bins) {
+      if (bin.empty()) continue;
+      SubCircuitNodeImpl* rep = columnSets[bin[0]][0];
+      for (size_t idx : bin)
+        for (auto* node : columnSets[idx]) columns.unionSets(rep, node);
     }
   }
 
@@ -535,6 +495,7 @@ struct CoyoteVectorizerPass
     llvm::errs() << "\n[4.5/9] Columnizing (bipartite matching)...\n";
     ColumnAssigner columnizer(graph, forceLanes);
     columnizer.assignColumns();
+    columnizer.printColumns();
     llvm::errs() << "  Initial lane assignment done\n";
 
     //==========================================================================
@@ -564,13 +525,13 @@ struct CoyoteVectorizerPass
     // - epoch: time step
     // - column: lane number
 
-    // llvm::errs() << "\n[5/9] Quotient search...\n";
-    // unsigned searchRounds = 200;  // Match Python default (was 20, too low)
-    // auto bestSchedule = searchQuotients(graph, inputGroups, outputGroups,
-    //                                    forceLanes, searchRounds);
-    // llvm::errs() << "  Best cost: " << bestSchedule.cost << "\n";
-    // llvm::errs() << "  (Rotation: " << bestSchedule.rotationCost
-    //             << ", Height: " << bestSchedule.heightCost << ")\n";
+    llvm::errs() << "\n[5/9] Quotient search...\n";
+    unsigned searchRounds = 200;  // Match Python default (was 20, too low)
+    auto bestSchedule = searchQuotients(graph, inputGroups, outputGroups,
+                                        forceLanes, searchRounds);
+    llvm::errs() << "  Best cost: " << bestSchedule.cost << "\n";
+    llvm::errs() << "  (Rotation: " << bestSchedule.rotationCost
+                 << ", Height: " << bestSchedule.heightCost << ")\n";
 
     // // Step 7: Build lane assignment map
     // llvm::errs() << "\n[6/9] Building lane assignments...\n";
