@@ -12,9 +12,11 @@ cc_library(
     hdrs = [
         "CoyoteVectorizer.h",
         "GraphUtils.h",
+        "SimulatedAnnealing.h",
     ],
     deps = [
         ":pass_inc_gen",
+        "@com_google_ortools//ortools/graph:min_cost_flow",
         "@heir//lib/Dialect/Secret/IR:Dialect",
         "@heir//lib/Dialect/TensorExt/IR:Dialect",
         "@heir//lib/Utils:AttributeUtils",
