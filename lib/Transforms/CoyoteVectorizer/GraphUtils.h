@@ -26,6 +26,7 @@
 #ifndef LIB_TRANSFORMS_COYOTEVECTORIZER_MAXWEIGHTBIPARTITEMATCHING_H_
 #define LIB_TRANSFORMS_COYOTEVECTORIZER_MAXWEIGHTBIPARTITEMATCHING_H_
 
+#include <algorithm>
 #include <functional>
 #include <limits>
 #include <map>
@@ -36,6 +37,7 @@
 #include "llvm/include/llvm/ADT/EquivalenceClasses.h"  // from @llvm-project
 #include "llvm/include/llvm/ADT/SetVector.h"           // from @llvm-project
 #include "mlir/include/mlir/IR/Operation.h"            // from @llvm-project
+#include "ortools/graph/min_cost_flow.h"
 
 // heir graph utility — provides Graph<V> with addVertex/addEdge/edgesOutOf/
 // getInDegree/getOutDegree/hasEdge/getVertices.
@@ -83,6 +85,50 @@ struct SubCircuitNodeImpl {
 typedef std::shared_ptr<SubCircuitNodeImpl> SubCircuitNode;
 typedef graph::Graph<SubCircuitNode> CircuitGraph;
 
+//===----------------------------------------------------------------------===//
+// Deep copy
+//===----------------------------------------------------------------------===//
+
+/// Deep-copy a CircuitGraph, cloning all SubCircuitNodeImpl objects.
+///
+/// A plain copy of Graph<shared_ptr<T>> only copies the shared_ptr handles —
+/// the underlying SubCircuitNodeImpl objects are shared between both copies.
+/// That means mutations through one copy (epoch/column updates during SA,
+/// merge() during edge contraction) silently affect the other, corrupting the
+/// priority-queue search state.
+///
+/// This function mints a fresh SubCircuitNodeImpl for every vertex so the two
+/// graphs are fully independent.  It uses only Graph<V>'s public interface
+/// (getVertices, edgesOutOf) so Graph.h itself needs no changes.
+///
+/// Note: edgesOutOf() is non-const (it uses operator[] internally), so src
+/// must be passed by non-const reference.
+/// Clone a single node — SetVector has no copy constructor so we copy field
+/// by field.
+inline SubCircuitNode cloneNode(const SubCircuitNode &v) {
+  auto n = std::make_shared<SubCircuitNodeImpl>();
+  for (auto *op : v->operations) n->operations.insert(op);
+  n->epoch = v->epoch;
+  n->column = v->column;
+  return n;
+}
+
+inline CircuitGraph deepCopyCircuitGraph(CircuitGraph &src) {
+  // Build old-ptr → fresh-clone mapping.
+  std::unordered_map<SubCircuitNode, SubCircuitNode> remap;
+  for (const auto &v : src.getVertices()) remap[v] = cloneNode(v);
+
+  // Add cloned vertices, then rebuild edges using remapped pointers.
+  CircuitGraph result;
+  for (auto &[oldV, newV] : remap) result.addVertex(newV);
+
+  for (auto &[oldV, newV] : remap)
+    for (const auto &oldSucc : src.edgesOutOf(oldV))
+      result.addEdge(newV, remap.at(oldSucc));
+
+  return result;
+}
+
 CircuitGraph buildCircuitGraph(llvm::SmallVector<Operation *> operations) {
   CircuitGraph graph;
 
@@ -126,107 +172,26 @@ CircuitGraph buildCircuitGraph(llvm::SmallVector<Operation *> operations) {
   return graph;
 }
 
-//===----------------------------------------------------------------------===//
-// MCMF: min-cost max-flow using graph::Graph<int> as the flow network
+//===- MaxWeightBipartiteMatching.h - Bipartite matching for columnize ----===//
 //
-// Node IDs are plain ints:
-//   0          = source
-//   1 .. L     = left nodes  (epoch i)
-//   L+1 .. L+R = right nodes (epoch j)
-//   L+R+1      = sink
+// Implements max-weight bipartite matching equivalent to:
+//   nx.algorithms.max_weight_matching(G, maxcardinality=True)
 //
-// graph::Graph<int> holds the topology (including reverse edges so SPFA can
-// traverse the residual graph). Two std::maps hold the residual capacity and
-// cost for each directed (u, v) pair, updated in-place during augmentation.
-//===----------------------------------------------------------------------===//
-
-class MCMF {
- public:
-  static constexpr int INF = std::numeric_limits<int>::max() / 2;
-
-  explicit MCMF(int n) {
-    for (int i = 0; i < n; ++i) flowGraph.addVertex(i);
-  }
-
-  /// Add a directed edge u→v with given capacity and cost, plus the reverse
-  /// edge v→u with capacity 0 and negated cost (for the residual graph).
-  void addEdge(int u, int v, int cap, int cost) {
-    resCap[{u, v}] += cap;
-    if (!resCap.count({v, u})) resCap[{v, u}] = 0;
-    edgeCost[{u, v}] = cost;
-    edgeCost[{v, u}] = -cost;
-    // Add both directions to the topology so edgesOutOf covers residual edges.
-    if (!flowGraph.hasEdge(u, v)) flowGraph.addEdge(u, v);
-    if (!flowGraph.hasEdge(v, u)) flowGraph.addEdge(v, u);
-  }
-
-  /// Run min-cost max-flow from s to t. Returns {total_flow, total_cost}.
-  std::pair<int, int> minCostMaxFlow(int s, int t) {
-    int totalFlow = 0, totalCost = 0;
-
-    while (true) {
-      // SPFA: shortest (min-cost) path from s to t in the residual graph.
-      // Only traverse edges where resCap > 0.
-      std::map<int, int> dist;
-      std::map<int, bool> inQueue;
-      std::map<int, int> prev;
-
-      for (int v : flowGraph.getVertices()) {
-        dist[v] = INF;
-        inQueue[v] = false;
-      }
-      dist[s] = 0;
-
-      std::queue<int> q;
-      q.push(s);
-      inQueue[s] = true;
-
-      while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-        inQueue[u] = false;
-
-        for (int v : flowGraph.edgesOutOf(u)) {
-          if (resCap[{u, v}] > 0 && dist[u] != INF &&
-              dist[u] + edgeCost[{u, v}] < dist[v]) {
-            dist[v] = dist[u] + edgeCost[{u, v}];
-            prev[v] = u;
-            if (!inQueue[v]) {
-              q.push(v);
-              inQueue[v] = true;
-            }
-          }
-        }
-      }
-
-      if (dist[t] == INF) break;  // no augmenting path — optimal
-
-      // Augment one unit of flow along the shortest path.
-      ++totalFlow;
-      totalCost += dist[t];
-      for (int v = t; v != s;) {
-        int u = prev[v];
-        resCap[{u, v}]--;
-        resCap[{v, u}]++;
-        v = u;
-      }
-    }
-
-    return {totalFlow, totalCost};
-  }
-
-  // Residual capacity and cost for each directed (u, v) pair.
-  std::map<std::pair<int, int>, int> resCap;
-
- private:
-  graph::Graph<int> flowGraph;  // topology including reverse edges
-  std::map<std::pair<int, int>, int> edgeCost;
-};
-
-//===----------------------------------------------------------------------===//
-// maxWeightBipartiteMatching
-//===----------------------------------------------------------------------===//
-
+// Used by the columnize phase of the Coyote vectorizer to seed initial lane
+// assignments. For each (epoch_i, epoch_j) pair, finds the maximum-weight
+// matching between epoch-i nodes and epoch-j nodes in the circuit graph, where
+// edge weight = sum of total degrees of the two endpoints.
+//
+// Python equivalent: schedule_graph.py:209
+//   nx.algorithms.max_weight_matching(matchable_graph, maxcardinality=True)
+//
+// Algorithm: min-cost max-flow via OR-Tools SimpleMinCostFlow.
+//   The flow network has source (0), left nodes (1..L), right nodes (L+1..L+R),
+//   and sink (L+R+1). Each arc has unit capacity.
+//
+//   maxcardinality=True is encoded by adding a cardinality bonus M to every
+//   matching edge cost, making every augmenting path cheaper than not
+//   augmenting. Weight then acts as a tiebreaker within equal cardinality.
 /// Compute a maximum-weight bipartite matching between leftNodes (epoch i) and
 /// rightNodes (epoch j).
 ///
@@ -235,8 +200,9 @@ class MCMF {
 ///   getInDegree(u) + getOutDegree(u) + getInDegree(v) + getOutDegree(v)
 ///
 /// maxcardinality=True semantics (matching Python):
-///   A cardinality bonus M = sum_of_all_weights + 1 is added to each matching
-///   edge cost so SPFA always prefers augmenting. Weight breaks ties.
+///   A cardinality bonus M = 2 * maxDeg * min(L,R) + 1 is added to each
+///   matching edge cost so the solver always prefers augmenting. Weight breaks
+///   ties within equal cardinality.
 ///
 /// An optional `isMatchable` predicate can reject individual edges (used to
 /// prevent epoch conflicts in the Union-Find column structure during
@@ -254,17 +220,19 @@ maxWeightBipartiteMatching(
   const int R = rightNodes.size();
   const int source = 0, sink = L + R + 1;
 
-  MCMF mcmf(L + R + 2);
+  operations_research::SimpleMinCostFlow mcmf;
 
-  // source → left nodes
-  for (int i = 0; i < L; ++i) mcmf.addEdge(source, i + 1, 1, 0);
+  // source → left nodes (arc indices 0..L-1)
+  for (int i = 0; i < L; ++i)
+    mcmf.AddArcWithCapacityAndUnitCost(source, i + 1, 1, 0);
 
-  // right nodes → sink
-  for (int j = 0; j < R; ++j) mcmf.addEdge(L + 1 + j, sink, 1, 0);
+  // right nodes → sink (arc indices L..L+R-1)
+  for (int j = 0; j < R; ++j)
+    mcmf.AddArcWithCapacityAndUnitCost(L + 1 + j, sink, 1, 0);
 
   // Compute cardinality bonus: M > any single edge weight so that
   // maximising cardinality always dominates maximising weight.
-  // O(L+R) bound: 2 * maxDeg * min(L,R) + 1 exceeds the total weight of any
+  // O(L+R): 2 * maxDeg * min(L,R) + 1 exceeds the total weight of any
   // matching (at most min(L,R) edges, each with weight at most 2*maxDeg).
   int maxDeg = 0;
   for (auto &n : leftNodes)
@@ -275,13 +243,15 @@ maxWeightBipartiteMatching(
                                     circuitGraph.getOutDegree(n)));
   const int cardinalityBonus = 2 * maxDeg * std::min(L, R) + 1;
 
-  // left → right edges
+  // left → right matching edges (arc indices starting at L+R).
+  // Store (i, j) alongside each arc so we can recover node pairs after solve.
+  std::vector<std::pair<int, int>> matchingArcNodes;
   for (int i = 0; i < L; ++i) {
-    const SubCircuitNode &u = leftNodes[i];
+    SubCircuitNode u = leftNodes[i];
     int degU = circuitGraph.getInDegree(u) + circuitGraph.getOutDegree(u);
 
     for (int j = 0; j < R; ++j) {
-      const SubCircuitNode &v = rightNodes[j];
+      SubCircuitNode v = rightNodes[j];
 
       if (!circuitGraph.hasEdge(u, v) && !circuitGraph.hasEdge(v, u)) continue;
 
@@ -289,24 +259,143 @@ maxWeightBipartiteMatching(
 
       int degV = circuitGraph.getInDegree(v) + circuitGraph.getOutDegree(v);
       int weight = degU + degV;
-      // Negative cost so SPFA prefers this edge; cardinality bonus ensures
+      // Negative cost so solver prefers this edge; cardinality bonus ensures
       // all augmenting paths are preferred over not augmenting.
-      mcmf.addEdge(i + 1, L + 1 + j, 1, -(weight + cardinalityBonus));
+      mcmf.AddArcWithCapacityAndUnitCost(i + 1, L + 1 + j, 1,
+                                         -(weight + cardinalityBonus));
+      matchingArcNodes.push_back({i, j});
     }
   }
 
-  mcmf.minCostMaxFlow(source, sink);
+  // Source supplies L units; SolveMaxFlowWithMinCost pushes as many as the
+  // network allows (bounded by right→sink capacities, so at most min(L,R)).
+  mcmf.SetNodeSupply(source, L);
+  mcmf.SetNodeSupply(sink, -L);
+  mcmf.SolveMaxFlowWithMinCost();
 
-  // Extract matched pairs: iterate only edges that were actually added,
-  // selecting left→right entries where residual capacity == 0 (flow sent).
+  // Extract matched pairs: matching arcs start at index L+R.
   std::vector<std::pair<SubCircuitNode, SubCircuitNode>> matching;
-  for (auto &[edge, cap] : mcmf.resCap) {
-    int u = edge.first, v = edge.second;
-    if (u >= 1 && u <= L && v >= L + 1 && v <= L + R && cap == 0)
-      matching.push_back({leftNodes[u - 1], rightNodes[v - L - 1]});
+  const int arcBase = L + R;
+  for (int k = 0; k < (int)matchingArcNodes.size(); ++k) {
+    if (mcmf.Flow(arcBase + k) > 0) {
+      auto [i, j] = matchingArcNodes[k];
+      matching.push_back({leftNodes[i], rightNodes[j]});
+    }
   }
 
   return matching;
+}
+
+/// Assigns topological epochs to graph nodes
+/// Python reference: schedule_graph.py:56-112 (grade_nx_graph)
+///
+/// Algorithm:
+/// 1. Clear existing epoch assignments
+/// 2. Assign input_groups to epochs 0, 1, 2, ...
+/// 3. Topologically visit nodes, setting epoch = max(predecessor epochs) + 1
+/// 4. Assign output_groups to epochs (max_epoch + 1), (max_epoch + 2), ...
+class EpochAssigner {
+ public:
+  using Node = SubCircuitNode;
+
+  /// Assign epochs to all nodes in the graph
+  /// Returns (input_epochs, output_epochs) sets
+  std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> assignEpochs(
+      CircuitGraph &graph,
+      llvm::ArrayRef<llvm::SmallVector<Operation *>> inputGroups,
+      llvm::ArrayRef<llvm::SmallVector<Operation *>> outputGroups) {
+    llvm::DenseSet<int64_t> inputEpochs, outputEpochs;
+
+    // Helper: find node containing a specific operation
+    auto nodeOf = [&](Operation *op) -> Node {
+      for (auto &nodePtr : graph.getVertices()) {
+        if (nodePtr->operations.count(op)) {
+          return nodePtr;
+        }
+      }
+      llvm::outs() << "Warning: Operation " << *op
+                   << " not found in any graph node\n";
+      return nullptr;
+    };
+
+    // Step 1: Clear existing epoch assignments
+    for (const Node &nodePtr : graph.getVertices()) {
+      nodePtr->epoch = -1;
+    }
+
+    // Step 2: Assign input groups to epochs 0, 1, 2, ...
+    for (size_t i = 0; i < inputGroups.size(); ++i) {
+      for (auto *op : inputGroups[i]) {
+        Node node = nodeOf(op);
+        if (node) {
+          node->epoch = i;
+          inputEpochs.insert(i);
+          llvm::outs() << "Op " << *op << " assigned to input epoch "
+                       << node->epoch << "\n";
+        }
+      }
+    }
+
+    // Build output node set for fast lookup during epoch assignment
+    std::unordered_set<Node> outputNodes;
+    for (const auto &group : outputGroups) {
+      for (auto *op : group) {
+        if (Node node = nodeOf(op)) outputNodes.insert(node);
+      }
+    }
+
+    // Step 3: Topologically sort all nodes
+    auto topoOrder = graph.topologicalSort();
+    assert(succeeded(topoOrder) && "CircuitGraph has a cycle");
+
+    // Step 4: Iterate in topo order, assigning epoch = max(pred epochs) + 1
+    // Skip nodes already pinned (input groups) and output nodes (assigned
+    // later)
+    for (Node node : *topoOrder) {
+      if (node->epoch != -1) continue;        // already pinned (input group)
+      if (outputNodes.count(node)) continue;  // will be pinned in step 5
+
+      int64_t maxPredEpoch = -1;
+      for (Node pred : graph.edgesInto(node)) {
+        if (pred->epoch != -1)
+          maxPredEpoch = std::max(maxPredEpoch, pred->epoch);
+      }
+      node->epoch = maxPredEpoch + 1;
+      llvm::outs() << "Op " << *node->operations[0]
+                   << " assigned to topoOrder epoch " << node->epoch << "\n";
+    }
+
+    // Step 5: Find max epoch and assign output groups
+    int64_t maxEpoch = -1;
+    for (auto &nodePtr : graph.getVertices()) {
+      if (nodePtr->epoch > maxEpoch) {
+        maxEpoch = nodePtr->epoch;
+      }
+    }
+
+    for (size_t i = 0; i < outputGroups.size(); ++i) {
+      for (auto *op : outputGroups[i]) {
+        Node node = nodeOf(op);
+        if (node) {
+          node->epoch = maxEpoch + 1 + i;
+          outputEpochs.insert(maxEpoch + 1 + i);
+          llvm::outs() << "Op " << *op << " assigned to output epoch "
+                       << node->epoch << "\n";
+        }
+      }
+    }
+
+    return {inputEpochs, outputEpochs};
+  }
+};
+
+/// Standalone function wrapper for easier integration
+std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> gradeGraph(
+    CircuitGraph &graph,
+    llvm::ArrayRef<llvm::SmallVector<Operation *>> inputGroups,
+    llvm::ArrayRef<llvm::SmallVector<Operation *>> outputGroups) {
+  EpochAssigner assigner;
+  return assigner.assignEpochs(graph, inputGroups, outputGroups);
 }
 
 }  // namespace heir
