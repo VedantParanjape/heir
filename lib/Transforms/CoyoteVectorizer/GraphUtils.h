@@ -330,8 +330,8 @@ class EpochAssigner {
         if (node) {
           node->epoch = i;
           inputEpochs.insert(i);
-          llvm::outs() << "Op " << *op << " assigned to input epoch "
-                       << node->epoch << "\n";
+          // llvm::outs() << "Op " << *op << " assigned to input epoch "
+          //              << node->epoch << "\n";
         }
       }
     }
@@ -361,8 +361,8 @@ class EpochAssigner {
           maxPredEpoch = std::max(maxPredEpoch, pred->epoch);
       }
       node->epoch = maxPredEpoch + 1;
-      llvm::outs() << "Op " << *node->operations[0]
-                   << " assigned to topoOrder epoch " << node->epoch << "\n";
+      // llvm::outs() << "Op " << *node->operations[0]
+      //              << " assigned to topoOrder epoch " << node->epoch << "\n";
     }
 
     // Step 5: Find max epoch and assign output groups
@@ -379,8 +379,8 @@ class EpochAssigner {
         if (node) {
           node->epoch = maxEpoch + 1 + i;
           outputEpochs.insert(maxEpoch + 1 + i);
-          llvm::outs() << "Op " << *op << " assigned to output epoch "
-                       << node->epoch << "\n";
+          // llvm::outs() << "Op " << *op << " assigned to output epoch "
+          //              << node->epoch << "\n";
         }
       }
     }
@@ -400,5 +400,27 @@ std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> gradeGraph(
 
 }  // namespace heir
 }  // namespace mlir
+
+namespace llvm {
+template <>
+struct DenseMapInfo<mlir::heir::SubCircuitNode> {
+  using T = mlir::heir::SubCircuitNodeImpl;
+  using Ptr = mlir::heir::SubCircuitNode;
+  using PtrInfo = DenseMapInfo<T *>;
+
+  static Ptr getEmptyKey() {
+    return Ptr(PtrInfo::getEmptyKey(), [](T *) {});
+  }
+  static Ptr getTombstoneKey() {
+    return Ptr(PtrInfo::getTombstoneKey(), [](T *) {});
+  }
+  static unsigned getHashValue(const Ptr &val) {
+    return PtrInfo::getHashValue(val.get());
+  }
+  static bool isEqual(const Ptr &lhs, const Ptr &rhs) {
+    return lhs.get() == rhs.get();
+  }
+};
+}  // namespace llvm
 
 #endif  // LIB_TRANSFORMS_COYOTEVECTORIZER_MAXWEIGHTBIPARTITEMATCHING_H_

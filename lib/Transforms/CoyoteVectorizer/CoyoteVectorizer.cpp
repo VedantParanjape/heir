@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "GraphUtils.h"
+#include "GreedyAlign.h"
+#include "Optimizations.h"
 #include "SimulatedAnnealing.h"
 #include "lib/Dialect/Secret/IR/SecretDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
@@ -34,9 +36,12 @@
 #include "mlir/include/mlir/Dialect/Tensor/IR/Tensor.h"  // from @llvm-project
 #include "mlir/include/mlir/IR/Builders.h"               // from @llvm-project
 #include "mlir/include/mlir/IR/BuiltinOps.h"             // from @llvm-project
+#include "mlir/include/mlir/IR/PatternMatch.h"           // from @llvm-project
 #include "mlir/include/mlir/IR/Visitors.h"               // from @llvm-project
 #include "mlir/include/mlir/Pass/Pass.h"                 // from @llvm-project
 #include "mlir/include/mlir/Support/LogicalResult.h"     // from @llvm-project
+#include "mlir/include/mlir/Transforms/GreedyPatternRewriteDriver.h"  // from @llvm-project
+#include "mlir/include/mlir/Transforms/RegionUtils.h"  // from @llvm-project
 
 namespace mlir {
 namespace heir {
@@ -532,65 +537,190 @@ struct CoyoteVectorizerPass
     llvm::errs() << "  Best cost: " << bestSchedule.cost << "\n";
     llvm::errs() << "  (Rotation: " << bestSchedule.rotationCost
                  << ", Height: " << bestSchedule.heightCost << ")\n";
+    printGraph(bestSchedule.graph, "Best schedule graph after quotient search");
 
-    // // Step 7: Build lane assignment map
-    // llvm::errs() << "\n[6/9] Building lane assignments...\n";
-    // llvm::DenseMap<Operation*, int64_t> lanes;
-    // unsigned warpSize = 8;  // Default warp size
+    //==========================================================================
+    // Step 6: Normalize column assignments and extract metadata
+    // Python equivalent: Lines 76-82 in vectorize_circuit.py
+    //==========================================================================
+    // After quotient search, normalize columns to start at 0 and extract
+    // the lane assignments for each operation.
+    //
+    // Python code:
+    //   min_column = min(protoschedule.nodes[node]['column'] ...)
+    //   for node in protoschedule.nodes:
+    //     protoschedule.nodes[node]['column'] -= min_column
+    //   warp_size = max(protoschedule.nodes[node]['column'] ...) + 1
+    //   lanes = get_lanes(protoschedule)
+    //
+    // Note: In Python, quotient nodes may contain multiple operations, so we
+    // need to extract per-operation lane assignments.
+    llvm::errs() << "\n[6/9] Normalizing and extracting lane assignments...\n";
 
-    // for (const auto& nodePtr : bestSchedule.graph.getVertices()) {
-    //   for (auto* op : nodePtr->operations) {
-    //     lanes[op] = nodePtr->column;
-    //     if (nodePtr->column >= (int64_t)warpSize) {
-    //       warpSize = nodePtr->column + 1;
-    //     }
-    //   }
-    // }
-    // llvm::errs() << "  Warp size: " << warpSize << "\n";
+    // Find minimum column (should already be 0 after quotient search, but
+    // check)
+    int64_t minColumn = INT64_MAX;
+    for (const auto& nodePtr : bestSchedule.graph.getVertices()) {
+      if (nodePtr->column < minColumn) {
+        minColumn = nodePtr->column;
+      }
+    }
 
-    // // Step 8: Instruction alignment
-    // llvm::errs() << "\n[7/9] Aligning instructions (greedy)...\n";
-    // auto alignment = greedyAlign(operations, warpSize, lanes);
-    // llvm::errs() << "  Schedule height: " <<
-    // (*std::max_element(alignment.begin(), alignment.end()) + 1) << "\n";
+    // Normalize and build per-operation lane map
+    llvm::DenseMap<Operation*, int64_t> lanes;
+    unsigned warpSize = 0;
 
-    // // Step 9: Build complete schedule
-    // Schedule schedule;
-    // schedule.lanes = lanes;
-    // for (size_t i = 0; i < operations.size(); ++i) {
-    //   schedule.alignment[operations[i]] = alignment[i];
-    // }
-    // schedule.instructions = operations;
-    // schedule.warpSize = warpSize;
+    for (const auto& nodePtr : bestSchedule.graph.getVertices()) {
+      // Normalize column
+      int64_t normalizedColumn = nodePtr->column - minColumn;
 
-    // // Step 10: Code generation
-    // llvm::errs() << "\n[8/9] Generating vector code...\n";
-    // auto vecCode = generateVectorCode(schedule);
-    // llvm::errs() << "  Generated " << vecCode.size() << " vector
-    // instructions\n";
+      // Assign all operations in this node to the same lane
+      for (auto* op : nodePtr->operations) {
+        lanes[op] = normalizedColumn;
+      }
 
-    // // Step 11: Optimization passes
-    // llvm::errs() << "\n[9/9] Running optimization passes...\n";
-    // llvm::errs() << "  - Blend optimization...\n";
-    // optimizeBlends(schedule, 100);  // Reduced rounds for demo
-    // llvm::errs() << "  - Rotation optimization...\n";
-    // optimizeRotations(vecCode, warpSize);
+      // Track maximum for warp size
+      if (normalizedColumn >= (int64_t)warpSize) {
+        warpSize = normalizedColumn + 1;
+      }
+    }
+    llvm::errs() << "  Warp size: " << warpSize << " lanes\n";
 
-    // // Step 12: Lower to MLIR
-    // llvm::errs() << "\nLowering to MLIR...\n";
-    // lowerToMLIR(func, vecCode, schedule);
+    //==========================================================================
+    // Step 7: Fine-grained instruction alignment (epoch-by-epoch)
+    // Python equivalent: Lines 211-228 in vectorize_circuit.py
+    //==========================================================================
+    // The quotient search assigns operations to epochs (coarse-grained timing).
+    // This step computes fine-grained alignment within each epoch
+    // independently, then concatenates epochs sequentially using a running
+    // program_length offset.
+    //
+    // Python code:
+    //   program_length = 0
+    //   for stage in get_stages(protoschedule):
+    //     stage_instrs = [comp.code[i] for i in stage]
+    //     stage_align = fast_align(stage_instrs, warp_size, lanes)
+    //     for s, i in zip(stage_align, stage_instrs):
+    //       alignment[i.dest.val] = s + program_length
+    //     program_length = max(alignment) + 1
+    //
+    // Each call to fast_align (greedyAlign) only sees the instructions in the
+    // current epoch, so cross-epoch dependencies are implicitly satisfied
+    // (they reference operations not present in the local dep graph, thus
+    // treated as already-scheduled). Epochs are then stacked sequentially.
+    llvm::errs()
+        << "\n[7/9] Computing fine-grained alignment (epoch-by-epoch)...\n";
 
-    // // Annotate operations with their assignments
-    // for (auto* op : operations) {
-    //   op->setAttr("coyote.lane",
-    //              IntegerAttr::get(IntegerType::get(op->getContext(), 64),
-    //                              lanes[op]));
-    //   op->setAttr("coyote.alignment",
-    //              IntegerAttr::get(IntegerType::get(op->getContext(), 64),
-    //                              schedule.alignment.lookup(op)));
-    // }
+    // Build op -> epoch map from the best quotient graph.
+    llvm::DenseMap<Operation*, int64_t> opToEpoch;
+    for (const auto& nodePtr : bestSchedule.graph.getVertices())
+      for (auto* op : nodePtr->operations) opToEpoch[op] = nodePtr->epoch;
 
-    // llvm::errs() << "\n=== Coyote Vectorizer Complete ===\n\n";
+    // Group operations by epoch, preserving program order within each epoch.
+    std::map<int64_t, llvm::SmallVector<Operation*>> epochOps;
+    for (auto* op : operations) {
+      int64_t epoch =
+          opToEpoch.lookup(op);  // 0 for ops not in graph (constants etc.)
+      epochOps[epoch].push_back(op);
+    }
+
+    // Align per epoch, accumulating a global offset.
+    llvm::DenseMap<Operation*, int64_t> alignmentMap;
+    int64_t programLength = 0;
+
+    for (auto& [epoch, stageOps] : epochOps) {
+      auto stageAlign = greedyAlign(stageOps, warpSize, lanes);
+
+      int64_t stageMax = 0;
+      for (size_t i = 0; i < stageOps.size(); ++i) {
+        int64_t t = stageAlign[i] + programLength;
+        alignmentMap[stageOps[i]] = t;
+        stageMax = std::max(stageMax, t);
+      }
+      programLength = stageMax + 1;
+    }
+
+    // Convert to index-parallel vector matching `operations` order.
+    std::vector<int64_t> alignment(operations.size());
+    for (size_t i = 0; i < operations.size(); ++i)
+      alignment[i] = alignmentMap.lookup(operations[i]);
+
+    llvm::errs() << "  Schedule height: " << programLength << " cycles\n";
+
+    //==========================================================================
+    // Step 8: Build complete Schedule object
+    // Python equivalent: schedule = Schedule(lanes, alignment, comp.code)
+    //==========================================================================
+    // Package all scheduling information into a single Schedule structure.
+    // This is the input to code generation and optimization passes.
+    Schedule schedule;
+    schedule.lanes = lanes;
+    for (size_t i = 0; i < operations.size(); ++i) {
+      schedule.alignment[operations[i]] = alignment[i];
+    }
+    schedule.instructions = operations;
+    schedule.warpSize = warpSize;
+
+    // //==========================================================================
+    // // Step 9: Optimize blend operations
+    // // Python equivalent: blend_relaxed_schedule = relax_blends(schedule)
+    // //==========================================================================
+    // // Blends are operations that combine values from different sources based
+    // // on lane masks. They're used to implement cross-lane data movement.
+    // //
+    // // Python relax_blends() optimizes blend placement to reduce overhead:
+    // // - Move blends closer to their use points
+    // // - Merge redundant blends
+    // // - Eliminate unnecessary blends
+    // //
+    // // This changes the schedule (updates alignment), so we do it before
+    // // code generation.
+    // //
+    // // IMPORTANT: In Python, this step produces a NEW schedule. We need to
+    // // update our schedule in-place or regenerate it.
+    llvm::errs() << "\n[8/9] Optimizing blend operations...\n";
+    optimizeBlends(schedule, 100);  // TODO: Match Python's iteration count
+    llvm::errs() << "  Blend optimization complete\n";
+
+    //==========================================================================
+    // Step 10: Lower schedule to MLIR tensor operations
+    // Python equivalent: codegen() + lowering
+    //==========================================================================
+    // Emit tensor_ext.rotate, element-wise arith ops on tensors, and
+    // tensor.from_elements masks for blends — directly from the Schedule,
+    // without going through the VecInstr intermediate representation.
+    //
+    // After lowering, scalar op results are replaced by tensor.extract from
+    // the vectorized result tensors, and the original scalar ops are erased.
+    llvm::errs() << "\n[9/9] Lowering schedule to MLIR tensor operations...\n";
+    lowerToMLIR(func, schedule);
+    llvm::errs() << "  Lowering complete\n";
+
+    // Canonicalize + DCE to clean up dead ops left behind by lowering.
+    {
+      MLIRContext* ctx = func.getContext();
+      RewritePatternSet patterns(ctx);
+      for (auto* dialect : ctx->getLoadedDialects())
+        dialect->getCanonicalizationPatterns(patterns);
+      for (RegisteredOperationName op : ctx->getRegisteredOperations())
+        op.getCanonicalizationPatterns(patterns, ctx);
+
+      GreedyRewriteConfig config;
+      config.setUseTopDownTraversal();
+      (void)applyPatternsGreedily(func, std::move(patterns), config);
+
+      IRRewriter rewriter(ctx);
+      (void)mlir::eraseUnreachableBlocks(rewriter,
+                                         func.getOperation()->getRegions());
+    }
+
+    llvm::errs() << "\n=== Generated MLIR ===\n";
+    func.print(llvm::errs());
+    llvm::errs() << "\n=====================\n";
+
+    llvm::errs() << "\n=== Coyote Vectorizer Complete ===\n";
+    llvm::errs() << "Final schedule: " << warpSize << " lanes, "
+                 << schedule.maxStep() + 1 << " cycles\n\n";
   }
 };
 
