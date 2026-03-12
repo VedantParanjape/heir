@@ -293,7 +293,7 @@ struct QuotientSchedule {
   // Each group is a set of edges that can be contracted together.
   // nullopt = not yet generated; empty vector = generated but exhausted.
   // Python: cur.edges is None vs cur.edges == []
-  using EdgePair = std::pair<SubCircuitNodeImpl*, SubCircuitNodeImpl*>;
+  using EdgePair = std::pair<SubCircuitNode, SubCircuitNode>;
   std::optional<std::vector<std::set<EdgePair>>> edgeGroups;
 
   // For priority queue (min-heap)
@@ -302,14 +302,37 @@ struct QuotientSchedule {
   }
 };
 
+static void printGraph(const CircuitGraph& g, llvm::StringRef label = "") {
+  if (!label.empty()) llvm::errs() << "=== " << label << " ===\n";
+
+  for (const SubCircuitNode& node :
+       const_cast<CircuitGraph&>(g).getVertices()) {
+    llvm::errs() << "Node(epoch=" << node->epoch << ", col=" << node->column
+                 << ", ops=[";
+    bool first = true;
+    for (auto* op : node->operations) {
+      if (!first) llvm::errs() << ", ";
+      llvm::errs() << op->getName().getStringRef();
+      first = false;
+    }
+    llvm::errs() << "])\n";
+
+    for (const SubCircuitNode& succ :
+         const_cast<CircuitGraph&>(g).edgesOutOf(node)) {
+      llvm::errs() << "  -> Node(epoch=" << succ->epoch
+                   << ", col=" << succ->column << ")\n";
+    }
+  }
+  llvm::errs() << "\n";
+}
+
 //===----------------------------------------------------------------------===//
 // QuotientSearcher: Best-first search over circuit quotients
 //===----------------------------------------------------------------------===//
 
 class QuotientSearcher {
  public:
-  using Node = SubCircuitNodeImpl*;
-  using EdgePair = std::pair<Node, Node>;
+  using Node = SubCircuitNode;
 
   /// Search for best circuit quotient
   /// Python: protoschedule.py:49-247 (pq_relax_schedule)
@@ -334,6 +357,35 @@ class QuotientSearcher {
     // NOTE: This should be done externally via ColumnAssigner before calling
     // search
 
+    // Helper: pre-SA column swap.
+    // Python: protoschedule.py:79-85
+    //   for reg, lane in force_lanes.items():
+    //       col_num = graph.nodes[reg,]["column"]
+    //       new_data.update({n: lane for n, d in ... if d["column"] ==
+    //       col_num})
+    //   nx.set_node_attributes(graph, new_data, name="column")
+    //
+    // Before SA we remap entire columns: find the current column of each forced
+    // op and reassign ALL nodes in that column to the forced lane.  This
+    // ensures SA starts from a state that already respects force-lane
+    // constraints, so it optimizes the remaining nodes relative to the correct
+    // forced positions.
+    auto applyForceLaneColumnSwap = [&](CircuitGraph& g) {
+      // Build: current_column_of_forced_op -> forced_lane
+      llvm::DenseMap<int64_t, int64_t> columnToForcedLane;
+      for (auto& nodePtr : g.getVertices())
+        for (auto* op : nodePtr->operations) {
+          auto it = forceLanes.find(op);
+          if (it != forceLanes.end())
+            columnToForcedLane[nodePtr->column] = it->second;
+        }
+      // Reassign every node whose current column maps to a forced lane.
+      for (auto& nodePtr : g.getVertices()) {
+        auto it = columnToForcedLane.find(nodePtr->column);
+        if (it != columnToForcedLane.end()) nodePtr->column = it->second;
+      }
+    };
+
     // Helper: re-apply forced lanes after SA.
     // Python: protoschedule.py:102-107
     //   for reg, lane in force_lanes.items():
@@ -345,9 +397,10 @@ class QuotientSearcher {
     };
 
     // Step 3: Run lane placement (simulated annealing)
+    applyForceLaneColumnSwap(initialGraph);  // pre-SA: swap entire columns
     double rotCost =
         runLanePlacement(initialGraph, forceLanes, 50, 0.001, 20000);
-    reapplyForceLanes(initialGraph);  // Gap 4: re-pin forced lanes after SA
+    reapplyForceLanes(initialGraph);  // post-SA: re-pin individual forced ops
     double heightCost = computeScheduleHeight(initialGraph);
 
     // Initialize best schedule
@@ -387,7 +440,7 @@ class QuotientSearcher {
       if (cur.edgeGroups->empty()) continue;  // No more edges to contract
 
       // Pick an edge group to contract
-      std::set<EdgePair> edgesToContract;
+      std::set<QuotientSchedule::EdgePair> edgesToContract;
       while (!cur.edgeGroups->empty()) {
         edgesToContract = cur.edgeGroups->back();
         cur.edgeGroups->pop_back();
@@ -408,9 +461,10 @@ class QuotientSearcher {
       gradeGraph(contracted, inputGroups, outputGroups);
 
       // Run lane placement on contracted graph
+      applyForceLaneColumnSwap(contracted);  // pre-SA: swap entire columns
       double newRotCost =
           runLanePlacement(contracted, forceLanes, 50, 0.001, 20000);
-      reapplyForceLanes(contracted);  // Gap 4: re-pin forced lanes after SA
+      reapplyForceLanes(contracted);  // post-SA: re-pin individual forced ops
       double newHeightCost = computeScheduleHeight(contracted);
       double newCost = newRotCost + newHeightCost;
 
@@ -435,10 +489,11 @@ class QuotientSearcher {
  private:
   /// Group cross-lane edges by (source_epoch, rotation_span)
   /// Python: protoschedule.py:139-160
-  std::vector<std::set<EdgePair>> groupCrossEdges(
+  std::vector<std::set<QuotientSchedule::EdgePair>> groupCrossEdges(
       const CircuitGraph& graph, const llvm::DenseSet<Operation*>& inputOps,
       const llvm::DenseSet<Operation*>& outputOps) {
-    std::map<std::pair<int64_t, int64_t>, std::set<EdgePair>> crossEdges;
+    std::map<std::pair<int64_t, int64_t>, std::set<QuotientSchedule::EdgePair>>
+        crossEdges;
 
     for (const auto& [u, v] : graph.getEdges()) {
       // Get source epoch and rotation span
@@ -481,11 +536,11 @@ class QuotientSearcher {
       if (uIsOutput && vIsOutput) continue;
 
       // Group by (epoch, span)
-      crossEdges[{srcEpoch, span}].insert({u, v});
+      crossEdges[{srcEpoch, span}].insert(std::make_pair(u, v));
     }
 
     // Convert map to vector
-    std::vector<std::set<EdgePair>> result;
+    std::vector<std::set<QuotientSchedule::EdgePair>> result;
     for (auto& [key, edges] : crossEdges) {
       result.push_back(std::move(edges));
     }
@@ -503,52 +558,46 @@ class QuotientSearcher {
   ///     if fixed: col = force_lanes[next(iter(fixed))]
   ///     else:     col = raw_contracted.nodes[first_member]["column"]
   CircuitGraph contractAndCondense(
-      CircuitGraph graph,  // taken by value — deep-copied via copy ctor
-      const std::set<EdgePair>& edges,
+      CircuitGraph inputGraph,
+      const std::set<std::pair<SubCircuitNode, SubCircuitNode>>& edges,
       const llvm::DenseMap<Operation*, int64_t>& forceLanes) {
-    // Snapshot op→column BEFORE any mutation so we can restore correct
-    // column values onto the freshly-created condensed nodes afterwards.
+    CircuitGraph graph = deepCopyCircuitGraph(inputGraph);
+
+    // Snapshot op→column before any mutation.
     llvm::DenseMap<Operation*, int64_t> opToColumn;
-    for (auto& nodePtr : graph.getVertices())
-      for (auto* op : nodePtr->operations) opToColumn[op] = nodePtr->column;
+    for (const SubCircuitNode& node : graph.getVertices())
+      for (auto* op : node->operations) opToColumn[op] = node->column;
 
-    // Contract all edges in the group.
-    for (const auto& [u, v] : edges) graph.contractEdge(u, v);
-
-    // Condense SCCs → new graph with new nodes.
-    CircuitGraph condensed = graph.condense();
-
-    // Fix column of each condensed node.
-    // Forced lanes take priority (Python: force_lanes check first).
-    // Otherwise use the pre-contraction column of the first op in the SCC.
-    for (auto& nodePtr : condensed.getVertices()) {
-      int64_t col = -1;
-      for (auto* op : nodePtr->operations) {
-        auto it = forceLanes.find(op);
-        if (it != forceLanes.end()) {
-          col = it->second;
-          break;
+    // mergeFn: merge operations and fix column in one shot.
+    // Forced lanes take priority; otherwise keep first pre-contraction column.
+    auto mergeFn = [&](SubCircuitNode& a, const SubCircuitNode& b) {
+      a->merge(*b);
+      // Prefer a forced lane from either node.
+      for (auto* op : a->operations)
+        if (auto it = forceLanes.find(op); it != forceLanes.end()) {
+          a->column = it->second;
+          return;
         }
-      }
-      if (col == -1) {
-        for (auto* op : nodePtr->operations) {
-          auto it = opToColumn.find(op);
-          if (it != opToColumn.end()) {
-            col = it->second;
-            break;
+      // Fall back to pre-contraction column.
+      if (a->column == -1)
+        for (auto* op : a->operations)
+          if (auto it = opToColumn.find(op); it != opToColumn.end()) {
+            a->column = it->second;
+            return;
           }
-        }
-      }
-      nodePtr->column = col;
-    }
+    };
 
-    return condensed;
+    for (const auto& [u, v] : edges) graph.contractEdge(u, v, mergeFn);
+
+    graph.condenseGraph(mergeFn);
+
+    return graph;
   }
 
   /// Check if edges respect force lane constraints
   /// Python: protoschedule.py:171-179
   bool respectsForceLanes(
-      const std::set<EdgePair>& edges,
+      const std::set<QuotientSchedule::EdgePair>& edges,
       const llvm::DenseMap<Operation*, int64_t>& forceLanes) {
     std::set<int64_t> leftFixedLanes, rightFixedLanes;
 
