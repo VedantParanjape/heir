@@ -12,6 +12,8 @@ cc_library(
     hdrs = [
         "CoyoteVectorizer.h",
         "GraphUtils.h",
+        "GreedyAlign.h",
+        "Optimizations.h",
         "SimulatedAnnealing.h",
     ],
     deps = [
