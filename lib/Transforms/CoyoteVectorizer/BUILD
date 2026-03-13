@@ -14,6 +14,7 @@ cc_library(
         "GraphUtils.h",
         "GreedyAlign.h",
         "Optimizations.h",
+        "PythonScheduler.h",
         "SimulatedAnnealing.h",
     ],
     deps = [
