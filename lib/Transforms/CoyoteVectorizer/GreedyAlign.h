@@ -31,7 +31,7 @@ typedef struct Schedule {
   llvm::DenseMap<Operation *, int64_t> alignment;
 
   /// Ordered list of all operations in the schedule (program order).
-  llvm::ArrayRef<Operation *> instructions;
+  llvm::SmallVector<Operation *> instructions;
 
   /// Number of vector lanes (SIMD width).
   unsigned warpSize = 0;

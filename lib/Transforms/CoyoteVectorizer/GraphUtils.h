@@ -36,7 +36,12 @@
 
 #include "llvm/include/llvm/ADT/EquivalenceClasses.h"  // from @llvm-project
 #include "llvm/include/llvm/ADT/SetVector.h"           // from @llvm-project
+#include "mlir/include/mlir/IR/Builders.h"             // from @llvm-project
+#include "mlir/include/mlir/IR/OpDefinition.h"         // from @llvm-project
 #include "mlir/include/mlir/IR/Operation.h"            // from @llvm-project
+#include "mlir/include/mlir/IR/Value.h"                // from @llvm-project
+#include "mlir/include/mlir/IR/ValueRange.h"           // from @llvm-project
+#include "mlir/include/mlir/IR/Visitors.h"             // from @llvm-project
 #include "ortools/graph/min_cost_flow.h"
 
 // heir graph utility — provides Graph<V> with addVertex/addEdge/edgesOutOf/
@@ -127,6 +132,39 @@ inline CircuitGraph deepCopyCircuitGraph(CircuitGraph &src) {
       result.addEdge(newV, remap.at(oldSucc));
 
   return result;
+}
+
+/// Replicate multi-use tensor.extract ops so each clone has a single arith
+/// consumer.  This mirrors Python Coyote's allow_replicating='all' behavior:
+/// each use of an input variable gets its own load register, making optimal
+/// lane placement obvious and letting the scheduler converge faster.
+///
+/// Called between collecting operations and buildCircuitGraph.
+void replicateMultiUseExtracts(
+    llvm::SmallVector<Operation *> &operations,
+    llvm::SmallVector<llvm::SmallVector<Operation *>> &inputGroups) {
+  for (int i = 0; i < inputGroups.size(); i++) {
+    SmallVector<Operation *> origInputGroup(inputGroups[i]);
+    for (auto *op : origInputGroup) {
+      size_t NumUses = op->getResult(0).getNumUses();
+      SmallVector<OpOperand *> opUses;
+      for (auto &use : op->getResult(0).getUses()) opUses.push_back(&use);
+
+      SmallVector<Operation *> inputClones;
+      OpBuilder builder(op);
+      builder.setInsertionPointAfter(op);
+
+      for (int i = 0; i < NumUses - 1; i++) {
+        inputClones.push_back(builder.clone(*op));
+      }
+
+      for (int j = 1; j < NumUses; j++) {
+        opUses[j]->set(inputClones[j - 1]->getResult(0));
+        inputGroups[i].push_back(inputClones[j - 1]);
+        operations.push_back(inputClones[j - 1]);
+      }
+    }
+  }
 }
 
 CircuitGraph buildCircuitGraph(llvm::SmallVector<Operation *> operations) {
