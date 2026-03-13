@@ -1,0 +1,89 @@
+  [Python] done proto
+  [Python] DiGraph with 18 nodes and 22 edges
+  [Python] lanes: [3, 2, 7, 6, 7, 5, 6, 4, 3, 2, 2, 1, 0, 0, 7, 6, 6, 5, 4, 4]
+  [Python] alignment: [0, 0, 0, 0, 1, 1, 1, 1, 2, 4, 5, 2, 4, 5, 2, 2, 3, 2, 2, 3]
+  [Python]
+  [Python] Vectorized code:
+  [Python]   __t0 = [0, 0, arg0:1, arg0:0, 0, 0, arg0:3, arg0:2]
+  [Python]   __v0 = load(__t0)
+  [Python]   __s0 = __v0 >> -2
+  [Python]   __t1 = [0, 0, 0, 0, arg1:3, arg1:1, arg1:2, arg1:0]
+  [Python]   __v1 = load(__t1)
+  [Python]   __s1 = __v1 >> -4
+  [Python]   __t2 = blend(__s0@01001100, __v0@00010011)
+  [Python]   __t3 = blend(__s1@01010000, __v1@00001111)
+  [Python]   __v2 = __t2 * __t3
+  [Python]   __s2 = __v2 >> -1
+  [Python]   __v3 = __s2 + __v2
+  [Python]   __t4 = blend(__s0@10000000, __v0@00100000)
+  [Python]   __v4 = __t4 * __s1
+  [Python]   __v5 = __s2 + __v4
+  [Python]
+  [Python] Costs: {'rotations': 3, 'blends': 3, 'ct_ct_muls': 2, 'pt_ct_muls': 6, 'adds': 5, 'loads': 2, 'total_instructions': 14}
+  [Python] Written to /tmp/coyote_python_result.json
+  [Python] Schedule: warp=8, lanes=20, depth=6
+
+[9/9] Lowering schedule to MLIR tensor operations...
+  Lowering complete
+
+=== Generated MLIR ===
+func.func @matmul_2x2(%arg0: !secret.secret<tensor<1x8xi32>>, %arg1: !secret.secret<tensor<1x8xi32>>) -> !secret.secret<tensor<1x8xi32>> attributes {client.enc_func} {
+  %c1_i32 = arith.constant 1 : i32
+  %0 = secret.generic(%arg0: !secret.secret<tensor<1x8xi32>>, %arg1: !secret.secret<tensor<1x8xi32>>) {
+  ^body(%input0: tensor<1x8xi32>, %input1: tensor<1x8xi32>):
+    %1 = tensor_ext.assign_layout %input0 {layout = dense<[[0, 0, 0, 1], [0, 0, 0, 3], [0, 1, 0, 0], [0, 1, 0, 2], [0, 2, 0, 5], [0, 2, 0, 7], [0, 3, 0, 4], [0, 3, 0, 6]]> : tensor<8x4xi64>} : tensor<1x8xi32>
+    %2 = tensor_ext.assign_layout %input1 {layout = dense<[[0, 0, 0, 7], [0, 0, 0, 3], [0, 1, 0, 5], [0, 1, 0, 1], [0, 2, 0, 6], [0, 2, 0, 2], [0, 3, 0, 4], [0, 3, 0, 0]]> : tensor<8x4xi64>} : tensor<1x8xi32>
+    %3 = arith.muli %1, %2 : tensor<1x8xi32>
+    %4 = tensor_ext.rotate %3, %c1_i32 : tensor<1x8xi32>, i32
+    %5 = arith.addi %4, %3 : tensor<1x8xi32>
+    secret.yield %5 {coyote.output_layout = dense<[[0, 6, 0, 2], [0, 4, 0, 3]]> : tensor<2x4xi64>} : tensor<1x8xi32>
+  } -> !secret.secret<tensor<1x8xi32>>
+  return %0 : !secret.secret<tensor<1x8xi32>>
+}
+=====================
+
+=== Coyote Vectorizer Complete ===
+Final schedule: 8 lanes, 6 cycles
+
+module {
+  func.func @matmul_2x2(%arg0: !secret.secret<tensor<1x8xi32>>, %arg1: !secret.secret<tensor<1x8xi32>>) -> !secret.secret<tensor<1x8xi32>> attributes {client.enc_func} {
+    %c1_i32 = arith.constant 1 : i32
+    %0 = secret.generic(%arg0: !secret.secret<tensor<1x8xi32>>, %arg1: !secret.secret<tensor<1x8xi32>>) {
+    ^body(%input0: tensor<1x8xi32>, %input1: tensor<1x8xi32>):
+      %1 = tensor_ext.assign_layout %input0 {layout = dense<[[0, 0, 0, 1], [0, 0, 0, 3], [0, 1, 0, 0], [0, 1, 0, 2], [0, 2, 0, 5], [0, 2, 0, 7], [0, 3, 0, 4], [0, 3, 0, 6]]> : tensor<8x4xi64>} : tensor<1x8xi32>
+      %2 = tensor_ext.assign_layout %input1 {layout = dense<[[0, 0, 0, 7], [0, 0, 0, 3], [0, 1, 0, 5], [0, 1, 0, 1], [0, 2, 0, 6], [0, 2, 0, 2], [0, 3, 0, 4], [0, 3, 0, 0]]> : tensor<8x4xi64>} : tensor<1x8xi32>
+      %3 = arith.muli %1, %2 : tensor<1x8xi32>
+      %4 = tensor_ext.rotate %3, %c1_i32 : tensor<1x8xi32>, i32
+      %5 = arith.addi %4, %3 : tensor<1x8xi32>
+      secret.yield %5 {coyote.output_layout = dense<[[0, 6, 0, 2], [0, 4, 0, 3]]> : tensor<2x4xi64>} : tensor<1x8xi32>
+    } -> !secret.secret<tensor<1x8xi32>>
+    return %0 : !secret.secret<tensor<1x8xi32>>
+  }
+}
+
+=== Coyote Vectorizer Complete ===
+Final schedule: 8 lanes, 13 cycles
+
+module {
+  func.func @matmul_2x2(%arg0: !secret.secret<tensor<1x8xi32>>, %arg1: !secret.secret<tensor<1x8xi32>>) -> !secret.secret<tensor<1x8xi32>> attributes {client.enc_func} {
+    %cst = arith.constant dense<[[0, 0, 0, 0, 1, 1, 0, 1]]> : tensor<1x8xi32>
+    %cst_0 = arith.constant dense<[[0, 0, 0, 0, 0, 0, 1, 0]]> : tensor<1x8xi32>
+    %c-4_i32 = arith.constant -4 : i32
+    %0 = secret.generic(%arg0: !secret.secret<tensor<1x8xi32>>, %arg1: !secret.secret<tensor<1x8xi32>>) {
+    ^body(%input0: tensor<1x8xi32>, %input1: tensor<1x8xi32>):
+      %1 = tensor_ext.assign_layout %input1 {layout = dense<[[0, 0, 0, 2], [0, 0, 0, 4], [0, 1, 0, 7], [0, 1, 0, 5], [0, 2, 0, 6], [0, 2, 0, 0], [0, 3, 0, 3], [0, 3, 0, 1]]> : tensor<8x4xi64>} : tensor<1x8xi32>
+      %2 = tensor_ext.assign_layout %input0 {layout = dense<[[0, 0, 0, 5], [0, 0, 0, 4], [0, 1, 0, 1], [0, 1, 0, 0], [0, 2, 0, 7], [0, 2, 0, 2], [0, 3, 0, 3], [0, 3, 0, 6]]> : tensor<8x4xi64>} : tensor<1x8xi32>
+      %3 = arith.muli %2, %1 : tensor<1x8xi32>
+      %4 = tensor_ext.rotate %3, %c-4_i32 : tensor<1x8xi32>, i32
+      %5 = arith.muli %4, %cst_0 : tensor<1x8xi32>
+      %6 = arith.muli %3, %cst : tensor<1x8xi32>
+      %7 = arith.addi %5, %6 : tensor<1x8xi32>
+      %8 = arith.muli %4, %cst : tensor<1x8xi32>
+      %9 = arith.muli %3, %cst_0 : tensor<1x8xi32>
+      %10 = arith.addi %8, %9 : tensor<1x8xi32>
+      %11 = arith.addi %7, %10 : tensor<1x8xi32>
+      secret.yield %11 {coyote.output_layout = dense<[[0, 4, 0, 0], [0, 5, 0, 1], [0, 6, 0, 2], [0, 7, 0, 3]]> : tensor<4x4xi64>} : tensor<1x8xi32>
+    } -> !secret.secret<tensor<1x8xi32>>
+    return %0 : !secret.secret<tensor<1x8xi32>>
+  }
+}

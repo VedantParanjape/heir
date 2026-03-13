@@ -425,7 +425,9 @@ class QuotientSearcher {
     pqueue.push(std::move(initial));
 
     // Best-first search
+    unsigned saCallCount = 0;
     for (unsigned r = 0; r < rounds && !pqueue.empty(); ++r) {
+      auto popStart = std::chrono::steady_clock::now();
       QuotientSchedule cur = pqueue.top();
       pqueue.pop();
 
@@ -462,11 +464,24 @@ class QuotientSearcher {
 
       // Run lane placement on contracted graph
       applyForceLaneColumnSwap(contracted);  // pre-SA: swap entire columns
+      auto saStart = std::chrono::steady_clock::now();
       double newRotCost =
           runLanePlacement(contracted, forceLanes, 50, 0.001, 20000);
+      auto saMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      std::chrono::steady_clock::now() - saStart)
+                      .count();
       reapplyForceLanes(contracted);  // post-SA: re-pin individual forced ops
       double newHeightCost = computeScheduleHeight(contracted);
       double newCost = newRotCost + newHeightCost;
+
+      ++saCallCount;
+      auto popMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       std::chrono::steady_clock::now() - popStart)
+                       .count();
+      llvm::errs() << "  [pop " << r << "] SA=" << saMs << "ms, total=" << popMs
+                   << "ms, cost=" << newCost << " (rot=" << newRotCost
+                   << " ht=" << newHeightCost
+                   << "), queue=" << pqueue.size() + 1 << "\n";
 
       // Add contracted graph to queue
       QuotientSchedule newSchedule;
@@ -482,6 +497,8 @@ class QuotientSearcher {
       // remaining groups (Python: heappush remaining edges variant).
       if (!cur.edgeGroups->empty()) pqueue.push(std::move(cur));
     }
+    llvm::errs() << "  Quotient search: " << saCallCount << " SA calls in "
+                 << rounds << " rounds\n";
 
     return best;
   }
