@@ -41,7 +41,11 @@ namespace heir {
 ///          (need rotations by 1 and 2, but not 0 since that's same-lane)
 double computeRotationCost(const CircuitGraph& graph) {
   // Map: epoch -> set of unique rotation amounts needed in that epoch
-  std::map<int64_t, std::set<int64_t>> rotationsPerEpoch;
+  static std::unordered_map<int64_t, std::unordered_set<int64_t>>
+      rotationsPerEpoch;
+  rotationsPerEpoch.clear();
+
+  for (auto& [epoch, spans] : rotationsPerEpoch) spans.clear();
 
   // For each edge (producer -> consumer), compute the "span" (lane difference)
   for (const auto& [u, v] : graph.getEdges()) {
@@ -67,19 +71,13 @@ double computeRotationCost(const CircuitGraph& graph) {
 ///
 ///   COSTS_PER_ROTATE = {'+': 0.1, '*': 1, '-': 0.1}
 ///
-///   for each (epoch, column) cell:
-///     for each distinct op-type in that cell:
-///       cost += COSTS_PER_ROTATE[op_type]
+///   For each epoch, build a Counter of op types per column, then take the
+///   union (element-wise max) across all columns within that epoch.
+///   Sum weighted costs from the per-epoch maxes.
 ///
-/// Rationale: multiplications dominate rotation cost in HE (each mul needs a
-/// key-switching rotation), while additions/subtractions are 10× cheaper.
-/// Counting distinct types per cell — rather than per individual op — matches
-/// the Python model where each type in a cell contributes one rotation slot.
-double computeScheduleHeight(CircuitGraph& graph) {
-  // Python: COSTS_PER_ROTATE = {'+': 0.1, '*': 1, '-': 0.1}
-  // Use a small enum so the per-cell set is typed rather than string-keyed.
-  // isa<> is more robust than substring matching — it handles dialect
-  // prefixes, op aliases, and future renames without false positives.
+/// This matches Python's `reduce(lambda x, y: x | y, counters)` which uses
+/// Counter.__or__ (element-wise max), NOT Counter.__add__ (sum).
+double computeScheduleHeight(const CircuitGraph& graph) {
   enum class OpKind : uint8_t { Mul, AddSub, Other };
 
   auto classify = [](Operation* op) -> OpKind {
@@ -95,18 +93,24 @@ double computeScheduleHeight(CircuitGraph& graph) {
     return 0.0;
   };
 
-  // cells[epoch][column] = set of distinct OpKind values seen in that cell.
-  // Counting distinct types per cell (not per individual op) matches the
-  // Python model: each op-type in a cell contributes one rotation slot.
-  std::map<int64_t, std::map<int64_t, std::set<OpKind>>> cells;
+  // cells[epoch][column] → Counter of op kinds (OpKind → count)
+  std::map<int64_t, std::map<int64_t, std::map<OpKind, int>>> cells;
   for (auto& nodePtr : graph.getVertices())
-    for (auto* op : nodePtr->operations)
-      cells[nodePtr->epoch][nodePtr->column].insert(classify(op));
+    for (auto* op : nodePtr->operations) {
+      OpKind k = classify(op);
+      if (k != OpKind::Other) cells[nodePtr->epoch][nodePtr->column][k]++;
+    }
 
+  // For each epoch, take element-wise max across columns, then sum weighted
+  // costs
   double cost = 0;
-  for (auto& [epoch, cols] : cells)
-    for (auto& [col, kinds] : cols)
-      for (auto k : kinds) cost += kindWeight(k);
+  for (auto& [epoch, cols] : cells) {
+    std::map<OpKind, int> epochMax;
+    for (auto& [col, counter] : cols)
+      for (auto& [kind, count] : counter)
+        epochMax[kind] = std::max(epochMax[kind], count);
+    for (auto& [kind, maxCount] : epochMax) cost += kindWeight(kind) * maxCount;
+  }
   return cost;
 }
 
@@ -222,7 +226,7 @@ double runLanePlacement(CircuitGraph& graph,
   double bestCost = currentCost;
   auto bestColumns = snapshotColumns();
 
-  std::mt19937 rng(42);  // fixed seed for reproducibility
+  std::mt19937 rng(1);  // fixed seed for reproducibility
   std::uniform_real_distribution<double> realDist(0.0, 1.0);
 
   for (unsigned i = 0; i < rounds; ++i) {
@@ -436,9 +440,21 @@ class QuotientSearcher {
 
       // Generate edge groups lazily on first pop.
       // Gap 5: nullopt means "not yet generated" (Python: cur.edges is None)
-      if (!cur.edgeGroups.has_value())
+      if (!cur.edgeGroups.has_value()) {
         cur.edgeGroups = groupCrossEdges(cur.graph, inputOps, outputOps);
-
+        llvm::errs() << "    [pop " << r << "] generated "
+                     << cur.edgeGroups->size() << " edge groups\n";
+        for (size_t gi = 0; gi < cur.edgeGroups->size(); ++gi) {
+          llvm::errs() << "      group " << gi << ": "
+                       << (*cur.edgeGroups)[gi].size() << " edges\n";
+          for (const auto& [eu, ev] : (*cur.edgeGroups)[gi]) {
+            llvm::errs() << "        epoch=" << eu->epoch
+                         << " col=" << eu->column << " -> epoch=" << ev->epoch
+                         << " col=" << ev->column
+                         << " (span=" << ev->column - eu->column << ")\n";
+          }
+        }
+      }
       if (cur.edgeGroups->empty()) continue;  // No more edges to contract
 
       // Pick an edge group to contract
@@ -461,6 +477,28 @@ class QuotientSearcher {
 
       // Regrade after contraction
       gradeGraph(contracted, inputGroups, outputGroups);
+
+      // After re-grading, column assignments may be stale: two nodes that were
+      // at different epochs (and thus shared a column legally) may now be at
+      // the same epoch after merging.  Such (epoch, column) conflicts are
+      // invisible to SA (span=0 edges are skipped) and cause multiple ops at
+      // the same lane, which leads to duplicate vector instructions in the
+      // lowering. Fix: assign any conflicting node a fresh column beyond the
+      // current max.
+      {
+        std::map<std::pair<int64_t, int64_t>, SubCircuitNode> seen;
+        int64_t maxCol = 0;
+        for (const SubCircuitNode& node : contracted.getVertices())
+          maxCol = std::max(maxCol, node->column);
+        for (const SubCircuitNode& node : contracted.getVertices()) {
+          auto key = std::make_pair(node->epoch, node->column);
+          auto [it, inserted] = seen.emplace(key, node);
+          if (!inserted) {
+            // Collision: give this node a fresh column.
+            node->column = ++maxCol;
+          }
+        }
+      }
 
       // Run lane placement on contracted graph
       applyForceLaneColumnSwap(contracted);  // pre-SA: swap entire columns
@@ -574,19 +612,28 @@ class QuotientSearcher {
   ///     fixed = members.intersection(force_lanes.keys())
   ///     if fixed: col = force_lanes[next(iter(fixed))]
   ///     else:     col = raw_contracted.nodes[first_member]["column"]
+  /// Contract edge group and condense cycles, restoring correct column
+  /// assignments on the condensed nodes.
+  ///
+  /// Python: protoschedule.py:186-205
   CircuitGraph contractAndCondense(
-      CircuitGraph inputGraph,
-      const std::set<std::pair<SubCircuitNode, SubCircuitNode>>& edges,
+      CircuitGraph& inputGraph,
+      const std::set<QuotientSchedule::EdgePair>& edges,
       const llvm::DenseMap<Operation*, int64_t>& forceLanes) {
     CircuitGraph graph = deepCopyCircuitGraph(inputGraph);
 
-    // Snapshot op→column before any mutation.
+    // Map old nodes → new nodes by first Operation* (stable across deep copy)
+    llvm::DenseMap<Operation*, SubCircuitNode> opToNode;
+    for (const SubCircuitNode& node : graph.getVertices())
+      opToNode[node->operations[0]] = node;
+
+    // Snapshot op→column BEFORE any mutation so we can restore correct
+    // column values onto the freshly-created condensed nodes afterwards.
     llvm::DenseMap<Operation*, int64_t> opToColumn;
     for (const SubCircuitNode& node : graph.getVertices())
       for (auto* op : node->operations) opToColumn[op] = node->column;
 
-    // mergeFn: merge operations and fix column in one shot.
-    // Forced lanes take priority; otherwise keep first pre-contraction column.
+    // Merge functor: merge operations and fix column.
     auto mergeFn = [&](SubCircuitNode& a, const SubCircuitNode& b) {
       a->merge(*b);
       // Prefer a forced lane from either node.
@@ -604,8 +651,15 @@ class QuotientSearcher {
           }
     };
 
-    for (const auto& [u, v] : edges) graph.contractEdge(u, v, mergeFn);
+    // Contract all edges in the group, remapping to deep copy's nodes.
+    for (const auto& [oldU, oldV] : edges) {
+      SubCircuitNode u = opToNode[oldU->operations[0]];
+      SubCircuitNode v = opToNode[oldV->operations[0]];
+      if (u == v || !graph.hasEdge(u, v)) continue;
+      graph.contractEdge(u, v, mergeFn);
+    }
 
+    // Condense SCCs.
     graph.condenseGraph(mergeFn);
 
     return graph;

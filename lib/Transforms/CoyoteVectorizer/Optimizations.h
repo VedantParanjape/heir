@@ -353,31 +353,35 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   func.setType(FunctionType::get(ctx, newArgTypes, {secretVecType}));
 
   // --- Input handling via assign_layout (same-type: 1xW → 1xW) ---
+  // Each source gets a conflict-free layout: slot i → lane i.  This ensures
+  // every input element occupies a distinct lane.  Rotations in buildOperandVec
+  // move values from layout lanes to consumer lanes.
+  llvm::DenseMap<Operation *, int64_t> extractLayoutLane;
+
   for (auto &[source, extractOps] : srcToExtracts) {
     if (extractOps.empty()) continue;
 
-    // Build layout: map each source slot to ALL consumer lanes (with
-    // duplication).  This matches Python Coyote's load vectors where each
-    // element appears at every lane that needs it, eliminating input rotations.
-    SmallVector<int64_t> layoutData;
-    int64_t numMappings = 0;
+    // Collect unique slots and assign each to its own lane (slot index = lane).
+    std::set<int64_t> seenSlots;
     for (auto *op : extractOps) {
       auto extractOp = cast<tensor::ExtractOp>(op);
-
       auto indices = extractOp.getIndices();
       auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
       int64_t slot = constIdx ? constIdx.value() : 0;
+      seenSlots.insert(slot);
+      // All extracts of the same slot share the same layout lane = slot index.
+      extractLayoutLane[op] = slot;
+    }
 
-      // Map to each consumer's lane
-      for (auto &use : op->getResult(0).getUses()) {
-        Operation *consumer = use.getOwner();
-        int64_t consLane = schedule.lanes.lookup(consumer);
-        layoutData.push_back(0);
-        layoutData.push_back(slot);
-        layoutData.push_back(0);
-        layoutData.push_back(consLane);
-        ++numMappings;
-      }
+    // Build layout: slot i → lane i (guaranteed conflict-free).
+    SmallVector<int64_t> layoutData;
+    int64_t numMappings = 0;
+    for (int64_t slot : seenSlots) {
+      layoutData.push_back(0);
+      layoutData.push_back(slot);
+      layoutData.push_back(0);
+      layoutData.push_back(slot);  // lane = slot
+      ++numMappings;
     }
     auto layoutAttrType =
         RankedTensorType::get({numMappings, 4}, builder.getI64Type());
@@ -424,13 +428,12 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
       if (!prod || !opVec.count(prod)) continue;
 
       int64_t consLane = schedule.lanes.lookup(op);
-      // Extract ops: assign_layout already placed the value at the consumer's
-      // lane (via duplication), so no rotation is needed.
-      int64_t shift = 0;
-      if (!isa<tensor::ExtractOp>(prod)) {
-        int64_t prodLane = schedule.lanes.lookup(prod);
-        shift = prodLane - consLane;
-      }
+      // For extract producers, use the layout lane (= slot index) since that's
+      // where assign_layout physically placed the value.
+      int64_t prodLane = isa<tensor::ExtractOp>(prod)
+                             ? extractLayoutLane.lookup(prod)
+                             : schedule.lanes.lookup(prod);
+      int64_t shift = prodLane - consLane;
 
       Value src = opVec[prod];
       void *ptr = valuePtr(src);
@@ -506,7 +509,9 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
       continue;
     }
 
-    for (auto *op : opsAtStep) opVec[op] = result;
+    for (auto *op : opsAtStep) {
+      if (!isa<tensor::ExtractOp>(op)) opVec[op] = result;
+    }
   }
 
   // --- Output handling via assign_layout (inverse permutation) ---
@@ -586,13 +591,6 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
       }
       lastInsert.getResult().replaceAllUsesWith(result);
     }
-  }
-
-  // --- Erase now-dead scalar ops (reverse order for SSA validity) ---
-  for (auto it = schedule.instructions.rbegin();
-       it != schedule.instructions.rend(); ++it) {
-    auto *op = *it;
-    if (op->use_empty()) op->erase();
   }
 }
 
