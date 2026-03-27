@@ -5,6 +5,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef SIMULATED_ANNEALING_H
+#define SIMULATED_ANNEALING_H
+
 #include <map>
 #include <optional>
 #include <queue>
@@ -709,3 +712,5 @@ QuotientSchedule searchQuotients(
 
 }  // namespace heir
 }  // namespace mlir
+
+#endif  // SIMULATED_ANNEALING_H
