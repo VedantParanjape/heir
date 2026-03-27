@@ -353,41 +353,38 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   func.setType(FunctionType::get(ctx, newArgTypes, {secretVecType}));
 
   // --- Input handling via assign_layout (same-type: 1xW → 1xW) ---
-  // Each source gets a conflict-free layout: slot i → lane i.  This ensures
-  // every input element occupies a distinct lane.  Rotations in buildOperandVec
-  // move values from layout lanes to consumer lanes.
+  // Each extract op (after replicateMultiUseExtracts) has a unique scheduled
+  // lane.  We place each extract's slot directly into its scheduled lane,
+  // matching Python's approach where the input vector has each element
+  // pre-positioned exactly where the schedule needs it (with replication
+  // for slots used by multiple consumers).
   llvm::DenseMap<Operation *, int64_t> extractLayoutLane;
 
   for (auto &[source, extractOps] : srcToExtracts) {
     if (extractOps.empty()) continue;
 
-    // Collect unique slots and assign each to its own lane (slot index = lane).
-    std::set<int64_t> seenSlots;
+    // Build layout: for each extract, map its slot to its scheduled lane.
+    SmallVector<int64_t> layoutData;
+    int64_t numMappings = 0;
     for (auto *op : extractOps) {
       auto extractOp = cast<tensor::ExtractOp>(op);
       auto indices = extractOp.getIndices();
       auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
       int64_t slot = constIdx ? constIdx.value() : 0;
-      seenSlots.insert(slot);
-      // All extracts of the same slot share the same layout lane = slot index.
-      extractLayoutLane[op] = slot;
-    }
+      int64_t lane = schedule.lanes.lookup(op);
 
-    // Build layout: slot i → lane i (guaranteed conflict-free).
-    SmallVector<int64_t> layoutData;
-    int64_t numMappings = 0;
-    for (int64_t slot : seenSlots) {
+      extractLayoutLane[op] = lane;
+
       layoutData.push_back(0);
       layoutData.push_back(slot);
       layoutData.push_back(0);
-      layoutData.push_back(slot);  // lane = slot
+      layoutData.push_back(lane);
       ++numMappings;
     }
     auto layoutAttrType =
         RankedTensorType::get({numMappings, 4}, builder.getI64Type());
     auto layoutAttr = DenseIntElementsAttr::get(layoutAttrType, layoutData);
 
-    // Same-type assign_layout: tensor<1xW> → tensor<1xW>
     Value permuted =
         tensor_ext::AssignLayoutOp::create(builder, loc, source, layoutAttr);
 
@@ -515,68 +512,53 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   }
 
   // --- Output handling via assign_layout (inverse permutation) ---
-  llvm::SmallVector<tensor::InsertOp> allInsertOps;
-  for (auto *op : schedule.instructions) {
-    if (isa<tensor::ExtractOp>(op)) continue;
-    if (!opVec.count(op)) continue;
-    if (op->getResults().empty()) continue;
+  // Scan ALL insert ops in the block — don't depend on opVec, since not all
+  // output producers may have opVec entries (the vectorized accumulation
+  // structure differs from the original scalar data flow).
+  SmallVector<int64_t> invLayoutData;
+  int64_t numOutputMappings = 0;
+  tensor::InsertOp lastInsert;
 
-    for (auto &use : op->getResult(0).getUses()) {
-      if (auto insertOp = dyn_cast<tensor::InsertOp>(use.getOwner()))
-        allInsertOps.push_back(insertOp);
-    }
-  }
+  scheduleBlock->walk([&](tensor::InsertOp insertOp) {
+    Value scalar = insertOp.getScalar();
+    Operation *producer = scalar.getDefiningOp();
+    if (!producer || !schedule.lanes.count(producer)) return;
 
-  if (!allInsertOps.empty()) {
-    llvm::DenseMap<Value, llvm::SmallVector<tensor::InsertOp>> vecToInserts;
-    for (auto insertOp : allInsertOps) {
-      Value scalar = insertOp.getScalar();
-      Operation *producer = scalar.getDefiningOp();
-      if (producer && opVec.count(producer))
-        vecToInserts[opVec[producer]].push_back(insertOp);
-    }
+    int64_t lane = schedule.lanes.lookup(producer);
 
-    for (auto &[vecResult, insertOps] : vecToInserts) {
-      if (insertOps.empty()) continue;
+    auto indices = insertOp.getIndices();
+    auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
+    int64_t slot = constIdx ? constIdx.value() : 0;
 
-      // Build inverse permutation: [lane -> slot]
-      // Dest is tensor<1xN>: index [0, slot] -> slot is the flat index.
-      SmallVector<int64_t> invLayoutData;
-      for (auto insertOp : insertOps) {
-        Value scalar = insertOp.getScalar();
-        Operation *producer = scalar.getDefiningOp();
-        int64_t lane = schedule.lanes.lookup(producer);
+    // [src_ct=0, src_slot=lane, dst_ct=0, dst_slot=slot]
+    invLayoutData.push_back(0);
+    invLayoutData.push_back(lane);
+    invLayoutData.push_back(0);
+    invLayoutData.push_back(slot);
+    ++numOutputMappings;
 
-        auto indices = insertOp.getIndices();
-        auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
-        int64_t slot = constIdx ? constIdx.value() : 0;
+    // Track the last insert in the chain (the one yielded).
+    lastInsert = insertOp;
+  });
 
-        // [src_ct=0, src_slot=lane, dst_ct=0, dst_slot=slot]
-        invLayoutData.push_back(0);
-        invLayoutData.push_back(lane);
-        invLayoutData.push_back(0);
-        invLayoutData.push_back(slot);
-      }
+  if (numOutputMappings > 0) {
+    auto invLayoutAttrType =
+        RankedTensorType::get({numOutputMappings, 4}, builder.getI64Type());
+    auto invLayoutAttr =
+        DenseIntElementsAttr::get(invLayoutAttrType, invLayoutData);
 
-      int64_t numMappings = insertOps.size();
-      auto invLayoutAttrType =
-          RankedTensorType::get({numMappings, 4}, builder.getI64Type());
-      auto invLayoutAttr =
-          DenseIntElementsAttr::get(invLayoutAttrType, invLayoutData);
+    // Annotate the yield with the output layout metadata.
+    Operation *terminator = scheduleBlock->getTerminator();
+    terminator->setAttr("coyote.output_layout", invLayoutAttr);
 
-      // Annotate the yield (or its parent) with the output layout.
-      // This is metadata only — the ciphertext is already in this layout,
-      // we're just recording it so the client knows how to unpack after
-      // decryption.
-      Operation *terminator = scheduleBlock->getTerminator();
-      terminator->setAttr("coyote.output_layout", invLayoutAttr);
-
-      // Replace the insert chain result with the vectorized result directly.
-      Value result = vecResult;
-
-      // Find the last insert in the chain and replace its result.
-      tensor::InsertOp lastInsert = insertOps.back();
-      for (auto insertOp : insertOps) {
+    // Find the last insert in the chain (its result is yielded) and replace
+    // with the final vectorized result.
+    Value finalVec;
+    for (auto *op : schedule.instructions)
+      if (!isa<tensor::ExtractOp>(op) && opVec.count(op)) finalVec = opVec[op];
+    if (finalVec) {
+      // Walk to find the actual last insert (the one whose result feeds yield).
+      scheduleBlock->walk([&](tensor::InsertOp insertOp) {
         bool isLast = true;
         for (auto &use : insertOp.getResult().getUses()) {
           if (isa<tensor::InsertOp>(use.getOwner())) {
@@ -584,12 +566,8 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
             break;
           }
         }
-        if (isLast) {
-          lastInsert = insertOp;
-          break;
-        }
-      }
-      lastInsert.getResult().replaceAllUsesWith(result);
+        if (isLast) insertOp.getResult().replaceAllUsesWith(finalVec);
+      });
     }
   }
 }

@@ -206,8 +206,10 @@ class ColumnAssigner {
 
     for (auto& [u, v] : matched) columns.unionSets(u.get(), v.get());
 
-    // Ensure all epoch-j nodes are registered in the column structure.
-    for (SubCircuitNode node : epochJ) {
+    // Add unmatched epoch-i producers (rightNodes) as singletons.
+    // Python: columns.add(*filter(lambda p: not columns.contains(p), part))
+    // where part = epoch-i producers (bipartite=1 side), NOT epoch-j consumers.
+    for (SubCircuitNode node : rightNodes) {
       if (!columns.contains(node.get())) columns.insert(node.get());
     }
   }
@@ -217,11 +219,6 @@ class ColumnAssigner {
   bool isMatchable(SubCircuitNode u, SubCircuitNode v) {
     // Don't match if it would create epoch conflicts
     // i.e., if u's column already contains a node from v's epoch
-
-    if (!columns.contains(u.get()) || !columns.contains(v.get())) {
-      return true;  // At least one not yet in a column
-    }
-
     if (columns.isEquivalent(u.get(), v.get())) {
       return false;  // Already in same column
     }
@@ -236,7 +233,8 @@ class ColumnAssigner {
     }
 
     // Can't match if v's epoch is in u's column, or vice versa
-    return !uEpochs.count(v->epoch) && !vEpochs.count(u->epoch);
+    return !uEpochs.count(v->epoch) && !vEpochs.count(u->epoch) &&
+           !(columns.contains(u.get()) && columns.contains(v.get()));
   }
 
   /// Apply forced lane constraints
@@ -436,6 +434,15 @@ void coyoteVectorizer(func::FuncOp& func) {
   }
   llvm::errs() << "Found " << operations.size() << " operations total\n";
 
+  //==========================================================================
+  // Step 1.a: Replicate multi-use loads
+  //==========================================================================
+  llvm::errs() << "\n[1.a/9] Replicating multi-use loads...\n";
+  replicateMultiUseExtracts(operations, inputGroups);
+  llvm::errs() << "  Operations after replication: " << operations.size()
+               << "\n";
+  func.dump();
+
   Schedule schedule;
 #ifdef USE_PYTHON_COYOTE
   //==========================================================================
@@ -452,15 +459,6 @@ void coyoteVectorizer(func::FuncOp& func) {
   }
 
 #else  // Native C++ scheduler
-  //==========================================================================
-  // Step 1.5: Replicate multi-use loads
-  //==========================================================================
-  llvm::errs() << "\n[1.5/9] Replicating multi-use loads...\n";
-  replicateMultiUseExtracts(operations, inputGroups);
-  llvm::errs() << "  Operations after replication: " << operations.size()
-               << "\n";
-
-  func.dump();
   //==========================================================================
   // Step 2: Build initial circuit graph
   // Python equivalent: graph = instr_sequence_to_nx_graph(comp.code)
