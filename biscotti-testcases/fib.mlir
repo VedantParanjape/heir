@@ -4,14 +4,14 @@
 func.func @fib(%i_cipher : !ctxt, %n : !val { biscotti.progress_argument = 1 }) -> !ctxt {
     %c0 = arith.constant 1 : i32
     %c1 = arith.constant 2 : i32
-    
+
     // Base cases
     %cond = arith.cmpi sle, %n, %c0 : i32
     cf.cond_br %cond, ^base, ^recursive { biscotti.base_condition = 0 }
-    
+
 ^base:
     return %i_cipher : !ctxt
-    
+
 ^recursive:
     // Calculate fib(n-1)
     %i_cipher_minus_1 = secret.generic(%i_cipher: !ctxt, %c0: !val) {
@@ -21,7 +21,7 @@ func.func @fib(%i_cipher : !ctxt, %n : !val { biscotti.progress_argument = 1 }) 
     } -> (!ctxt)
     %n_minus_1 = arith.subi %n, %c0 : i32
     %fib_n_minus_1 = call @fib(%i_cipher_minus_1, %n_minus_1) { biscotti.recursive_call = 0 } : (!ctxt, !val) -> !ctxt
-    
+
     // Calculate fib(n-2)
     %i_cipher_minus_2 = secret.generic(%i_cipher: !ctxt, %c1: !val) {
         ^bb0(%X: !val, %Y: !val):
@@ -41,8 +41,8 @@ func.func @fib(%i_cipher : !ctxt, %n : !val { biscotti.progress_argument = 1 }) 
 }
 
 func.func @main(%input_fib: !ctxt) -> !ctxt {
-    %n = arith.constant 6 : i32
-    %result = call @fib(%input_fib, %n) { biscotti.call = 0 } : (!ctxt, !val) -> !ctxt 
+    %n = arith.constant 3 : i32
+    %result = call @fib(%input_fib, %n) { biscotti.call = 0 } : (!ctxt, !val) -> !ctxt
     // %n2 = arith.constant -1 : i32
     // %result2 = call @fib(%input_fib, %n2) { biscotti.call = 0 } : (!ctxt, !val) -> !ctxt
     return %result : !ctxt
