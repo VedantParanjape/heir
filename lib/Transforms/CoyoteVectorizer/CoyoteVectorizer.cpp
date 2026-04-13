@@ -23,26 +23,6 @@
 #include "Optimizations.h"
 #include "PythonScheduler.h"
 #include "SimulatedAnnealing.h"
-#include "lib/Dialect/Secret/IR/SecretDialect.h"
-#include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
-#include "lib/Utils/Graph/Graph.h"
-#include "llvm/include/llvm/ADT/DenseMap.h"              // from @llvm-project
-#include "llvm/include/llvm/ADT/DenseSet.h"              // from @llvm-project
-#include "llvm/include/llvm/ADT/EquivalenceClasses.h"    // from @llvm-project
-#include "llvm/include/llvm/ADT/SetVector.h"             // from @llvm-project
-#include "llvm/include/llvm/ADT/SmallSet.h"              // from @llvm-project
-#include "llvm/include/llvm/ADT/SmallVector.h"           // from @llvm-project
-#include "mlir/include/mlir/Dialect/Arith/IR/Arith.h"    // from @llvm-project
-#include "mlir/include/mlir/Dialect/Func/IR/FuncOps.h"   // from @llvm-project
-#include "mlir/include/mlir/Dialect/Tensor/IR/Tensor.h"  // from @llvm-project
-#include "mlir/include/mlir/IR/Builders.h"               // from @llvm-project
-#include "mlir/include/mlir/IR/BuiltinOps.h"             // from @llvm-project
-#include "mlir/include/mlir/IR/PatternMatch.h"           // from @llvm-project
-#include "mlir/include/mlir/IR/Visitors.h"               // from @llvm-project
-#include "mlir/include/mlir/Pass/Pass.h"                 // from @llvm-project
-#include "mlir/include/mlir/Support/LogicalResult.h"     // from @llvm-project
-#include "mlir/include/mlir/Transforms/GreedyPatternRewriteDriver.h"  // from @llvm-project
-#include "mlir/include/mlir/Transforms/RegionUtils.h"  // from @llvm-project
 
 namespace mlir {
 namespace heir {
@@ -171,6 +151,10 @@ class ColumnAssigner {
         bool first = true;
         for (auto* op : node->operations) {
           if (!first) llvm::errs() << ", ";
+          // if (!op) {
+          //   llvm::errs() << "<null-op>";
+          //   continue;
+          // }
           op->print(llvm::errs());
           first = false;
         }
