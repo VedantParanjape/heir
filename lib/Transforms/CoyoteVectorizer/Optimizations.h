@@ -19,6 +19,7 @@
 #include "lib/Dialect/Secret/IR/SecretTypes.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtOps.h"
+#include "lib/Utils/AttributeUtils.h"
 #include "llvm/include/llvm/ADT/DenseMap.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/DenseSet.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/EquivalenceClasses.h"    // from @llvm-project
@@ -547,9 +548,10 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     auto invLayoutAttr =
         DenseIntElementsAttr::get(invLayoutAttrType, invLayoutData);
 
-    // Annotate the yield with the output layout metadata.
-    Operation *terminator = scheduleBlock->getTerminator();
-    terminator->setAttr("coyote.output_layout", invLayoutAttr);
+    // Attach output layout to the secret.generic op result, then propagate
+    // to the func return type via HEIR's AttributeUtils.
+    genericOp->setAttr("tensor_ext.layout", invLayoutAttr);
+    copyReturnOperandAttrsToFuncResultAttrs(func, "tensor_ext.layout");
 
     // Find the last insert in the chain (its result is yielded) and replace
     // with the final vectorized result.
