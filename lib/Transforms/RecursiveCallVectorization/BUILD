@@ -10,12 +10,15 @@ cc_library(
     name = "RecursiveCallVectorization",
     srcs = ["RecursiveCallVectorization.cpp"],
     hdrs = [
+        "CoyoteCaller.h",
         "RecursiveCallVectorization.h",
+        "RecursiveProgramInfo.h",
     ],
     deps = [
         ":pass_inc_gen",
         "@heir//lib/Dialect/Secret/IR:Dialect",
         "@heir//lib/Dialect/TensorExt/IR:Dialect",
+        "@heir//lib/Transforms/CoyoteVectorizer",
         "@heir//lib/Utils:AttributeUtils",
         "@heir//lib/Utils/Graph",
         "@llvm-project//llvm:Support",

@@ -8,6 +8,8 @@
 #include "lib/Dialect/Secret/IR/SecretPatterns.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtOps.h"
+#include "lib/Transforms/RecursiveCallVectorization/CoyoteCaller.h"
+#include "lib/Transforms/RecursiveCallVectorization/RecursiveProgramInfo.h"
 #include "lib/Utils/AttributeUtils.h"
 #include "lib/Utils/Graph/Graph.h"
 #include "llvm/include/llvm/Support/Debug.h"           // from @llvm-project
@@ -23,6 +25,7 @@
 #include "mlir/include/mlir/IR/OpDefinition.h"           // from @llvm-project
 #include "mlir/include/mlir/IR/ValueRange.h"             // from @llvm-project
 #include "mlir/include/mlir/IR/Visitors.h"               // from @llvm-project
+#include "mlir/include/mlir/Pass/Pass.h"                 // from @llvm-project
 #include "mlir/include/mlir/Pass/PassManager.h"          // from @llvm-project
 #include "mlir/include/mlir/Transforms/GreedyPatternRewriteDriver.h"  // from @llvm-project
 #include "mlir/include/mlir/Transforms/Inliner.h"        // from @llvm-project
@@ -38,21 +41,6 @@ namespace heir {
 
 #define GEN_PASS_DEF_RECURSIVECALLVECTORIZATION
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.h.inc"
-
-typedef struct recursiveProgramInfo_ {
-  SmallVector<std::pair<Operation *, int>> baseConditions;
-  SmallVector<std::pair<Operation *, int>> recursiveCalls;
-  SmallVector<std::pair<Value *, int>> progressArguments;
-  SmallVector<std::pair<Operation *, int>> staticArgumentValues;
-  Operation *call;
-} recursiveProgramInfo;
-DenseMap<Operation *, recursiveProgramInfo> biscottiCalls;
-
-typedef struct recursiveProgramNode_ {
-  func::FuncOp parent;
-  SmallVector<std::pair<Operation *, int>> staticArgumentValues;
-  SmallVector<recursiveProgramNode_ *> children;
-} recursiveProgramNode;
 
 DenseSet<func::FuncOp> functionDeleteList;
 
@@ -160,8 +148,8 @@ static void prettyPrintRecursiveProgramTree(recursiveProgramNode *node,
   indent(indentLevel);
 
   // Print function name
-  if (node->parent) {
-    llvm::outs() << "func @" << node->parent.getSymName();
+  if (node->function) {
+    llvm::outs() << "func @" << node->function.getSymName();
   } else {
     llvm::outs() << "<null func>";
   }
@@ -194,7 +182,7 @@ static void prettyPrintRecursiveProgramTree(recursiveProgramNode *node,
   //   leaf = true;
   //   indent(indentLevel + 1);
   //   llvm::outs() << "(leaf node)\n";
-  //   node->parent.dump();
+  //   node->function.dump();
   // }
 }
 
@@ -243,6 +231,7 @@ struct RecursiveCallVectorization
   bool tryVectorizeRecursiveBlock(Block *block, Dialect *dialect);
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<secret::SecretDialect>();
+    registry.insert<tensor_ext::TensorExtDialect>();
     registry.addExtension(
         +[](MLIRContext *ctx, secret::SecretDialect *dialect) {
           dialect->addInterfaces<SecretInlinerInterface>();
@@ -276,6 +265,10 @@ struct RecursiveCallVectorization
       if (funcOp.empty()) return;
       foldAllOpsInFunc(funcOp, funcOp.getContext());
     });
+
+    for (auto &calls : biscottiCalls) {
+      processVectorizationCandidates(calls.second.root);
+    }
   }
 };
 
@@ -464,7 +457,7 @@ int RecursiveCallVectorization::countNodeFunctionSize(
   if (!node) return 0;
 
   int size = 0;
-  node->parent.walk([&](secret::GenericOp genOp) {
+  node->function.walk([&](secret::GenericOp genOp) {
     genOp.getBody()->walk([&](Operation *op) {
       if (isa<tensor::ExtractOp>(op) ||
           ((op->getDialect()->getNamespace() == "arith") &&
@@ -480,14 +473,15 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
     SmallVector<recursiveProgramNode *> &mergeableNodes) {
   for (recursiveProgramNode *node : mergeableNodes) {
     int nodeSize = countNodeFunctionSize(node);
-    llvm::outs() << "Merging node with function: " << node->parent.getName()
+    llvm::outs() << "Merging node with function: " << node->function.getName()
                  << "\n";
 
     for (recursiveProgramNode *child : node->children) {
       int childSize = countNodeFunctionSize(child);
       nodeSize += childSize;
-      llvm::outs() << "   Child node with function: " << child->parent.getName()
-                   << ", size: " << childSize << "\n";
+      llvm::outs() << "   Child node with function: "
+                   << child->function.getName() << ", size: " << childSize
+                   << "\n";
     }
 
     llvm::outs() << "Node function size: " << nodeSize << "\n";
@@ -498,15 +492,15 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
     }
 
     for (recursiveProgramNode *child : node->children) {
-      ModuleOp parentModule = node->parent->getParentOfType<ModuleOp>();
+      ModuleOp parentModule = node->function->getParentOfType<ModuleOp>();
       if (!parentModule)
         llvm::errs() << "Error: Parent module not found for function "
-                     << node->parent.getName() << "\n";
+                     << node->function.getName() << "\n";
 
-      auto &ChildFunction = child->parent;
-      // Collect call ops first, only within node->parent
+      auto &ChildFunction = child->function;
+      // Collect call ops first, only within node->function
       SmallVector<func::CallOp> callsToInline;
-      node->parent.walk([&](func::CallOp callOp) {
+      node->function.walk([&](func::CallOp callOp) {
         if (callOp.getCallee() == ChildFunction.getName()) {
           callsToInline.push_back(callOp);
         }
@@ -517,7 +511,7 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
       InlinerConfig config;
       for (auto callOp : callsToInline) {
         llvm::outs() << "Inlining " << ChildFunction.getName() << " into "
-                     << node->parent.getName() << "\n";
+                     << node->function.getName() << "\n";
         if (failed(inlineCall(interface, config.getCloneCallback(), callOp,
                               ChildFunction,
                               ChildFunction.getCallableRegion()))) {
@@ -535,6 +529,12 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
       if (ChildFunction.symbolKnownUseEmpty(parentModule))
         ChildFunction.erase();
     }
+
+    // TODO: Clear children after merging, since they've been inlined into the
+    // parent. This assumes that the merge step above didn't fail. It it failed,
+    // we might generate incorrect code. But there is a weak guarantee that this
+    // will not happen. Look at this in future, if there are any bugs.
+    node->children.clear();
   }
 }
 
@@ -586,23 +586,18 @@ class FoldExtractFromFromElements final
   LogicalResult matchAndRewrite(tensor::ExtractOp extractOp,
                                 PatternRewriter &rewriter) const override {
     // Check source is a size-1 tensor
-    // llvm::outs() << "Trying to fold extract from from_elements at: " <<
-    // extractOp.getLoc() << "\n";
     auto tensorType =
         mlir::dyn_cast<RankedTensorType>(extractOp.getTensor().getType());
     if (!tensorType || !tensorType.hasStaticShape() ||
         tensorType.getNumElements() != 1)
       return failure();
 
-    // llvm::outs() << "Tensor type: " << tensorType << "\n";
     // Check source is tensor.from_elements with single element
     auto fromElements =
         extractOp.getTensor().getDefiningOp<tensor::FromElementsOp>();
     if (!fromElements || fromElements.getElements().size() != 1)
       return failure();
 
-    // llvm::outs() << "Folding extract from from_elements at: " <<
-    // extractOp.getLoc() << "\n";
     rewriter.replaceOp(extractOp, fromElements.getElements()[0]);
     return success();
   }
@@ -707,6 +702,7 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
   std::queue<std::pair<Operation *, recursiveProgramNode *>> workQueue;
   recursiveProgramNode *root = new recursiveProgramNode();
   root->staticArgumentValues = recursiveProgramInfo.staticArgumentValues;
+  recursiveProgramInfo.root = root;
   workQueue.push({rootOp, root});
   int recursiveCallCounter = 0;
 
@@ -726,8 +722,6 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
     workQueue.pop();
     llvm::outs() << *op << "\n";
 
-    // llvm::outs() << "== Processing recursive function: " << funcOp.getName()
-    // << "\n"; Clone the funcOp to specialise it.
     func::FuncOp funcOpCloned = funcOp.clone();
     funcOpCloned.setName(funcOp.getName().str() + "_clone_" +
                          std::to_string(functionCounter) + "_" +
@@ -746,9 +740,11 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
     foldAllOpsInFunc(funcOpCloned, funcOp.getContext());
     // funcOpCloned.dump();
 
-    currentNode->parent = funcOpCloned;
+    currentNode->function = funcOpCloned;
     parentModule.push_back(funcOpCloned);
     dyn_cast<func::CallOp>(op).setCallee(funcOpCloned.getName());
+    currentNode->caller = dyn_cast<func::CallOp>(op);
+
     functionDeleteList.insert(funcOp);
 
     // analyse the cloned function for further recursive calls.
@@ -771,6 +767,7 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
           childNode->staticArgumentValues.push_back(
               {calledOp->getOperand(attrValue).getDefiningOp(), attrValue});
         }
+        childNode->parent = currentNode;
         currentNode->children.push_back(childNode);
         workQueue.push({calledOp, childNode});
       }
@@ -784,12 +781,13 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
 
   for (recursiveProgramNode *node : mergeableNodes) {
     llvm::outs() << "Found mergeable node with parent function: "
-                 << node->parent.getName() << "\n";
+                 << node->function.getName() << "\n";
     llvm::outs() << "Static argument values for this node:\n";
     for (auto &[op, idx] : node->staticArgumentValues) {
       llvm::outs() << "  Arg index: " << idx << ", Value: " << *op << "\n";
     }
   }
+  prettyPrintRecursiveProgramTree(root);
 }
 
 bool RecursiveCallVectorization::tryVectorizeRecursiveBlock(Block *block,
@@ -798,7 +796,6 @@ bool RecursiveCallVectorization::tryVectorizeRecursiveBlock(Block *block,
     if (funcOp.getName().contains("clone")) return false;
 
   llvm::outs() << "Analyzing block for recursive call vectorization: \n";
-  block->dump();
 
   buildRecursiveAttributes(block, dialect);
   for (auto &calls : biscottiCalls) {
@@ -809,13 +806,14 @@ bool RecursiveCallVectorization::tryVectorizeRecursiveBlock(Block *block,
     functionCounter++;
   }
 
-  llvm::outs() << "Checking dialect inliner interfaces:\n";
-  for (auto *dialect : getContext().getLoadedDialects()) {
-    auto *inlinerInterface =
-        dialect->getRegisteredInterface<DialectInlinerInterface>();
-    llvm::outs() << "  " << dialect->getNamespace() << ": "
-                 << (inlinerInterface ? "has inliner" : "NO inliner") << "\n";
-  }
+  // llvm::outs() << "Checking dialect inliner interfaces:\n";
+  // for (auto *dialect : getContext().getLoadedDialects()) {
+  //   auto *inlinerInterface =
+  //       dialect->getRegisteredInterface<DialectInlinerInterface>();
+  //   llvm::outs() << "  " << dialect->getNamespace() << ": "
+  //                << (inlinerInterface ? "has inliner" : "NO inliner") <<
+  //                "\n";
+  // }
 
   return false;
 }
