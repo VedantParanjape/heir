@@ -39,7 +39,7 @@
 // Python Coyote Scheduler (fallback via subprocess)
 //===----------------------------------------------------------------------===//
 
-// #define USE_PYTHON_COYOTE 1
+#define USE_PYTHON_COYOTE 1
 
 #ifdef USE_PYTHON_COYOTE
 
