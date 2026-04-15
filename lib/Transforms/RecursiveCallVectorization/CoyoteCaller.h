@@ -124,7 +124,18 @@ void expandTensorShapeAcrossUseChain(Value inputTensor,
   }
 }
 
-void runCoyoteVectorizer(func::FuncOp func) { coyoteVectorizer(func); }
+void adjustTensorAccessIndices(Value inputTensor, Attribute layoutAttr) {
+  for (auto &use : inputTensor.getUses()) {
+  }
+}
+
+void runCoyoteVectorizer(func::FuncOp func) {
+  static DenseSet<func::FuncOp> vectorizedFunctions;
+  if (!vectorizedFunctions.contains(func)) {
+    vectorizedFunctions.insert(func);
+    coyoteVectorizer(func);
+  }
+}
 
 void findVectorizationCandidates(
     recursiveProgramNode *node,
@@ -144,22 +155,19 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
   for (recursiveProgramNode *candidate : vectorizationCandidates) {
     SmallVector<Type> oldArgTypes;
     SmallVector<Type> oldResultTypes;
-    for (auto arg : candidate->function.getArguments())
+    for (auto arg : candidate->caller.getArgOperands())
       oldArgTypes.push_back(arg.getType());
-    for (auto result : candidate->function.getFunctionType().getResults())
+    for (auto result : candidate->caller.getResultTypes())
       oldResultTypes.push_back(result);
 
-    // oldArgTypes.push_back(candidate->function.getArgument(0).getType());
-    // oldResultTypes.push_back(candidate->function.getFunctionType().getResult(0));
-    // auto tensorType = mlir::RankedTensorType::get({1, 8},
-    // IntegerType::get(candidate->function.getContext(), 32));
-
     runCoyoteVectorizer(candidate->function);
+
     auto funcOp = candidate->caller->getParentOfType<func::FuncOp>();
     OpBuilder builder(&funcOp.getBody().front(),
                       funcOp.getBody().front().begin());
     llvm::outs() << "Processing vectorization candidate: "
                  << candidate->function.getName() << "\n";
+
     for (int i = 0; i < oldArgTypes.size(); i++) {
       llvm::outs() << "Checking argument " << i << " of type " << oldArgTypes[i]
                    << "\n";
@@ -175,19 +183,19 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
         expandTensorShapeAcrossDefChain(candidate->caller.getArgOperands()[i],
                                         tensorType, builder);
       }
+    }
 
-      for (int i = 0; i < oldResultTypes.size(); i++) {
-        if (isa<secret::SecretType>(oldResultTypes[i]) &&
-            oldResultTypes[i] !=
-                candidate->function.getFunctionType().getResult(i)) {
-          llvm::outs() << "Expanding tensor shape of result " << i << "\n";
-          auto tensorType = mlir::cast<RankedTensorType>(
-              mlir::cast<secret::SecretType>(
-                  candidate->function.getFunctionType().getResult(i))
-                  .getValueType());
-          expandTensorShapeAcrossUseChain(candidate->caller.getResults()[i],
-                                          tensorType, builder);
-        }
+    for (int i = 0; i < oldResultTypes.size(); i++) {
+      if (isa<secret::SecretType>(oldResultTypes[i]) &&
+          oldResultTypes[i] !=
+              candidate->function.getFunctionType().getResult(i)) {
+        llvm::outs() << "Expanding tensor shape of result " << i << "\n";
+        auto tensorType = mlir::cast<RankedTensorType>(
+            mlir::cast<secret::SecretType>(
+                candidate->function.getFunctionType().getResult(i))
+                .getValueType());
+        expandTensorShapeAcrossUseChain(candidate->caller.getResults()[i],
+                                        tensorType, builder);
       }
     }
   }
