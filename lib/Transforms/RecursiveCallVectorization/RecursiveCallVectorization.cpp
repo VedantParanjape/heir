@@ -43,6 +43,7 @@ namespace heir {
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.h.inc"
 
 DenseSet<func::FuncOp> functionDeleteList;
+std::map<std::set<std::pair<int, int>>, func::FuncOp> functionCache;
 
 static func::FuncOp getEnclosingFunction(Operation *op, ModuleOp &module) {
   auto callOp = dyn_cast<func::CallOp>(op);
@@ -218,6 +219,7 @@ struct RecursiveCallVectorization
 
   void unrollTensorGenerates(Operation *op);
   void removeRedundantTensorCasts(Operation *Op);
+  void removeDuplicateFunctions(recursiveProgramNode *node);
   void findMergeableRecursiveCallNodes(
       recursiveProgramNode *node,
       SmallVector<recursiveProgramNode *> &mergeableNodes);
@@ -431,6 +433,35 @@ void RecursiveCallVectorization::removeRedundantTensorCasts(Operation *Op) {
         changed = true;
       }
     });
+  }
+}
+
+void RecursiveCallVectorization::removeDuplicateFunctions(
+    recursiveProgramNode *node) {
+  if (!node) return;
+
+  for (recursiveProgramNode *child : node->children) {
+    removeDuplicateFunctions(child);
+  }
+
+  std::set<std::pair<int, int>> staticArgsKey;
+  for (auto &[op, idx] : node->staticArgumentValues)
+    if (auto constantOp = dyn_cast<arith::ConstantOp>(op))
+      staticArgsKey.insert({cast<mlir::IntegerAttr>(constantOp.getValue())
+                                .getValue()
+                                .getSExtValue(),
+                            idx});
+
+  if (functionCache.find(staticArgsKey) != functionCache.end()) {
+    func::FuncOp cachedFunc = functionCache[staticArgsKey];
+    llvm::outs() << "Removing duplicate function: " << node->function.getName()
+                 << " (reusing " << cachedFunc.getName() << ")\n";
+    node->caller.setCallee(cachedFunc.getName());
+    functionDeleteList.insert(node->function);
+    node->function = cachedFunc;
+  } else {
+    functionCache[staticArgsKey] = node->function;
+    llvm::outs() << "Caching function: " << node->function.getName() << "\n";
   }
 }
 
@@ -700,6 +731,7 @@ static int functionCounter = 0;
 void RecursiveCallVectorization::buildRecursiveCallTree(
     Operation *rootOp, recursiveProgramInfo &recursiveProgramInfo) {
   std::queue<std::pair<Operation *, recursiveProgramNode *>> workQueue;
+
   recursiveProgramNode *root = new recursiveProgramNode();
   root->staticArgumentValues = recursiveProgramInfo.staticArgumentValues;
   recursiveProgramInfo.root = root;
@@ -713,6 +745,7 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
     llvm::outs() << "Error: Could not find enclosing function for operation.\n";
     return;
   }
+  functionDeleteList.insert(funcOp);
 
   while (!workQueue.empty()) {
     llvm::outs() << "== Processing node in recursive call tree...\n";
@@ -739,13 +772,11 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
     // Perform Constant Op propagation + Op folding + DCE.
     foldAllOpsInFunc(funcOpCloned, funcOp.getContext());
     // funcOpCloned.dump();
+    parentModule.push_back(funcOpCloned);
 
     currentNode->function = funcOpCloned;
-    parentModule.push_back(funcOpCloned);
     dyn_cast<func::CallOp>(op).setCallee(funcOpCloned.getName());
     currentNode->caller = dyn_cast<func::CallOp>(op);
-
-    functionDeleteList.insert(funcOp);
 
     // analyse the cloned function for further recursive calls.
     // find static argument values for each recursive call.
@@ -787,6 +818,8 @@ void RecursiveCallVectorization::buildRecursiveCallTree(
       llvm::outs() << "  Arg index: " << idx << ", Value: " << *op << "\n";
     }
   }
+
+  removeDuplicateFunctions(root);
   prettyPrintRecursiveProgramTree(root);
 }
 
