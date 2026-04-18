@@ -332,16 +332,23 @@ struct RecursiveCallVectorization
 
       for (auto node : mergeableNodes) {
         func::FuncOp merged = node.second[0]->function;
+        DenseMap<int, SmallVector<Value>> argumentsToExpand;
+
+        for (int i = 0; i < node.second.size(); i++)
+          for (int j = 0; j < node.second[i]->caller->getNumArguments(); j++)
+            if (isa<secret::SecretType>(
+                    node.second[i]->caller->getArgArgument(j).getType()))
+              argumentsToExpand[j].push_back(
+                  node.second[i]->caller->getArgArgument(j));
 
         for (int i = 1; i < node.second.size(); i++) {
           auto current = node.second[i]->function;
           auto result = mergeWithNeedlemanWunsch(merged, current, merged);
 
           if (succeeded(result)) {
-            llvm::outs() << "printing merged function:\n";
-            // `merged` is now a new func::FuncOp named
-            // "dot_3a_nw_merged_dot_3b" inserted into the module before funcA
-            merged.dump();  // print the merged MLIR
+            merged.dump();
+          } else {
+            assert(false && "Merging failed");
           }
         }
 
