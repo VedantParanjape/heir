@@ -35,9 +35,10 @@ namespace heir {
 
 typedef struct recursiveProgramNode_ {
   recursiveProgramNode_ *parent = nullptr;
+  bool vectorizationCandidate = false;
   func::FuncOp function;
   func::CallOp caller;
-  SmallVector<std::pair<Operation *, int>> staticArgumentValues;
+  SmallVector<std::pair<TypedAttr, int>> staticArgumentValues;
   SmallVector<recursiveProgramNode_ *> children;
 } recursiveProgramNode;
 
@@ -45,11 +46,11 @@ typedef struct recursiveProgramInfo_ {
   SmallVector<std::pair<Operation *, int>> baseConditions;
   SmallVector<std::pair<Operation *, int>> recursiveCalls;
   SmallVector<std::pair<Value *, int>> progressArguments;
-  SmallVector<std::pair<Operation *, int>> staticArgumentValues;
+  SmallVector<std::pair<TypedAttr, int>> staticArgumentValues;
   Operation *call;
   recursiveProgramNode *root;
 } recursiveProgramInfo;
-DenseMap<Operation *, recursiveProgramInfo> biscottiCalls;
+static DenseMap<Operation *, recursiveProgramInfo> biscottiCalls;
 
 }  // namespace heir
 }  // namespace mlir

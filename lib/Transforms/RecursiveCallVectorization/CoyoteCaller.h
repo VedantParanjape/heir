@@ -130,9 +130,9 @@ void adjustTensorAccessIndices(Value inputTensor, Attribute layoutAttr) {
 }
 
 void runCoyoteVectorizer(func::FuncOp func) {
-  static DenseSet<func::FuncOp> vectorizedFunctions;
-  if (!vectorizedFunctions.contains(func)) {
-    vectorizedFunctions.insert(func);
+  static DenseSet<StringRef> vectorizedFunctions;
+  if (!vectorizedFunctions.contains(func.getName())) {
+    vectorizedFunctions.insert(func.getName());
     coyoteVectorizer(func);
   }
 }
@@ -152,6 +152,8 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
   SmallVector<recursiveProgramNode *> vectorizationCandidates;
   findVectorizationCandidates(root, vectorizationCandidates);
 
+  llvm::outs() << "Found " << vectorizationCandidates.size()
+               << " vectorization candidates.\n";
   for (recursiveProgramNode *candidate : vectorizationCandidates) {
     SmallVector<Type> oldArgTypes;
     SmallVector<Type> oldResultTypes;
@@ -161,6 +163,17 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
       oldResultTypes.push_back(result);
 
     runCoyoteVectorizer(candidate->function);
+
+    // Operation *callerOp = candidate->caller.getOperation();
+    // llvm::outs() << "  caller ptr: " << callerOp << "\n";
+    // llvm::outs() << "  caller block: " << (callerOp ? callerOp->getBlock() :
+    // nullptr) << "\n"; llvm::outs() << "  caller parent op: " << (callerOp &&
+    // callerOp->getBlock() ? callerOp->getParentOp() : nullptr) << "\n";
+
+    // if (!callerOp || !callerOp->getBlock()) {
+    //   llvm::outs() << "  *** caller is detached/erased, skipping ***\n";
+    //   continue;
+    // }
 
     auto funcOp = candidate->caller->getParentOfType<func::FuncOp>();
     OpBuilder builder(&funcOp.getBody().front(),

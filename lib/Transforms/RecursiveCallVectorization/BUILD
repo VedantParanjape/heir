@@ -8,9 +8,13 @@ package(
 
 cc_library(
     name = "RecursiveCallVectorization",
-    srcs = ["RecursiveCallVectorization.cpp"],
+    srcs = [
+        "MergeSchedules.cpp",
+        "RecursiveCallVectorization.cpp",
+    ],
     hdrs = [
         "CoyoteCaller.h",
+        "MergeSchedules.h",
         "RecursiveCallVectorization.h",
         "RecursiveProgramInfo.h",
     ],
