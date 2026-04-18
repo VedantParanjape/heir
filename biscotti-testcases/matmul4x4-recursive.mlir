@@ -263,3 +263,59 @@ func.func @main(%A : !inputvec, %B : !inputvec) -> !inputvec {
 
     return %result_static : !inputvec
 }
+
+// !inputvec = !secret.secret<tensor<64xi32>>
+// func.func @main8(%A : !inputvec, %B : !inputvec) -> !inputvec {
+//     %c4 = arith.constant 8 : !val
+
+//     %A_dyn = secret.generic(%A : !inputvec) {
+//     ^bb0(%a: tensor<64xi32>):
+//         %cast = tensor.cast %a : tensor<64xi32> to tensor<?xi32>
+//         secret.yield %cast : tensor<?xi32>
+//     } -> !svec
+
+//     %B_dyn = secret.generic(%B : !inputvec) {
+//     ^bb0(%b: tensor<64xi32>):
+//         %cast = tensor.cast %b : tensor<64xi32> to tensor<?xi32>
+//         secret.yield %cast : tensor<?xi32>
+//     } -> !svec
+
+//     %result = call @mm(%A_dyn, %B_dyn, %c4)
+//         { biscotti.call = 0 } : (!svec, !svec, !val) -> !svec
+
+//     %result_static = secret.generic(%result : !svec) {
+//     ^bb0(%r: tensor<?xi32>):
+//         %cast = tensor.cast %r : tensor<?xi32> to tensor<64xi32>
+//         secret.yield %cast : tensor<64xi32>
+//     } -> !inputvec
+
+//     return %result_static : !inputvec
+// }
+
+// !inputvec = !secret.secret<tensor<256xi32>>
+// func.func @main16(%A : !inputvec, %B : !inputvec) -> !inputvec {
+//     %c4 = arith.constant 16 : !val
+
+//     %A_dyn = secret.generic(%A : !inputvec) {
+//     ^bb0(%a: tensor<256xi32>):
+//         %cast = tensor.cast %a : tensor<256xi32> to tensor<?xi32>
+//         secret.yield %cast : tensor<?xi32>
+//     } -> !svec
+
+//     %B_dyn = secret.generic(%B : !inputvec) {
+//     ^bb0(%b: tensor<256xi32>):
+//         %cast = tensor.cast %b : tensor<256xi32> to tensor<?xi32>
+//         secret.yield %cast : tensor<?xi32>
+//     } -> !svec
+
+//     %result = call @mm(%A_dyn, %B_dyn, %c4)
+//         { biscotti.call = 0 } : (!svec, !svec, !val) -> !svec
+
+//     %result_static = secret.generic(%result : !svec) {
+//     ^bb0(%r: tensor<?xi32>):
+//         %cast = tensor.cast %r : tensor<?xi32> to tensor<256xi32>
+//         secret.yield %cast : tensor<256xi32>
+//     } -> !inputvec
+
+//     return %result_static : !inputvec
+// }
