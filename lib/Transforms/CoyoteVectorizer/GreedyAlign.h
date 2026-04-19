@@ -20,23 +20,23 @@
 namespace mlir {
 namespace heir {
 
-/// Complete schedule with lane and timing assignments.
-/// Python equivalent: Schedule class in codegen.py
+// Schedule with lane and timing assignments.
+// Python equivalent: Schedule class in codegen.py
 typedef struct Schedule {
-  /// Lane assignment: operation -> lane number [0, warpSize)
+  // Lane assignment: operation -> lane number [0, warpSize)
   llvm::DenseMap<Operation *, int64_t> lanes;
 
-  /// Time step assignment: operation -> cycle number.
-  /// Operations with the same alignment execute in parallel (different lanes).
+  // Time step assignment: operation -> cycle number.
+  // Operations with the same alignment execute in parallel (different lanes).
   llvm::DenseMap<Operation *, int64_t> alignment;
 
-  /// Ordered list of all operations in the schedule (program order).
+  // Ordered list of all operations in the schedule (program order).
   llvm::SmallVector<Operation *> instructions;
 
-  /// Number of vector lanes (SIMD width).
+  // Number of vector lanes (SIMD width).
   unsigned warpSize = 0;
 
-  /// Get all operations executing at a specific time step.
+  // Get all operations executing at a specific time step.
   llvm::SmallVector<Operation *> getStep(int64_t step) const {
     llvm::SmallVector<Operation *> result;
     for (auto *op : instructions)
@@ -44,7 +44,7 @@ typedef struct Schedule {
     return result;
   }
 
-  /// Get the highest time step in the schedule (schedule depth - 1).
+  // Get the highest time step in the schedule (schedule depth - 1).
   int64_t maxStep() const {
     int64_t max = 0;
     for (const auto &[op, step] : alignment)
@@ -215,7 +215,7 @@ class GreedyAligner {
 };
 
 /// Standalone function wrapper
-std::vector<int64_t> greedyAlign(
+inline std::vector<int64_t> greedyAlign(
     llvm::ArrayRef<Operation *> program, unsigned warpSize,
     const llvm::DenseMap<Operation *, int64_t> &lanes) {
   GreedyAligner aligner;

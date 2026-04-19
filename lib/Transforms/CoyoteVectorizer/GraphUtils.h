@@ -140,7 +140,7 @@ inline CircuitGraph deepCopyCircuitGraph(CircuitGraph &src) {
 /// lane placement obvious and letting the scheduler converge faster.
 ///
 /// Called between collecting operations and buildCircuitGraph.
-void replicateMultiUseExtracts(
+inline void replicateMultiUseExtracts(
     llvm::SmallVector<Operation *> &operations,
     llvm::SmallVector<llvm::SmallVector<Operation *>> &inputGroups) {
   for (int i = 0; i < inputGroups.size(); i++) {
@@ -167,7 +167,8 @@ void replicateMultiUseExtracts(
   }
 }
 
-CircuitGraph buildCircuitGraph(llvm::SmallVector<Operation *> operations) {
+inline CircuitGraph buildCircuitGraph(
+    llvm::SmallVector<Operation *> operations) {
   CircuitGraph graph;
 
   // Map from MLIR operation to graph node (for edge construction)
@@ -247,7 +248,7 @@ CircuitGraph buildCircuitGraph(llvm::SmallVector<Operation *> operations) {
 /// columnize).
 ///
 /// Returns matched (leftNode, rightNode) pairs.
-std::vector<std::pair<SubCircuitNode, SubCircuitNode>>
+inline std::vector<std::pair<SubCircuitNode, SubCircuitNode>>
 maxWeightBipartiteMatching(
     CircuitGraph &circuitGraph, const std::vector<SubCircuitNode> &leftNodes,
     const std::vector<SubCircuitNode> &rightNodes,
@@ -428,7 +429,7 @@ class EpochAssigner {
 };
 
 /// Standalone function wrapper for easier integration
-std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> gradeGraph(
+inline std::pair<llvm::DenseSet<int64_t>, llvm::DenseSet<int64_t>> gradeGraph(
     CircuitGraph &graph,
     llvm::ArrayRef<llvm::SmallVector<Operation *>> inputGroups,
     llvm::ArrayRef<llvm::SmallVector<Operation *>> outputGroups) {

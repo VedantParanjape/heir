@@ -349,7 +349,8 @@ class ColumnAssigner {
   llvm::EquivalenceClasses<SubCircuitNodeImpl*> columns;
 };
 
-void coyoteVectorizer(func::FuncOp& func) {
+void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
+                      bool ShouldThisLowerToMLIR) {
   llvm::outs() << "\n=== Coyote Vectorizer Pass ===\n\n";
 
   //==========================================================================
@@ -694,12 +695,17 @@ void coyoteVectorizer(func::FuncOp& func) {
   //
   // After lowering, scalar op results are replaced by tensor.extract from
   // the vectorized result tensors, and the original scalar ops are erased.
-  llvm::errs() << "\n[9/9] Lowering schedule to MLIR tensor operations...\n";
-  lowerToMLIR(func, schedule);
-  llvm::errs() << "  Lowering complete\n";
+  for (auto op : schedule.instructions) {
+    llvm::errs() << "Op: " << *op << " lane: " << schedule.lanes[op]
+                 << " align: " << schedule.alignment[op] << "\n";
+  }
 
-  // Canonicalize + DCE to clean up dead ops left behind by lowering.
-  {
+  if (ShouldThisLowerToMLIR) {
+    llvm::errs() << "\n[9/9] Lowering schedule to MLIR tensor operations...\n";
+    lowerToMLIR(func, schedule);
+    llvm::errs() << "  Lowering complete\n";
+
+    // Canonicalize + DCE to clean up dead ops left behind by lowering.
     MLIRContext* ctx = func.getContext();
     RewritePatternSet patterns(ctx);
     for (auto* dialect : ctx->getLoadedDialects())
@@ -716,6 +722,9 @@ void coyoteVectorizer(func::FuncOp& func) {
                                        func.getOperation()->getRegions());
   }
 
+  // Output the final schedule for testing/verification
+  finalSchedule = schedule;
+
   llvm::errs() << "\n=== Generated MLIR ===\n";
   func.print(llvm::errs());
   llvm::errs() << "\n=====================\n";
@@ -731,7 +740,8 @@ struct CoyoteVectorizerPass
 
   void runOnOperation() override {
     func::FuncOp func = getOperation();
-    coyoteVectorizer(func);
+    Schedule finalSchedule;
+    coyoteVectorizer(func, finalSchedule);
   }
 };
 

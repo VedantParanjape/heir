@@ -6,6 +6,7 @@
 #include "lib/Dialect/Secret/IR/SecretPatterns.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtOps.h"
+#include "lib/Transforms/CoyoteVectorizer/GreedyAlign.h"
 #include "lib/Utils/AttributeUtils.h"
 #include "lib/Utils/Graph/Graph.h"
 #include "llvm/include/llvm/Support/Debug.h"           // from @llvm-project
@@ -40,6 +41,7 @@ typedef struct recursiveProgramNode_ {
   func::CallOp caller;
   SmallVector<std::pair<TypedAttr, int>> staticArgumentValues;
   SmallVector<recursiveProgramNode_ *> children;
+  Schedule coyoteSchedule;
 } recursiveProgramNode;
 
 typedef struct recursiveProgramInfo_ {

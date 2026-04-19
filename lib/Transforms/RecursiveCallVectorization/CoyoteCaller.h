@@ -83,10 +83,15 @@ void expandTensorShapeAcrossDefChain(Value inputTensor,
             });
       } else {
         if (auto insOp = dyn_cast<tensor::InsertOp>(defOp)) {
+          auto currentRank =
+              cast<RankedTensorType>(insOp.getResult().getType()).getRank();
+          auto targetRank = targetType.getRank();
           insOp.getResult().setType(targetType);
-          Value c0 =
-              arith::ConstantIndexOp::create(builder, insOp->getLoc(), 0);
-          insOp->insertOperands(2, {c0});
+          if (currentRank != targetRank) {
+            Value c0 =
+                arith::ConstantIndexOp::create(builder, insOp->getLoc(), 0);
+            insOp->insertOperands(2, {c0});
+          }
         }
       }
     } else if (auto blockArg = dyn_cast<BlockArgument>(val)) {
@@ -129,12 +134,15 @@ void adjustTensorAccessIndices(Value inputTensor, Attribute layoutAttr) {
   }
 }
 
-void runCoyoteVectorizer(func::FuncOp func) {
-  static DenseSet<StringRef> vectorizedFunctions;
+Schedule runCoyoteVectorizer(func::FuncOp func) {
+  static DenseMap<StringRef, Schedule> vectorizedFunctions;
   if (!vectorizedFunctions.contains(func.getName())) {
-    vectorizedFunctions.insert(func.getName());
-    coyoteVectorizer(func);
+    Schedule schedule;
+    vectorizedFunctions.insert({func.getName(), schedule});
+    coyoteVectorizer(func, schedule, false);
+    return schedule;
   }
+  return vectorizedFunctions.lookup(func.getName());
 }
 
 void findVectorizationCandidates(
@@ -162,8 +170,8 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
     for (auto result : candidate->caller.getResultTypes())
       oldResultTypes.push_back(result);
 
-    runCoyoteVectorizer(candidate->function);
-
+    Schedule schedule = runCoyoteVectorizer(candidate->function);
+    candidate->coyoteSchedule = schedule;
     // Operation *callerOp = candidate->caller.getOperation();
     // llvm::outs() << "  caller ptr: " << callerOp << "\n";
     // llvm::outs() << "  caller block: " << (callerOp ? callerOp->getBlock() :
@@ -175,42 +183,45 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
     //   continue;
     // }
 
-    auto funcOp = candidate->caller->getParentOfType<func::FuncOp>();
-    OpBuilder builder(&funcOp.getBody().front(),
-                      funcOp.getBody().front().begin());
-    llvm::outs() << "Processing vectorization candidate: "
-                 << candidate->function.getName() << "\n";
+    // this part commented out as we dont want to replace the function with
+    // vectorized version yet.
+    //   auto funcOp = candidate->caller->getParentOfType<func::FuncOp>();
+    //   OpBuilder builder(&funcOp.getBody().front(),
+    //                     funcOp.getBody().front().begin());
+    //   llvm::outs() << "Processing vectorization candidate: "
+    //                << candidate->function.getName() << "\n";
 
-    for (int i = 0; i < oldArgTypes.size(); i++) {
-      llvm::outs() << "Checking argument " << i << " of type " << oldArgTypes[i]
-                   << "\n";
-      llvm::outs() << "Candidate function argument type: "
-                   << candidate->function.getArgument(i).getType() << "\n";
-      if (isa<secret::SecretType>(oldArgTypes[i]) &&
-          oldArgTypes[i] != candidate->function.getArgument(i).getType()) {
-        llvm::outs() << "Expanding tensor shape of argument " << i << "\n";
-        auto tensorType = mlir::cast<RankedTensorType>(
-            mlir::cast<secret::SecretType>(
-                candidate->function.getArgument(i).getType())
-                .getValueType());
-        expandTensorShapeAcrossDefChain(candidate->caller.getArgOperands()[i],
-                                        tensorType, builder);
-      }
-    }
+    //   for (int i = 0; i < oldArgTypes.size(); i++) {
+    //     llvm::outs() << "Checking argument " << i << " of type " <<
+    //     oldArgTypes[i]
+    //                  << "\n";
+    //     llvm::outs() << "Candidate function argument type: "
+    //                  << candidate->function.getArgument(i).getType() << "\n";
+    //     if (isa<secret::SecretType>(oldArgTypes[i]) &&
+    //         oldArgTypes[i] != candidate->function.getArgument(i).getType()) {
+    //       llvm::outs() << "Expanding tensor shape of argument " << i << "\n";
+    //       auto tensorType = mlir::cast<RankedTensorType>(
+    //           mlir::cast<secret::SecretType>(
+    //               candidate->function.getArgument(i).getType())
+    //               .getValueType());
+    //       expandTensorShapeAcrossDefChain(candidate->caller.getArgOperands()[i],
+    //                                       tensorType, builder);
+    //     }
+    //   }
 
-    for (int i = 0; i < oldResultTypes.size(); i++) {
-      if (isa<secret::SecretType>(oldResultTypes[i]) &&
-          oldResultTypes[i] !=
-              candidate->function.getFunctionType().getResult(i)) {
-        llvm::outs() << "Expanding tensor shape of result " << i << "\n";
-        auto tensorType = mlir::cast<RankedTensorType>(
-            mlir::cast<secret::SecretType>(
-                candidate->function.getFunctionType().getResult(i))
-                .getValueType());
-        expandTensorShapeAcrossUseChain(candidate->caller.getResults()[i],
-                                        tensorType, builder);
-      }
-    }
+    //   for (int i = 0; i < oldResultTypes.size(); i++) {
+    //     if (isa<secret::SecretType>(oldResultTypes[i]) &&
+    //         oldResultTypes[i] !=
+    //             candidate->function.getFunctionType().getResult(i)) {
+    //       llvm::outs() << "Expanding tensor shape of result " << i << "\n";
+    //       auto tensorType = mlir::cast<RankedTensorType>(
+    //           mlir::cast<secret::SecretType>(
+    //               candidate->function.getFunctionType().getResult(i))
+    //               .getValueType());
+    //       expandTensorShapeAcrossUseChain(candidate->caller.getResults()[i],
+    //                                       tensorType, builder);
+    //     }
+    //   }
   }
 
   // vectorizationCandidates[0]->caller->getParentOfType<func::FuncOp>().dump();

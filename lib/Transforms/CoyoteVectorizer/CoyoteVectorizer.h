@@ -9,6 +9,7 @@
 
 #include "lib/Dialect/Secret/IR/SecretDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
+#include "lib/Transforms/CoyoteVectorizer/GreedyAlign.h"
 #include "lib/Utils/Graph/Graph.h"
 #include "llvm/include/llvm/ADT/DenseMap.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/DenseSet.h"              // from @llvm-project
@@ -37,7 +38,8 @@ namespace heir {
 #define GEN_PASS_REGISTRATION
 #include "lib/Transforms/CoyoteVectorizer/CoyoteVectorizer.h.inc"
 
-void coyoteVectorizer(func::FuncOp& func);
+void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
+                      bool ShouldThisLowerToMLIR = true);
 
 }  // namespace heir
 }  // namespace mlir
