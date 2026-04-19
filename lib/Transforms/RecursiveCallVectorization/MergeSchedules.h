@@ -68,6 +68,16 @@ void findScheduleMergingCandidates(
         &candidates,
     DenseSet<func::CallOp> &visited);
 
+typedef struct cipherTextSlot_ {
+  Operation *op;
+  int index;
+} cipherTextSlot;
+
+SmallVector<cipherTextSlot> processTensorOpsAfterMerging(
+    RankedTensorType mergedType, SmallVector<Value> subArgs, OpBuilder builder);
+Value mergeTensorOps(SmallVector<cipherTextSlot> &ctxt,
+                     RankedTensorType mergedType, OpBuilder builder);
+
 }  // namespace heir
 }  // namespace mlir
 

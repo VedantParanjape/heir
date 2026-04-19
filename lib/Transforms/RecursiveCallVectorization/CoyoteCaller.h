@@ -83,10 +83,15 @@ void expandTensorShapeAcrossDefChain(Value inputTensor,
             });
       } else {
         if (auto insOp = dyn_cast<tensor::InsertOp>(defOp)) {
+          auto currentRank =
+              cast<RankedTensorType>(insOp.getResult().getType()).getRank();
+          auto targetRank = targetType.getRank();
           insOp.getResult().setType(targetType);
-          Value c0 =
-              arith::ConstantIndexOp::create(builder, insOp->getLoc(), 0);
-          insOp->insertOperands(2, {c0});
+          if (currentRank != targetRank) {
+            Value c0 =
+                arith::ConstantIndexOp::create(builder, insOp->getLoc(), 0);
+            insOp->insertOperands(2, {c0});
+          }
         }
       }
     } else if (auto blockArg = dyn_cast<BlockArgument>(val)) {

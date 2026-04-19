@@ -8,6 +8,7 @@
 #include "lib/Dialect/Secret/IR/SecretPatterns.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtDialect.h"
 #include "lib/Dialect/TensorExt/IR/TensorExtOps.h"
+#include "lib/Dialect/Utils.h"
 #include "lib/Transforms/RecursiveCallVectorization/CoyoteCaller.h"
 #include "lib/Transforms/RecursiveCallVectorization/MergeSchedules.h"
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveProgramInfo.h"
@@ -197,6 +198,29 @@ static Operation *insertConstantAtTop(func::FuncOp &funcOp, TypedAttr attr) {
   return arith::ConstantOp::create(builder, funcOp.getLoc(), attr);
 }
 
+class MergeTensorInsertChains final
+    : public OpRewritePattern<secret::GenericOp> {
+ public:
+  SmallVector<Value> collectMergedTensorArgs;
+
+  MergeTensorInsertChains(MLIRContext *context, SmallVector<Value> args)
+      : OpRewritePattern<secret::GenericOp>(context),
+        collectMergedTensorArgs(std::move(args)) {}
+
+  LogicalResult matchAndRewrite(secret::GenericOp genericOp,
+                                PatternRewriter &rewriter) const override {
+    auto [modifiedGeneric, newResults] = genericOp.addNewYieldedValues(
+        ValueRange(collectMergedTensorArgs), rewriter);
+
+    for (auto [oldRes, newRes] :
+         llvm::zip(genericOp->getResults(), modifiedGeneric->getResults()))
+      oldRes.replaceAllUsesWith(newRes);
+
+    rewriter.eraseOp(genericOp);
+    return success();
+  }
+};
+
 struct RecursiveCallVectorization
     : impl::RecursiveCallVectorizationBase<RecursiveCallVectorization> {
   using RecursiveCallVectorizationBase::RecursiveCallVectorizationBase;
@@ -333,13 +357,21 @@ struct RecursiveCallVectorization
       for (auto node : mergeableNodes) {
         func::FuncOp merged = node.second[0]->function;
         DenseMap<int, SmallVector<Value>> argumentsToExpand;
-
-        for (int i = 0; i < node.second.size(); i++)
-          for (int j = 0; j < node.second[i]->caller->getNumArguments(); j++)
+        DenseMap<int, SmallVector<Value>> resultsToExpand;
+        for (int i = 0; i < node.second.size(); i++) {
+          for (int j = 0; j < node.second[i]->caller.getArgOperands().size();
+               j++)
             if (isa<secret::SecretType>(
-                    node.second[i]->caller->getArgArgument(j).getType()))
+                    node.second[i]->caller.getArgOperands()[j].getType()))
               argumentsToExpand[j].push_back(
-                  node.second[i]->caller->getArgArgument(j));
+                  node.second[i]->caller.getArgOperands()[j]);
+
+          for (int j = 0; j < node.second[i]->caller.getResults().size(); j++)
+            if (isa<secret::SecretType>(
+                    node.second[i]->caller.getResults()[j].getType()))
+              resultsToExpand[j].push_back(
+                  node.second[i]->caller.getResults()[j]);
+        }
 
         for (int i = 1; i < node.second.size(); i++) {
           auto current = node.second[i]->function;
@@ -352,11 +384,91 @@ struct RecursiveCallVectorization
           }
         }
 
-        // merged->insertBefore(node.second[0]->caller);
-        // for (auto caller: node.second)
-        //   caller->caller->erase();
+        OpBuilder builder(&node.first->function.getBody().front(),
+                          node.first->function.getBody().front().begin());
+        SmallVector<Value> collectMergedTensorArgs;
+        for (auto args : argumentsToExpand) {
+          auto tensorType = mlir::cast<RankedTensorType>(
+              mlir::cast<secret::SecretType>(
+                  merged.getArgument(args.first).getType())
+                  .getValueType());
+          auto ctxt =
+              processTensorOpsAfterMerging(tensorType, args.second, builder);
+          collectMergedTensorArgs.push_back(
+              mergeTensorOps(ctxt, tensorType, builder));
+          // for (auto slot: ctxt) {
+          //   llvm::outs() << slot.index << ": " << slot.op << "\n";
+          // }
+        }
 
-        // node.first->children.clear();
+        for (auto args : argumentsToExpand) {
+          for (auto arg : args.second) {
+            auto tensorType = mlir::cast<RankedTensorType>(
+                mlir::cast<secret::SecretType>(
+                    merged.getArgument(args.first).getType())
+                    .getValueType());
+            expandTensorShapeAcrossDefChain(arg, tensorType, builder);
+          }
+        }
+        for (auto results : resultsToExpand) {
+          for (auto result : results.second) {
+            auto tensorType = mlir::cast<RankedTensorType>(
+                mlir::cast<secret::SecretType>(
+                    merged.getFunctionType().getResult(results.first))
+                    .getValueType());
+            expandTensorShapeAcrossUseChain(result, tensorType, builder);
+          }
+        }
+
+        // TODO: check if the merged funcs have more args than the base
+        // functions ideally we should handle this, but it is a waste of time to
+        // handle all of these edge cases right now. Ideally after staging all
+        // the progress arguments should disappear and won't cause any issues.
+        // But we should add an assert which checks for this, would be easier to
+        // debug these self-sabotage issues if they come up.
+
+        Operation *op = collectMergedTensorArgs[0].getDefiningOp();
+        auto genericOp = cast<secret::GenericOp>(op->getParentOp());
+
+        // Update yield first
+        auto yieldOp = genericOp.getYieldOp();
+        yieldOp.getValuesMutable().append(collectMergedTensorArgs);
+
+        // Build new result types from yield
+        auto newTypes = llvm::to_vector<4>(llvm::map_range(
+            yieldOp.getValues().getTypes(),
+            [](Type t) -> Type { return secret::SecretType::get(t); }));
+
+        // Clone with new types
+        auto *newOp =
+            cloneWithNewResultTypes(genericOp.getOperation(), newTypes);
+        genericOp->getBlock()->getOperations().insert(
+            std::next(Block::iterator(genericOp)), newOp);
+        // Insert after old generic
+        newOp->moveAfter(genericOp);
+
+        // Replace old results
+        for (auto [oldRes, newRes] :
+             llvm::zip(genericOp->getResults(), newOp->getResults()))
+          oldRes.replaceAllUsesWith(newRes);
+
+        genericOp->erase();
+
+        // New results are the last N
+        auto newGenericOp = cast<secret::GenericOp>(newOp);
+        auto newResultStartIter = newGenericOp.getResults().drop_front(
+            newGenericOp.getNumResults() - collectMergedTensorArgs.size());
+
+        for (auto caller : node.second)
+          caller->caller.setCalleeAttr(mlir::SymbolRefAttr::get(merged));
+
+        SmallVector<Value> callArgs(newResultStartIter);
+        builder.setInsertionPoint(node.second[0]->caller);
+        auto callOp = func::CallOp::create(
+            builder, node.second[0]->caller.getLoc(), merged.getName(),
+            merged.getFunctionType().getResults(), callArgs);
+        node.first->children.clear();
+        node.first->function->dump();
       }
     }
   }

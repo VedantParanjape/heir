@@ -654,5 +654,122 @@ void findScheduleMergingCandidates(
   visited.insert(node->caller);
 }
 
+static void collectTensorInsertChain(Value inputTensor,
+                                     SmallVector<Value> &insertChain) {
+  if (auto defOp = inputTensor.getDefiningOp()) {
+    if (auto genericOp = dyn_cast<secret::GenericOp>(defOp)) {
+      // value is a result of secret.generic
+      auto resultIdx = cast<OpResult>(inputTensor).getResultNumber();
+      // Find what was yielded at that index
+      auto yieldOp =
+          cast<secret::YieldOp>(genericOp.getBody()->getTerminator());
+      Value yieldedVal = yieldOp->getOperand(resultIdx);
+      collectTensorInsertChain(yieldedVal, insertChain);
+    } else if (auto constantOp = dyn_cast<arith::ConstantOp>(defOp)) {
+      insertChain.push_back(constantOp.getResult());
+      return;
+    } else {
+      if (auto insOp = dyn_cast<tensor::InsertOp>(defOp)) {
+        insertChain.push_back(insOp.getResult());
+        collectTensorInsertChain(insOp.getDest(), insertChain);
+      }
+    }
+  } else if (auto blockArg = dyn_cast<BlockArgument>(inputTensor)) {
+    llvm::errs() << "Reached block argument during insert chain expansion. "
+                    "Cannot expand further.\n";
+    assert(1);
+  }
+}
+
+static RankedTensorType extractUnderlyingTensor(Value in) {
+  return mlir::cast<RankedTensorType>(
+      mlir::cast<secret::SecretType>(in.getType()).getValueType());
+}
+
+SmallVector<cipherTextSlot> processTensorOpsAfterMerging(
+    RankedTensorType mergedType, SmallVector<Value> subArgs,
+    OpBuilder builder) {
+  if (!mergedType.hasStaticShape()) return {};
+
+  llvm::outs() << "Rank: " << mergedType.getRank() << "\n";
+  // do a sanity check that summation of dim-1 of all subArgs = dim-1 of
+  // mergedType
+  int mergedDim1 = mergedType.getDimSize(1);
+  for (auto subarg : subArgs) {
+    auto tensorType = extractUnderlyingTensor(subarg);
+    mergedDim1 -= tensorType.getDimSize(1);
+  }
+
+  if (mergedDim1 != 0)
+    assert(false && "merged dim size doesn't match up with the subargs");
+
+  SmallVector<cipherTextSlot> ctxt;
+  for (int i = 0; i < mergedType.getDimSize(1); i++) {
+    ctxt.push_back({nullptr, i});
+  }
+
+  DenseMap<Value, SmallVector<Value>> insertChains;
+  for (auto subarg : subArgs) {
+    if (insertChains.contains(subarg)) continue;
+
+    SmallVector<Value> chain;
+    collectTensorInsertChain(subarg, chain);
+    if (isa<arith::ConstantOp>(chain.back().getDefiningOp())) chain.pop_back();
+    std::reverse(chain.begin(), chain.end());
+    insertChains[subarg] = chain;
+  }
+
+  for (auto a : insertChains) {
+    for (auto c : a.second) c.dump();
+
+    llvm::outs() << "\n";
+  }
+
+  int offset = 0;
+  for (auto subarg : subArgs) {
+    for (auto insertVal : insertChains[subarg]) {
+      auto insertOp = cast<tensor::InsertOp>(insertVal.getDefiningOp());
+      int index = offset + cast<arith::ConstantIndexOp>(
+                               insertOp.getIndices()[1].getDefiningOp())
+                               .value();
+      ctxt[index].op = insertOp;
+    }
+    offset += extractUnderlyingTensor(subarg).getDimSize(1);
+  }
+
+  return ctxt;
+}
+
+// auto zero = builder.getZeroAttr(mergedType.getElementType());
+// auto attr = DenseElementsAttr::get(mergedType, zero);
+// auto prevOp = arith::ConstantOp::create(builder, builder.getUnknownLoc(),
+// attr); prevOp.dump(); auto newInsertOp = tensor::InsertOp::create(builder,
+// insertOp.getLoc(), ins.getScalar(), prevOp.getResult(), ins.getIndices());
+// newInsertOp.dump();
+
+Value mergeTensorOps(SmallVector<cipherTextSlot> &ctxt,
+                     RankedTensorType mergedType, OpBuilder builder) {
+  auto zero = builder.getZeroAttr(mergedType.getElementType());
+  auto attr = DenseElementsAttr::get(mergedType, zero);
+  Operation *seedOp =
+      arith::ConstantOp::create(builder, builder.getUnknownLoc(), attr);
+
+  for (auto &slot : ctxt) {
+    if (slot.op) {
+      auto insertOp = cast<tensor::InsertOp>(slot.op);
+      builder.setInsertionPoint(insertOp->getBlock()->getTerminator());
+      auto newInsertOp = tensor::InsertOp::create(
+          builder, insertOp.getLoc(), insertOp.getScalar(),
+          seedOp->getResult(0), insertOp.getIndices());
+      slot.op = newInsertOp;
+      seedOp = slot.op;
+
+      newInsertOp.dump();
+    }
+  }
+
+  return seedOp->getResult(0);
+}
+
 }  // namespace heir
 }  // namespace mlir
