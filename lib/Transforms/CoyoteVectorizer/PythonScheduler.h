@@ -60,7 +60,9 @@ namespace heir {
 /// COYOTE_PYTHON_PATH env var or in the current working directory.
 std::optional<Schedule> runPythonScheduler(
     llvm::ArrayRef<Operation*> operations,
-    llvm::ArrayRef<llvm::SmallVector<Operation*>> inputGroups) {
+    llvm::ArrayRef<llvm::SmallVector<Operation*>> inputGroups,
+    const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes =
+        llvm::DenseMap<BlockArgument, int64_t>()) {
   // Locate the bridge script.
   std::string scriptPath;
   if (const char* envPath = std::getenv("COYOTE_PYTHON_PATH")) {
@@ -113,24 +115,41 @@ std::optional<Schedule> runPythonScheduler(
     return flatIdx;
   };
 
-  // --- Build variable names for extract ops (with correct flat index) ---
+  // Resolve the source BlockArgument of an input-load op (either a
+  // tensor.extract or a func.call @__coyote_load). Returns null if the op
+  // isn't recognized as a load.
+  auto getLoadSourceArg = [](Operation* op) -> BlockArgument {
+    if (auto ext = dyn_cast<tensor::ExtractOp>(op))
+      return dyn_cast<BlockArgument>(ext.getTensor());
+    if (auto call = dyn_cast<func::CallOp>(op))
+      if (call.getCallee() == "__coyote_load" && call.getNumOperands() == 1)
+        return dyn_cast<BlockArgument>(call.getOperand(0));
+    return BlockArgument();
+  };
+
+  // Lane index for an input-load op. Tensor extracts use their flat index;
+  // a @__coyote_load wrap of a scalar block arg is single-lane (lane 0).
+  auto getLoadLaneIdx = [&](Operation* op) -> int64_t {
+    if (auto ext = dyn_cast<tensor::ExtractOp>(op)) return computeFlatIdx(ext);
+    return 0;
+  };
+
+  // True if `op` is an input-load op (extract or @__coyote_load call).
+  auto isLoadOp = [&](Operation* op) { return (bool)getLoadSourceArg(op); };
+
+  // --- Build variable names for load ops (with correct flat index) ---
   llvm::DenseMap<Operation*, std::string> extractVarName;
   for (const auto& group : inputGroups) {
     BlockArgument blockArg;
     for (auto* op : group) {
-      if (auto extractOp = dyn_cast<tensor::ExtractOp>(op))
-        if (auto ba = dyn_cast<BlockArgument>(extractOp.getTensor())) {
-          blockArg = ba;
-          break;
-        }
+      blockArg = getLoadSourceArg(op);
+      if (blockArg) break;
     }
     if (!blockArg) continue;
     std::string argName = "arg" + std::to_string(blockArg.getArgNumber());
     for (auto* op : group) {
-      if (auto extractOp = dyn_cast<tensor::ExtractOp>(op)) {
-        int64_t flatIdx = computeFlatIdx(extractOp);
-        extractVarName[op] = argName + ":" + std::to_string(flatIdx);
-      }
+      if (getLoadSourceArg(op))
+        extractVarName[op] = argName + ":" + std::to_string(getLoadLaneIdx(op));
     }
   }
 
@@ -152,9 +171,9 @@ std::optional<Schedule> runPythonScheduler(
   llvm::SmallVector<LoadEntry> loadEntries;
   int64_t nextReg = 0;
 
-  // Phase 1: Replicated LOAD registers (one per use of each extract in arith)
+  // Phase 1: Replicated LOAD registers (one per use of each load op in arith)
   for (auto* op : operations) {
-    if (!isa<tensor::ExtractOp>(op) || !extractVarName.count(op)) continue;
+    if (!isLoadOp(op) || !extractVarName.count(op)) continue;
     int64_t firstReg = -1;
     for (auto& use : op->getResult(0).getUses()) {
       Operation* user = use.getOwner();
@@ -166,7 +185,7 @@ std::optional<Schedule> runPythonScheduler(
       if (firstReg == -1) firstReg = reg;
     }
     if (firstReg != -1)
-      opToReg[op] = firstReg;  // canonical register for this extract
+      opToReg[op] = firstReg;  // canonical register for this load
   }
 
   // Phase 2: OP registers (one per arith op)
@@ -194,11 +213,8 @@ std::optional<Schedule> runPythonScheduler(
     for (const auto& group : inputGroups) {
       BlockArgument blockArg;
       for (auto* op : group) {
-        if (auto extractOp = dyn_cast<tensor::ExtractOp>(op))
-          if (auto ba = dyn_cast<BlockArgument>(extractOp.getTensor())) {
-            blockArg = ba;
-            break;
-          }
+        blockArg = getLoadSourceArg(op);
+        if (blockArg) break;
       }
       if (!blockArg) continue;
       std::set<std::string> seen;
@@ -213,6 +229,24 @@ std::optional<Schedule> runPythonScheduler(
     // LOAD lines (with replication — one per use of each extract in arith).
     for (auto& entry : loadEntries)
       out << "LOAD " << entry.reg << " " << entry.varName << "\n";
+
+    // FORCE_LANE lines — pin specific input-load varnames to specific lanes.
+    // The caller provides a mapping from source BlockArgument to the lane
+    // it should occupy. We walk each input-load op, resolve its source arg,
+    // and emit a FORCE_LANE line for its varname if a constraint exists.
+    {
+      std::set<std::string> emittedForceVars;
+      for (auto* op : operations) {
+        BlockArgument src = getLoadSourceArg(op);
+        if (!src) continue;
+        auto it = forcedLanes.find(src);
+        if (it == forcedLanes.end()) continue;
+        auto nameIt = extractVarName.find(op);
+        if (nameIt == extractVarName.end()) continue;
+        if (emittedForceVars.insert(nameIt->second).second)
+          out << "FORCE_LANE " << nameIt->second << " " << it->second << "\n";
+      }
+    }
 
     // OP lines.
     for (auto* op : operations) {
@@ -246,7 +280,8 @@ std::optional<Schedule> runPythonScheduler(
 
   // --- Call Python ---
   std::string cmd = pythonBin + " " + scriptPath + " " + circuitPath.string() +
-                    " --output " + resultPath.string() + " 2>&1";
+                    " --verbose " + " --output " + resultPath.string() +
+                    " 2>&1";
   llvm::errs() << "  [Python] Running: " << cmd << "\n";
 
   FILE* pipe = popen(cmd.c_str(), "r");
@@ -327,7 +362,7 @@ std::optional<Schedule> runPythonScheduler(
   llvm::SmallVector<Operation*> circuitOps;
   for (auto* op : operations) {
     if (!opToReg.count(op)) continue;
-    if (!isa<tensor::ExtractOp>(op) && !isCircuitArith(op)) continue;
+    if (!isLoadOp(op) && !isCircuitArith(op)) continue;
     circuitOps.push_back(op);
     int64_t reg = opToReg[op];
     if (reg < (int64_t)pyLanes.size()) {

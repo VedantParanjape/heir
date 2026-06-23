@@ -134,12 +134,15 @@ void adjustTensorAccessIndices(Value inputTensor, Attribute layoutAttr) {
   }
 }
 
-Schedule runCoyoteVectorizer(func::FuncOp func) {
+Schedule runCoyoteVectorizer(
+    func::FuncOp func,
+    const llvm::DenseMap<BlockArgument, int64_t> &forcedLanes =
+        llvm::DenseMap<BlockArgument, int64_t>()) {
   static DenseMap<StringRef, Schedule> vectorizedFunctions;
   if (!vectorizedFunctions.contains(func.getName())) {
     Schedule schedule;
+    coyoteVectorizer(func, schedule, forcedLanes, false);
     vectorizedFunctions.insert({func.getName(), schedule});
-    coyoteVectorizer(func, schedule, false);
     return schedule;
   }
   return vectorizedFunctions.lookup(func.getName());

@@ -404,6 +404,50 @@ struct RecursiveCallVectorization
         });
   }
 
+  DenseMap<BlockArgument, int64_t> buildForcedLanesFromMerge(
+      func::FuncOp mergedFunc, const Schedule &mergedSchedule,
+      func::FuncOp outlinedReductionFunc) {
+    DenseMap<BlockArgument, int64_t> forcedLanes;
+    if (!mergedFunc || !outlinedReductionFunc) return forcedLanes;
+
+    // 1. Find the merged function's secret.generic + yield.
+    secret::GenericOp mergedGeneric;
+    mergedFunc.walk([&](secret::GenericOp g) { mergedGeneric = g; });
+    if (!mergedGeneric) return forcedLanes;
+    auto mergedYield = cast<secret::YieldOp>(
+        mergedGeneric.getRegion().front().getTerminator());
+
+    // 2. result-index → upstream lane.
+    DenseMap<unsigned, int64_t> resultLane;
+    for (unsigned r = 0; r < mergedYield->getNumOperands(); ++r) {
+      Operation *producer = mergedYield->getOperand(r).getDefiningOp();
+      if (!producer) continue;
+      auto it = mergedSchedule.lanes.find(producer);
+      if (it == mergedSchedule.lanes.end()) continue;
+      resultLane[r] = it->second;
+    }
+
+    // 3. Find the outlined function's secret.generic.
+    secret::GenericOp reductionGeneric;
+    outlinedReductionFunc.walk(
+        [&](secret::GenericOp g) { reductionGeneric = g; });
+    if (!reductionGeneric) return forcedLanes;
+
+    // 4. Pin each body block arg using its positional index.
+    //    Body block arg i corresponds to outlined func arg i, which
+    //    corresponds to merged call result i.
+    Block &gbody = reductionGeneric.getRegion().front();
+    for (unsigned i = 0; i < gbody.getNumArguments(); ++i) {
+      BlockArgument arg = gbody.getArgument(i);
+      if (!arg.getType().isIntOrFloat()) continue;
+      auto laneIt = resultLane.find(i);
+      if (laneIt == resultLane.end()) continue;
+      forcedLanes[arg] = laneIt->second;
+    }
+
+    return forcedLanes;
+  }
+
   void runOnOperation() override {
     Dialect *mlirDialect = getContext().getLoadedDialect(dialect);
 
@@ -496,44 +540,78 @@ struct RecursiveCallVectorization
       }
 
       for (auto node : mergeableNodes) {
-        func::FuncOp merged = node.second[0]->function;
-        DenseMap<int, SmallVector<Value>> argumentsToExpand;
-        DenseMap<int, SmallVector<Value>> resultsToExpand;
-        for (int i = 0; i < node.second.size(); i++) {
-          for (int j = 0; j < node.second[i]->caller.getArgOperands().size();
-               j++)
-            if (isa<secret::SecretType>(
-                    node.second[i]->caller.getArgOperands()[j].getType()))
-              argumentsToExpand[j].push_back(
-                  node.second[i]->caller.getArgOperands()[j]);
+        func::FuncOp merged;
+        // DenseMap<int, SmallVector<Value>> argumentsToExpand;
+        // DenseMap<int, SmallVector<Value>> resultsToExpand;
+        // for (int i = 0; i < node.second.size(); i++) {
+        //   for (int j = 0; j < node.second[i]->caller.getArgOperands().size();
+        //        j++)
+        //     if (isa<secret::SecretType>(
+        //             node.second[i]->caller.getArgOperands()[j].getType()))
+        //       argumentsToExpand[j].push_back(
+        //           node.second[i]->caller.getArgOperands()[j]);
 
-          for (int j = 0; j < node.second[i]->caller.getResults().size(); j++)
-            if (isa<secret::SecretType>(
-                    node.second[i]->caller.getResults()[j].getType()))
-              resultsToExpand[j].push_back(
-                  node.second[i]->caller.getResults()[j]);
+        //   for (int j = 0; j < node.second[i]->caller.getResults().size();
+        //   j++)
+        //     if (isa<secret::SecretType>(
+        //             node.second[i]->caller.getResults()[j].getType()))
+        //       resultsToExpand[j].push_back(
+        //           node.second[i]->caller.getResults()[j]);
+        // }
+
+        OpBuilder builder(&node.first->function.getBody().front(),
+                          node.first->function.getBody().front().begin());
+        // This part builds a ciphertext model based on the offsets
+        // of the insert chains.
+        // SmallVector<Value> collectMergedTensorArgs;
+        // for (auto args : argumentsToExpand) {
+        //   auto tensorType = expandedArgTypes[args.first];
+        //   auto ctxt = createMergedCipherTextMappings(tensorType, args.second,
+        //   builder); collectMergedTensorArgs.push_back(
+        //       createNewInsertOpsFromSeedOps(ctxt, tensorType, builder));
+        //   for (auto slot: ctxt) {
+        //     llvm::outs() << slot.index << ": " << slot.op << "\n";
+        //   }
+        // }
+
+        SmallVector<func::FuncOp> functionsToMerge;
+        SmallVector<Schedule> schedulesToMerge;
+        Schedule finalSchedule;
+        for (int i = 0; i < node.second.size(); i++) {
+          functionsToMerge.push_back(node.second[i]->function);
+          schedulesToMerge.push_back(node.second[i]->coyoteSchedule);
+        }
+        mergeSchedulesWithNW(functionsToMerge, schedulesToMerge, merged,
+                             finalSchedule);
+
+        merged.dump();
+        prettyPrintSchedule(finalSchedule);
+        for (auto &lanes : finalSchedule.lanes) {
+          llvm::outs() << "Op: " << *lanes.first << "\n";
+          llvm::outs() << "Lane: " << lanes.second << "\n";
         }
 
         // Determine the expanded argument/result types based on the number of
         // merged functions The idea is that if we N functions to be merged, we
         // get the max (N dim sizes) and the new expanded type is N * max (N dim
-        // sizes) DenseMap<int, RankedTensorType> expandedArgTypes; for (auto
-        // args : argumentsToExpand) {
-        //   int maxDimSize = 0;
+        // sizes)
+        // DenseMap<int, RankedTensorType> expandedArgTypes;
+        // for (auto args : argumentsToExpand) {
+        // int maxDimSize = 0;
 
-        //   for (auto arg : args.second) {
-        //     auto tensorType = mlir::cast<RankedTensorType>(
-        //         mlir::cast<secret::SecretType>(arg.getType()).getValueType());
-        //     maxDimSize = std::max(maxDimSize, (int)tensorType.getDimSize(1));
-        //   }
-
+        // for (auto arg : args.second) {
         //   auto tensorType = mlir::cast<RankedTensorType>(
-        //       mlir::cast<secret::SecretType>(args.second[0].getType()).getValueType());
-        //   int mergedDimSize = maxDimSize * args.second.size();
-        //   SmallVector<int64_t> newShape(tensorType.getShape());
-        //   newShape.back() = mergedDimSize;
-        //   expandedArgTypes[args.first] = RankedTensorType::get(newShape,
-        //   tensorType.getElementType());
+        //       mlir::cast<secret::SecretType>(arg.getType()).getValueType());
+        //   maxDimSize = std::max(maxDimSize, (int)tensorType.getDimSize(1));
+        // }
+
+        // auto tensorType = mlir::cast<RankedTensorType>(
+        //     mlir::cast<secret::SecretType>(args.second[0].getType()).getValueType());
+        // int mergedDimSize = maxDimSize * args.second.size();
+        // SmallVector<int64_t> newShape(tensorType.getShape());
+        // newShape.back() = mergedDimSize;
+        // expandedArgTypes[args.first] = RankedTensorType::get(newShape,
+        // tensorType.getElementType());
         // }
 
         // for (auto expandedArg : expandedArgTypes) {
@@ -565,35 +643,6 @@ struct RecursiveCallVectorization
         //                << " to type " << expandedResult.second << "\n";
         // }
 
-        OpBuilder builder(&node.first->function.getBody().front(),
-                          node.first->function.getBody().front().begin());
-        // This part builds a ciphertext model based on the offsets
-        // of the insert chains.
-        // SmallVector<Value> collectMergedTensorArgs;
-        // for (auto args : argumentsToExpand) {
-        //   auto tensorType = expandedArgTypes[args.first];
-        //   auto ctxt = createMergedCipherTextMappings(tensorType, args.second,
-        //   builder); collectMergedTensorArgs.push_back(
-        //       createNewInsertOpsFromSeedOps(ctxt, tensorType, builder));
-        //   for (auto slot: ctxt) {
-        //     llvm::outs() << slot.index << ": " << slot.op << "\n";
-        //   }
-        // }
-
-        SmallVector<func::FuncOp> functionsToMerge;
-        SmallVector<Schedule> schedulesToMerge;
-        Schedule finalSchedule;
-        for (int i = 0; i < node.second.size(); i++) {
-          functionsToMerge.push_back(node.second[i]->function);
-          schedulesToMerge.push_back(node.second[i]->coyoteSchedule);
-        }
-        mergeSchedulesWithNW(functionsToMerge, schedulesToMerge, merged,
-                             finalSchedule);
-
-        for (auto &lanes : finalSchedule.lanes) {
-          llvm::outs() << "Op: " << *lanes.first << "\n";
-          llvm::outs() << "Lane: " << lanes.second << "\n";
-        }
         // for (int i = 1; i < node.second.size(); i++) {
         //   auto current = node.second[i]->function;
         //   auto result = mergeWithNeedlemanWunsch(merged, current, merged);
@@ -608,19 +657,17 @@ struct RecursiveCallVectorization
         // expanded types. Widen each secret arg of the function individually
         // for (unsigned i = 0; i < merged.getNumArguments(); ++i) {
         //   auto targetType = expandedArgTypes[i];
-        //   Type secretTargetType = secret::SecretType::get(targetType);
+        //   Type secretTargetType = secret::SecretType::get(targetType); 
         //   Type oldSecretArgType = merged.getArgument(i).getType();
         //   if (isa<secret::SecretType>(oldSecretArgType) && secretTargetType
         //   != oldSecretArgType) {
         //       widenFunctionArgAndPropagate(merged, i, secretTargetType);
         //   }
         // }
-        // ModuleOp module =
-        // node.second[0]->function->getParentOfType<ModuleOp>();
-        // module.push_back(merged);
+        ModuleOp module = node.second[0]->function->getParentOfType<ModuleOp>();
+        module.push_back(merged);
 
         // reduction steps
-        continue;
         // TODO: check if the merged funcs have more args than the base
         // functions ideally we should handle this, but it is a waste of time to
         // handle all of these edge cases right now. Ideally after staging all
@@ -663,7 +710,7 @@ struct RecursiveCallVectorization
 
         // genericOp->erase();
 
-        // // New results are the last N
+        // New results are the last N
         // auto newGenericOp = cast<secret::GenericOp>(newOp);
         // auto newResultStartIter = newGenericOp.getResults().drop_front(
         //     newGenericOp.getNumResults() - collectMergedTensorArgs.size());
@@ -671,58 +718,161 @@ struct RecursiveCallVectorization
         // // for (auto caller : node.second)
         // //   caller->caller.setCalleeAttr(mlir::SymbolRefAttr::get(merged));
 
-        // SmallVector<Value> callArgs(newResultStartIter);
-        // builder.setInsertionPoint(node.second[0]->caller);
-        // auto callOp = func::CallOp::create(
-        //     builder, node.second[0]->caller.getLoc(), merged.getName(),
-        //     merged.getFunctionType().getResults(), callArgs);
+        SmallVector<Value> callArgs;
+        for (auto n : node.second)
+          for (auto arg : n->caller.getArgOperands()) callArgs.push_back(arg);
 
-        // auto findCommonGeneric = [&]() -> secret::GenericOp {
-        //     secret::GenericOp first = nullptr;
-        //     for (auto *n : node.second)
-        //         for (Value v : n->caller.getResults()) {
-        //             if (!v.hasOneUse()) return nullptr;
-        //             auto owner =
-        //             dyn_cast<secret::GenericOp>(v.getUses().begin()->getOwner());
-        //             if (!owner) return nullptr;
-        //             if (!first) first = owner;
-        //             else if (first != owner) return nullptr;
-        //         }
-        //     return first;
-        // };
-        // // Now we need to add the merged function result to the generic block
-        // // args that use the old function results. For simplicity we check
-        // that
-        // // all uses are in the same generic op, otherwise it asserts.
-        // auto commonGeneric = findCommonGeneric();
-        // assert(commonGeneric && "All results of merged functions must be used
-        // by the same secret.generic");
+        builder.setInsertionPoint(node.second[0]->caller);
+        auto callOp = func::CallOp::create(
+            builder, node.second[0]->caller.getLoc(), merged.getName(),
+            merged.getFunctionType().getResults(), callArgs);
 
-        // // Append merged arg to the existing generic (don't remove old ones
-        // yet) for (auto arg: callOp->getResults()) {
-        //   llvm::outs() << "Appending merged result " << arg << " to generic "
-        //   << *commonGeneric << "\n";
-        //   commonGeneric->insertOperands(commonGeneric->getNumOperands(),
-        //   arg); Block &body = commonGeneric->getRegion(0).front();
-        //   body.addArgument(cast<secret::SecretType>(arg.getType()).getValueType(),
-        //   commonGeneric.getLoc());
-        // }
+        for (int i = 0; i < node.second.size(); i++) {
+          if (node.second[0]->caller.getNumResults() != 1)
+            llvm::report_fatal_error("expected single-result calls");
+          node.second[i]->caller.getResult(0).replaceAllUsesWith(
+              callOp.getResults()[i]);
+          node.second[i]->caller.erase();
+        }
+        node.first->children.clear();
 
-        // // Outline the secret.generic into a new function, then scalarize the
-        // body to be fed into
-        // // coyote.
-        // func::FuncOp reductionKernel = outlineSecretGeneric(commonGeneric);
-        // MLIRContext *ctx = &getContext();
-        // RewritePatternSet patterns(ctx);
-        // patterns.add<ScalarizeAnyElementwise>(ctx);
-        // tensor::ExtractOp::getCanonicalizationPatterns(patterns, ctx);
-        // tensor::FromElementsOp::getCanonicalizationPatterns(patterns, ctx);
-        // (void)applyPatternsGreedily(reductionKernel, std::move(patterns));
+        auto findCommonGeneric = [&]() -> secret::GenericOp {
+          secret::GenericOp first = nullptr;
+          for (auto res : callOp.getResults()) {
+            for (auto &use : res.getUses()) {
+              auto owner = dyn_cast<secret::GenericOp>(use.getOwner());
+              if (!owner) return nullptr;
+              if (!first)
+                first = owner;
+              else if (first != owner)
+                return nullptr;
+            }
+          }
+          return first;
+        };
 
-        // // node.first->children.clear();
-        // // node.first->function->dump();
+        // Now we need to add the merged function result to the generic block
+        // args that use the old function results. For simplicity we check that
+        // all uses are in the same generic op, otherwise it asserts.
+        auto commonGeneric = findCommonGeneric();
+        assert(commonGeneric &&
+               "All results of merged functions must be used by the same "
+               "secret.generic");
+
+        Block &body = commonGeneric.getRegion().front();
+        Location loc = commonGeneric.getLoc();
+        builder.setInsertionPointToStart(&body);
+
+        unsigned numOldArgs = body.getNumArguments();
+
+        // 1. New operand list (callOp's results) + add new scalar block args.
+        SmallVector<Value> newOperands;
+        SmallVector<BlockArgument> newArgs;
+        for (unsigned k = 0; k < numOldArgs; ++k) {
+          auto tensorTy = cast<RankedTensorType>(body.getArgument(k).getType());
+          unsigned L = tensorTy.getNumElements();
+          Type elemTy = tensorTy.getElementType();
+          for (unsigned j = 0; j < L; ++j) {
+            newOperands.push_back(callOp.getResult(k * L + j));
+            newArgs.push_back(body.addArgument(elemTy, loc));
+          }
+        }
+
+        // 2. For each old tensor arg, rebuild a tensor<L x elemTy> from its L
+        //    new scalar args and replace the old arg's uses with it.
+        unsigned cursor = 0;
+        for (unsigned k = 0; k < numOldArgs; ++k) {
+          BlockArgument oldArg = body.getArgument(k);
+          auto tensorTy = cast<RankedTensorType>(oldArg.getType());
+          unsigned L = tensorTy.getNumElements();
+          SmallVector<Value> slice(newArgs.begin() + cursor,
+                                   newArgs.begin() + cursor + L);
+          Value rebuilt =
+              tensor::FromElementsOp::create(builder, loc, tensorTy, slice);
+          oldArg.replaceAllUsesWith(rebuilt);
+          cursor += L;
+        }
+
+        // 3. Erase the (now unused) old tensor block args.
+        for (unsigned i = numOldArgs; i-- > 0;) body.eraseArgument(i);
+
+        // 4. Update the generic's operand list.
+        commonGeneric->setOperands(newOperands);
+
+        // Outline the secret.generic into a new function, then scalarize the
+        // body to be fed into coyote.
+        func::FuncOp reductionKernel = outlineSecretGeneric(commonGeneric);
+        MLIRContext *ctx = &getContext();
+        RewritePatternSet patterns(ctx);
+        patterns.add<ScalarizeAnyElementwise>(ctx);
+        tensor::ExtractOp::getCanonicalizationPatterns(patterns, ctx);
+        tensor::FromElementsOp::getCanonicalizationPatterns(patterns, ctx);
+        (void)applyPatternsGreedily(reductionKernel, std::move(patterns));
+        foldAllOpsInFunc(reductionKernel, ctx);
+
+        // --- Wrap scalar secret.generic block args with @__coyote_load so the
+        //     Coyote vectorizer sees them as input loads (otherwise they fall
+        //     through to "const" in the converter). ---
+        {
+          ModuleOp module = reductionKernel->getParentOfType<ModuleOp>();
+          OpBuilder modBuilder(ctx);
+
+          // Find the inner secret.generic.
+          secret::GenericOp innerGeneric;
+          reductionKernel.walk([&](secret::GenericOp g) { innerGeneric = g; });
+          if (innerGeneric) {
+            Block &gbody = innerGeneric.getRegion().front();
+            OpBuilder bodyBuilder(ctx);
+            bodyBuilder.setInsertionPointToStart(&gbody);
+
+            // Ensure one @__coyote_load stub per element type used. The stub is
+            // an empty (declaration-only) private func: (T) -> T.
+            DenseMap<Type, func::FuncOp> stubByType;
+            auto getStub = [&](Type elemTy) -> func::FuncOp {
+              auto it = stubByType.find(elemTy);
+              if (it != stubByType.end()) return it->second;
+              std::string sym =
+                  "__coyote_load";  // single name (i32-only for now);
+                                    // if mixing types, add a suffix
+              if (auto existing = module.lookupSymbol<func::FuncOp>(sym)) {
+                // Verify type matches; otherwise rename per-type. For i32-only
+                // this is fine.
+                stubByType[elemTy] = existing;
+                return existing;
+              }
+              OpBuilder::InsertionGuard g(modBuilder);
+              modBuilder.setInsertionPointToStart(module.getBody());
+              auto fnType = modBuilder.getFunctionType({elemTy}, {elemTy});
+              auto stub = func::FuncOp::create(modBuilder, module.getLoc(), sym,
+                                               fnType);
+              stub.setPrivate();  // declaration-only — no entry block added.
+              stubByType[elemTy] = stub;
+              return stub;
+            };
+
+            for (BlockArgument arg : gbody.getArguments()) {
+              if (!arg.getType().isIntOrFloat()) continue;
+              func::FuncOp stub = getStub(arg.getType());
+              auto call = func::CallOp::create(bodyBuilder, arg.getLoc(), stub,
+                                               ValueRange{arg});
+              // Redirect every use of arg EXCEPT the call op itself.
+              arg.replaceAllUsesExcept(call.getResult(0), call);
+            }
+          }
+        }
+
+        auto forcedLanes =
+            buildForcedLanesFromMerge(merged, finalSchedule, reductionKernel);
+        auto reductionSchedule =
+            runCoyoteVectorizer(reductionKernel, forcedLanes);
+        prettyPrintSchedule(reductionSchedule);
       }
     }
+
+    getOperation()->walk<WalkOrder::PreOrder>([&](func::FuncOp funcOp) {
+      if (funcOp.empty()) return;
+      foldAllOpsInFunc(funcOp, funcOp.getContext());
+    });
   }
 };
 

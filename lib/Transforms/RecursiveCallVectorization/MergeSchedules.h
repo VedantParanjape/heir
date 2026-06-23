@@ -76,6 +76,35 @@ LogicalResult mergeWithNeedlemanWunsch(
 /// The merged function is created detached (caller must `module.push_back`).
 /// The merged Schedule references **cloned** ops in the merged function
 /// body, and stays valid until canonicalization erases the scalar ops.
+///
+/// **Signature layout (kernel-major, in `funcs` order).**
+/// With per-kernel input arity R and per-kernel result arity R_out:
+///
+///     merged inputs:  [call0_arg0, ..., call0_arg{R-1},
+///                      call1_arg0, ..., call1_arg{R-1},
+///                      ...,
+///                      call{N-1}_arg0, ..., call{N-1}_arg{R-1}]
+///                     // merged_input[k*R + i]  ==  funcs[k]'s input i
+///
+/// Outputs are **scalar SSA values** (one `secret<elemType>` per leaf), not
+/// tensors. For each kernel, we walk its yield operands' tensor.insert
+/// chains and emit each leaf scalar in original program order. So the
+/// result layout is:
+///
+///     merged results: [k0_leaf0, k0_leaf1, ..., k0_leaf{L0-1},
+///                      k1_leaf0, k1_leaf1, ..., k1_leaf{L1-1},
+///                      ...,
+///                      k{N-1}_leaf0, ..., k{N-1}_leaf{LN-1-1}]
+///
+/// where Lk is kernel k's total leaf-scalar count (sum over its yield
+/// operands). All kernels share the same Lk (because signatures match), so
+/// `Lk == L_out` and merged_result[k * L_out + l] == funcs[k]'s leaf l.
+///
+/// Caller-side rewrite for inputs is purely positional: iterate `funcs` (or
+/// the equivalent original-call list) in order and concatenate each call's
+/// `getArgOperands()` to form the merged call's arg list. For outputs,
+/// downstream consumers (e.g., a reduction kernel) take these scalars
+/// directly — no tensor extracts at the boundary.
 LogicalResult mergeSchedulesWithNW(
     llvm::ArrayRef<func::FuncOp> funcs, llvm::ArrayRef<Schedule> schedules,
     func::FuncOp &mergedFunc, Schedule &mergedSchedule,
@@ -120,6 +149,14 @@ Value mergeInsertChains(llvm::ArrayRef<Value> chainEnds, OpBuilder &builder);
 /// changed result types. Plaintext / non-tensor uses are left untouched.
 void widenFunctionArgAndPropagate(func::FuncOp func, unsigned argIdx,
                                   Type newType);
+
+/// Pretty-print a Schedule organized by (cycle, lane) for debugging.
+///
+/// Groups ops by their `alignment` (cycle), then within each cycle sorts by
+/// `lanes`. Prints the warp size, total op count, and per-cycle listing of
+/// (lane → op) pairs.
+void prettyPrintSchedule(const Schedule &schedule,
+                         llvm::raw_ostream &os = llvm::errs());
 
 void findScheduleMergingCandidates(
     recursiveProgramNode *node,

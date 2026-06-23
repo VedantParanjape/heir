@@ -38,8 +38,11 @@ namespace heir {
 #define GEN_PASS_REGISTRATION
 #include "lib/Transforms/CoyoteVectorizer/CoyoteVectorizer.h.inc"
 
-void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
-                      bool ShouldThisLowerToMLIR = true);
+void coyoteVectorizer(
+    func::FuncOp& func, Schedule& finalSchedule,
+    const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes =
+        llvm::DenseMap<BlockArgument, int64_t>(),
+    bool ShouldThisLowerToMLIR = true);
 
 }  // namespace heir
 }  // namespace mlir

@@ -30,10 +30,17 @@ namespace heir {
 #define GEN_PASS_DEF_COYOTEVECTORIZER
 #include "lib/Transforms/CoyoteVectorizer/CoyoteVectorizer.h.inc"
 
-/// Identify input/output operation groups
+/// Identify input/output operation groups.
 ///
-/// Input group = all tensor.extract ops that load from the same source block
-/// argument. Each unique block arg = one input group (one input vector).
+/// Input group = all ops that materialize a lane from a single source block
+/// argument:
+///   - `tensor::ExtractOp` whose source is a block arg (lane = constant
+///     flat index).
+///   - `func::CallOp` to the stub `@__coyote_load(x) -> x` (single-lane;
+///     emitted by the caller to mark a scalar block arg as an input load).
+/// Each unique block arg → one input group.
+/// Output group = all `tensor::InsertOp` ops that define the output layout.
+///
 /// No transitive expansion — the topo sort in EpochAssigner handles all
 /// downstream ops correctly.
 std::pair<llvm::SmallVector<llvm::SmallVector<Operation*>>,
@@ -42,24 +49,28 @@ identifyIOGroups(func::FuncOp func) {
   llvm::SmallVector<llvm::SmallVector<Operation*>> inputGroups;
   llvm::SmallVector<llvm::SmallVector<Operation*>> outputGroups;
 
-  // Group tensor.extract ops by their source block argument.
-  llvm::DenseMap<BlockArgument, llvm::SmallVector<Operation*>> argToExtracts;
+  // Group input-load ops by their source block argument.
+  llvm::DenseMap<BlockArgument, llvm::SmallVector<Operation*>> argToInputs;
 
-  func.walk([&](tensor::ExtractOp extractOp) {
-    Value source = extractOp.getTensor();
-    if (auto arg = dyn_cast<BlockArgument>(source)) {
-      argToExtracts[arg].push_back(extractOp.getOperation());
+  func.walk([&](Operation* op) {
+    BlockArgument source;
+    if (auto extractOp = dyn_cast<tensor::ExtractOp>(op)) {
+      source = dyn_cast<BlockArgument>(extractOp.getTensor());
+    } else if (auto callOp = dyn_cast<func::CallOp>(op)) {
+      if (callOp.getCallee() == "__coyote_load" && callOp.getNumOperands() == 1)
+        source = dyn_cast<BlockArgument>(callOp.getOperand(0));
     }
+    if (source) argToInputs[source].push_back(op);
   });
 
   // Sort by block argument index for deterministic epoch assignment.
   llvm::SmallVector<BlockArgument> sortedArgs;
-  for (auto& [arg, ops] : argToExtracts) sortedArgs.push_back(arg);
+  for (auto& [arg, ops] : argToInputs) sortedArgs.push_back(arg);
   llvm::sort(sortedArgs, [](BlockArgument a, BlockArgument b) {
     return a.getArgNumber() < b.getArgNumber();
   });
   for (auto arg : sortedArgs) {
-    if (!argToExtracts[arg].empty()) inputGroups.push_back(argToExtracts[arg]);
+    if (!argToInputs[arg].empty()) inputGroups.push_back(argToInputs[arg]);
   }
 
   // Output group: all tensor.insert ops, which define the output layout
@@ -350,6 +361,7 @@ class ColumnAssigner {
 };
 
 void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
+                      const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes,
                       bool ShouldThisLowerToMLIR) {
   llvm::outs() << "\n=== Coyote Vectorizer Pass ===\n\n";
 
@@ -435,7 +447,7 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //==========================================================================
   llvm::errs() << "\n[2-8/9] Using Python Coyote scheduler...\n";
   {
-    auto pySchedule = runPythonScheduler(operations, inputGroups);
+    auto pySchedule = runPythonScheduler(operations, inputGroups, forcedLanes);
     if (!pySchedule) {
       llvm::errs() << "  Python scheduler failed, aborting.\n";
       return;
