@@ -17,6 +17,8 @@ cc_library(
         "MergeSchedules.h",
         "RecursiveCallVectorization.h",
         "RecursiveProgramInfo.h",
+        "ScalarizeCallTree.h",
+        "Utils.h",
     ],
     deps = [
         ":pass_inc_gen",

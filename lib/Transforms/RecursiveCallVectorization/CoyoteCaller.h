@@ -2,6 +2,7 @@
 #define COYOTE_CALLER_H
 
 #include "lib/Transforms/CoyoteVectorizer/CoyoteVectorizer.h"
+#include "lib/Transforms/CoyoteVectorizer/Optimizations.h"
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveProgramInfo.h"
 #include "mlir/include/mlir/Analysis/CallGraph.h"  // from @llvm-project
 
@@ -134,6 +135,55 @@ void adjustTensorAccessIndices(Value inputTensor, Attribute layoutAttr) {
   }
 }
 
+void wrapBlockArgsWithVirtualLoads(func::FuncOp func) {
+  // --- Wrap scalar secret.generic block args with @__coyote_load so the
+  //     Coyote vectorizer sees them as input loads (otherwise they fall
+  //     through to "const" in the converter). ---
+  ModuleOp module = func->getParentOfType<ModuleOp>();
+  OpBuilder modBuilder(func.getContext());
+
+  // Find the inner secret.generic.
+  secret::GenericOp innerGeneric;
+  func.walk([&](secret::GenericOp g) { innerGeneric = g; });
+  if (innerGeneric) {
+    Block &gbody = innerGeneric.getRegion().front();
+    OpBuilder bodyBuilder(func.getContext());
+    bodyBuilder.setInsertionPointToStart(&gbody);
+
+    // Ensure one @__coyote_load stub per element type used. The stub is
+    // an empty (declaration-only) private func: (T) -> T.
+    DenseMap<Type, func::FuncOp> stubByType;
+    auto getStub = [&](Type elemTy) -> func::FuncOp {
+      auto it = stubByType.find(elemTy);
+      if (it != stubByType.end()) return it->second;
+      std::string sym = "__coyote_load";  // single name (i32-only for now);
+                                          // if mixing types, add a suffix
+      if (auto existing = module.lookupSymbol<func::FuncOp>(sym)) {
+        // Verify type matches; otherwise rename per-type. For i32-only
+        // this is fine.
+        stubByType[elemTy] = existing;
+        return existing;
+      }
+      OpBuilder::InsertionGuard g(modBuilder);
+      modBuilder.setInsertionPointToStart(module.getBody());
+      auto fnType = modBuilder.getFunctionType({elemTy}, {elemTy});
+      auto stub =
+          func::FuncOp::create(modBuilder, module.getLoc(), sym, fnType);
+      stub.setPrivate();  // declaration-only — no entry block added.
+      stubByType[elemTy] = stub;
+      return stub;
+    };
+
+    for (BlockArgument arg : gbody.getArguments()) {
+      if (!arg.getType().isIntOrFloat()) continue;
+      func::FuncOp stub = getStub(arg.getType());
+      auto call = func::CallOp::create(bodyBuilder, arg.getLoc(), stub,
+                                       ValueRange{arg});
+      // Redirect every use of arg EXCEPT the call op itself.
+      arg.replaceAllUsesExcept(call.getResult(0), call);
+    }
+  }
+}
 Schedule runCoyoteVectorizer(
     func::FuncOp func,
     const llvm::DenseMap<BlockArgument, int64_t> &forcedLanes =
@@ -141,6 +191,7 @@ Schedule runCoyoteVectorizer(
   static DenseMap<StringRef, Schedule> vectorizedFunctions;
   if (!vectorizedFunctions.contains(func.getName())) {
     Schedule schedule;
+    wrapBlockArgsWithVirtualLoads(func);
     coyoteVectorizer(func, schedule, forcedLanes, false);
     vectorizedFunctions.insert({func.getName(), schedule});
     return schedule;
@@ -166,12 +217,12 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
   llvm::outs() << "Found " << vectorizationCandidates.size()
                << " vectorization candidates.\n";
   for (recursiveProgramNode *candidate : vectorizationCandidates) {
-    SmallVector<Type> oldArgTypes;
-    SmallVector<Type> oldResultTypes;
-    for (auto arg : candidate->caller.getArgOperands())
-      oldArgTypes.push_back(arg.getType());
-    for (auto result : candidate->caller.getResultTypes())
-      oldResultTypes.push_back(result);
+    // SmallVector<Type> oldArgTypes;
+    // SmallVector<Type> oldResultTypes;
+    // for (auto arg : candidate->caller.getArgOperands())
+    //   oldArgTypes.push_back(arg.getType());
+    // for (auto result : candidate->caller.getResultTypes())
+    //   oldResultTypes.push_back(result);
 
     Schedule schedule = runCoyoteVectorizer(candidate->function);
     candidate->coyoteSchedule = schedule;

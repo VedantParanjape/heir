@@ -13,6 +13,8 @@
 #include "lib/Transforms/RecursiveCallVectorization/CoyoteCaller.h"
 #include "lib/Transforms/RecursiveCallVectorization/MergeSchedules.h"
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveProgramInfo.h"
+#include "lib/Transforms/RecursiveCallVectorization/ScalarizeCallTree.h"
+#include "lib/Transforms/RecursiveCallVectorization/Utils.h"
 #include "lib/Utils/AttributeUtils.h"
 #include "lib/Utils/Graph/Graph.h"
 #include "llvm/include/llvm/Support/Debug.h"           // from @llvm-project
@@ -49,20 +51,6 @@ namespace heir {
 
 DenseSet<func::FuncOp> functionDeleteList;
 std::map<std::set<std::pair<int, int>>, func::FuncOp> functionCache;
-
-static func::FuncOp getEnclosingFunction(Operation *op, ModuleOp &module) {
-  auto callOp = dyn_cast<func::CallOp>(op);
-  if (!callOp) {
-    llvm::errs() << "Error: Operation is not a func::CallOp\n";
-    return nullptr;
-  }
-
-  SymbolTable symTab(module);
-  auto callee = callOp.getCallee();
-  auto funcOp = symTab.lookup<func::FuncOp>(callee);
-
-  return funcOp;
-}
 
 static bool findBiscottiAttribute(Value op, StringRef attrName, int &outValue) {
   FailureOr<Attribute> attr = findAttributeAssociatedWith(op, attrName);
@@ -310,7 +298,6 @@ struct RecursiveCallVectorization
   int countNodeFunctionSize(recursiveProgramNode *node);
   void mergeRecursiveCallNodes(
       SmallVector<recursiveProgramNode *> &mergeableNodes);
-  void foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx);
   void buildRecursiveAttributes(Block *block, Dialect *dialect);
   void buildRecursiveCallTree(Operation *op,
                               recursiveProgramInfo &recursiveProgramInfo);
@@ -320,7 +307,7 @@ struct RecursiveCallVectorization
   /// Carve a secret.generic into a fresh func::FuncOp.
   /// Returns the new func; the original generic is replaced with a func.call.
   func::FuncOp outlineSecretGeneric(
-      secret::GenericOp genericOp,
+      secret::GenericOp genericOp, func::CallOp &callOp,
       std::string funcName = "outlined_reduction_generic") {
     MLIRContext *ctx = genericOp.getContext();
     ModuleOp module = genericOp->getParentOfType<ModuleOp>();
@@ -387,8 +374,7 @@ struct RecursiveCallVectorization
     //    Pass only the non-constant capture values as call args.
     OpBuilder callBuilder(genericOp);
     SmallVector<Value> callArgs(argCaptures.begin(), argCaptures.end());
-    auto callOp =
-        func::CallOp::create(callBuilder, loc, outlinedFunc, callArgs);
+    callOp = func::CallOp::create(callBuilder, loc, outlinedFunc, callArgs);
     genericOp->replaceAllUsesWith(callOp.getResults());
     genericOp->erase();
 
@@ -520,11 +506,11 @@ struct RecursiveCallVectorization
     });
 
     for (auto &calls : biscottiCalls) {
+      scalarizeBoundariesFromRoot(calls.second.root->function);
       processVectorizationCandidates(calls.second.root);
     }
 
     for (auto &calls : biscottiCalls) {
-      // continue;
       DenseMap<recursiveProgramNode *, SmallVector<recursiveProgramNode *>>
           mergeableNodes;
       DenseSet<func::CallOp> visited;
@@ -541,38 +527,8 @@ struct RecursiveCallVectorization
 
       for (auto node : mergeableNodes) {
         func::FuncOp merged;
-        // DenseMap<int, SmallVector<Value>> argumentsToExpand;
-        // DenseMap<int, SmallVector<Value>> resultsToExpand;
-        // for (int i = 0; i < node.second.size(); i++) {
-        //   for (int j = 0; j < node.second[i]->caller.getArgOperands().size();
-        //        j++)
-        //     if (isa<secret::SecretType>(
-        //             node.second[i]->caller.getArgOperands()[j].getType()))
-        //       argumentsToExpand[j].push_back(
-        //           node.second[i]->caller.getArgOperands()[j]);
-
-        //   for (int j = 0; j < node.second[i]->caller.getResults().size();
-        //   j++)
-        //     if (isa<secret::SecretType>(
-        //             node.second[i]->caller.getResults()[j].getType()))
-        //       resultsToExpand[j].push_back(
-        //           node.second[i]->caller.getResults()[j]);
-        // }
-
         OpBuilder builder(&node.first->function.getBody().front(),
                           node.first->function.getBody().front().begin());
-        // This part builds a ciphertext model based on the offsets
-        // of the insert chains.
-        // SmallVector<Value> collectMergedTensorArgs;
-        // for (auto args : argumentsToExpand) {
-        //   auto tensorType = expandedArgTypes[args.first];
-        //   auto ctxt = createMergedCipherTextMappings(tensorType, args.second,
-        //   builder); collectMergedTensorArgs.push_back(
-        //       createNewInsertOpsFromSeedOps(ctxt, tensorType, builder));
-        //   for (auto slot: ctxt) {
-        //     llvm::outs() << slot.index << ": " << slot.op << "\n";
-        //   }
-        // }
 
         SmallVector<func::FuncOp> functionsToMerge;
         SmallVector<Schedule> schedulesToMerge;
@@ -591,79 +547,6 @@ struct RecursiveCallVectorization
           llvm::outs() << "Lane: " << lanes.second << "\n";
         }
 
-        // Determine the expanded argument/result types based on the number of
-        // merged functions The idea is that if we N functions to be merged, we
-        // get the max (N dim sizes) and the new expanded type is N * max (N dim
-        // sizes)
-        // DenseMap<int, RankedTensorType> expandedArgTypes;
-        // for (auto args : argumentsToExpand) {
-        // int maxDimSize = 0;
-
-        // for (auto arg : args.second) {
-        //   auto tensorType = mlir::cast<RankedTensorType>(
-        //       mlir::cast<secret::SecretType>(arg.getType()).getValueType());
-        //   maxDimSize = std::max(maxDimSize, (int)tensorType.getDimSize(1));
-        // }
-
-        // auto tensorType = mlir::cast<RankedTensorType>(
-        //     mlir::cast<secret::SecretType>(args.second[0].getType()).getValueType());
-        // int mergedDimSize = maxDimSize * args.second.size();
-        // SmallVector<int64_t> newShape(tensorType.getShape());
-        // newShape.back() = mergedDimSize;
-        // expandedArgTypes[args.first] = RankedTensorType::get(newShape,
-        // tensorType.getElementType());
-        // }
-
-        // for (auto expandedArg : expandedArgTypes) {
-        //   llvm::outs() << "Expanding argument " << expandedArg.first
-        //                << " to type " << expandedArg.second << "\n";
-        // }
-
-        // DenseMap<int, RankedTensorType> expandedResultTypes;
-        // for (auto args : resultsToExpand) {
-        //   int maxDimSize = 0;
-
-        //   for (auto arg : args.second) {
-        //     auto tensorType = mlir::cast<RankedTensorType>(
-        //         mlir::cast<secret::SecretType>(arg.getType()).getValueType());
-        //     maxDimSize = std::max(maxDimSize, (int)tensorType.getDimSize(1));
-        //   }
-
-        //   auto tensorType = mlir::cast<RankedTensorType>(
-        //       mlir::cast<secret::SecretType>(args.second[0].getType()).getValueType());
-        //   int mergedDimSize = maxDimSize * args.second.size();
-        //   SmallVector<int64_t> newShape(tensorType.getShape());
-        //   newShape.back() = mergedDimSize;
-        //   expandedResultTypes[args.first] = RankedTensorType::get(newShape,
-        //   tensorType.getElementType());
-        // }
-
-        // for (auto expandedResult : expandedResultTypes) {
-        //   llvm::outs() << "Expanding result " << expandedResult.first
-        //                << " to type " << expandedResult.second << "\n";
-        // }
-
-        // for (int i = 1; i < node.second.size(); i++) {
-        //   auto current = node.second[i]->function;
-        //   auto result = mergeWithNeedlemanWunsch(merged, current, merged);
-
-        //   if (succeeded(result)) {
-        //     merged.dump();
-        //   } else {
-        //     assert(false && "Merging failed");
-        //   }
-        // }
-        // Change the function definition of the merged function to have the new
-        // expanded types. Widen each secret arg of the function individually
-        // for (unsigned i = 0; i < merged.getNumArguments(); ++i) {
-        //   auto targetType = expandedArgTypes[i];
-        //   Type secretTargetType = secret::SecretType::get(targetType); 
-        //   Type oldSecretArgType = merged.getArgument(i).getType();
-        //   if (isa<secret::SecretType>(oldSecretArgType) && secretTargetType
-        //   != oldSecretArgType) {
-        //       widenFunctionArgAndPropagate(merged, i, secretTargetType);
-        //   }
-        // }
         ModuleOp module = node.second[0]->function->getParentOfType<ModuleOp>();
         module.push_back(merged);
 
@@ -674,50 +557,6 @@ struct RecursiveCallVectorization
         // the progress arguments should disappear and won't cause any issues.
         // But we should add an assert which checks for this, would be easier to
         // debug these self-sabotage issues if they come up.
-
-        // We make an assumption that all the new merged tensor argument are in
-        // the same defining op. assert(llvm::all_of(collectMergedTensorArgs,
-        // [&](Value v) {
-        //   return v.getDefiningOp()->getParentOp() ==
-        //   collectMergedTensorArgs[0].getDefiningOp()->getParentOp();
-        // }) && "All merged tensor arguments should be defined by the same
-        // op"); Operation *op = collectMergedTensorArgs[0].getDefiningOp();
-        // auto genericOp = cast<secret::GenericOp>(op->getParentOp());
-
-        // // Update yield first
-        // auto yieldOp = genericOp.getYieldOp();
-        // yieldOp.getValuesMutable().append(collectMergedTensorArgs);
-
-        // // Build new result types from yield
-        // auto newTypes = llvm::to_vector<4>(llvm::map_range(
-        //     yieldOp.getValues().getTypes(),
-        //     [](Type t) -> Type { return secret::SecretType::get(t); }));
-
-        // // Clone with new types
-        // auto *newOp =
-        //     cloneWithNewResultTypes(genericOp.getOperation(), newTypes);
-        // // insert the new generic op inside the same block as the older
-        // // generic op.
-        // genericOp->getBlock()->getOperations().insert(
-        //     std::next(Block::iterator(genericOp)), newOp);
-        // // Insert after old generic
-        // newOp->moveAfter(genericOp);
-
-        // // Replace old results
-        // for (auto [oldRes, newRes] :
-        //      llvm::zip(genericOp->getResults(), newOp->getResults()))
-        //   oldRes.replaceAllUsesWith(newRes);
-
-        // genericOp->erase();
-
-        // New results are the last N
-        // auto newGenericOp = cast<secret::GenericOp>(newOp);
-        // auto newResultStartIter = newGenericOp.getResults().drop_front(
-        //     newGenericOp.getNumResults() - collectMergedTensorArgs.size());
-
-        // // for (auto caller : node.second)
-        // //   caller->caller.setCalleeAttr(mlir::SymbolRefAttr::get(merged));
-
         SmallVector<Value> callArgs;
         for (auto n : node.second)
           for (auto arg : n->caller.getArgOperands()) callArgs.push_back(arg);
@@ -801,7 +640,9 @@ struct RecursiveCallVectorization
 
         // Outline the secret.generic into a new function, then scalarize the
         // body to be fed into coyote.
-        func::FuncOp reductionKernel = outlineSecretGeneric(commonGeneric);
+        func::CallOp reductionCallOp;
+        func::FuncOp reductionKernel =
+            outlineSecretGeneric(commonGeneric, reductionCallOp);
         MLIRContext *ctx = &getContext();
         RewritePatternSet patterns(ctx);
         patterns.add<ScalarizeAnyElementwise>(ctx);
@@ -810,62 +651,28 @@ struct RecursiveCallVectorization
         (void)applyPatternsGreedily(reductionKernel, std::move(patterns));
         foldAllOpsInFunc(reductionKernel, ctx);
 
-        // --- Wrap scalar secret.generic block args with @__coyote_load so the
-        //     Coyote vectorizer sees them as input loads (otherwise they fall
-        //     through to "const" in the converter). ---
-        {
-          ModuleOp module = reductionKernel->getParentOfType<ModuleOp>();
-          OpBuilder modBuilder(ctx);
-
-          // Find the inner secret.generic.
-          secret::GenericOp innerGeneric;
-          reductionKernel.walk([&](secret::GenericOp g) { innerGeneric = g; });
-          if (innerGeneric) {
-            Block &gbody = innerGeneric.getRegion().front();
-            OpBuilder bodyBuilder(ctx);
-            bodyBuilder.setInsertionPointToStart(&gbody);
-
-            // Ensure one @__coyote_load stub per element type used. The stub is
-            // an empty (declaration-only) private func: (T) -> T.
-            DenseMap<Type, func::FuncOp> stubByType;
-            auto getStub = [&](Type elemTy) -> func::FuncOp {
-              auto it = stubByType.find(elemTy);
-              if (it != stubByType.end()) return it->second;
-              std::string sym =
-                  "__coyote_load";  // single name (i32-only for now);
-                                    // if mixing types, add a suffix
-              if (auto existing = module.lookupSymbol<func::FuncOp>(sym)) {
-                // Verify type matches; otherwise rename per-type. For i32-only
-                // this is fine.
-                stubByType[elemTy] = existing;
-                return existing;
-              }
-              OpBuilder::InsertionGuard g(modBuilder);
-              modBuilder.setInsertionPointToStart(module.getBody());
-              auto fnType = modBuilder.getFunctionType({elemTy}, {elemTy});
-              auto stub = func::FuncOp::create(modBuilder, module.getLoc(), sym,
-                                               fnType);
-              stub.setPrivate();  // declaration-only — no entry block added.
-              stubByType[elemTy] = stub;
-              return stub;
-            };
-
-            for (BlockArgument arg : gbody.getArguments()) {
-              if (!arg.getType().isIntOrFloat()) continue;
-              func::FuncOp stub = getStub(arg.getType());
-              auto call = func::CallOp::create(bodyBuilder, arg.getLoc(), stub,
-                                               ValueRange{arg});
-              // Redirect every use of arg EXCEPT the call op itself.
-              arg.replaceAllUsesExcept(call.getResult(0), call);
-            }
-          }
-        }
-
         auto forcedLanes =
             buildForcedLanesFromMerge(merged, finalSchedule, reductionKernel);
         auto reductionSchedule =
             runCoyoteVectorizer(reductionKernel, forcedLanes);
         prettyPrintSchedule(reductionSchedule);
+
+        Schedule finalKernelSchedule;
+        SmallVector<func::CallOp> mergeCallOps = {callOp, reductionCallOp};
+        SmallVector<Schedule> mergeSchedules = {finalSchedule,
+                                                reductionSchedule};
+        mergeSchedulesVertically(mergeCallOps, mergeSchedules,
+                                 finalKernelSchedule);
+        prettyPrintSchedule(finalKernelSchedule);
+
+        llvm::outs() << "START =====\n";
+        node.first->function->dump();
+        llvm::outs() << "ENDDD =====\n";
+
+        lowerToMLIR(node.first->function, finalKernelSchedule);
+        node.first->function.setPublic();
+        node.first->function->dump();
+        redirectCallToDummy(node.first->caller);
       }
     }
 
@@ -1188,95 +995,6 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
     // will not happen. Look at this in future, if there are any bugs.
     node->children.clear();
   }
-}
-
-// Pattern 1: arith.addi (tensor.from_elements %a), (tensor.from_elements %b)
-//         -> tensor.from_elements (arith.addi %a, %b)
-// Only for tensor<1xi32>
-class FoldAddOfFromElements final : public OpRewritePattern<arith::AddIOp> {
- public:
-  using OpRewritePattern<arith::AddIOp>::OpRewritePattern;
-
-  FoldAddOfFromElements(MLIRContext *context)
-      : OpRewritePattern<arith::AddIOp>(context) {}
-
-  LogicalResult matchAndRewrite(arith::AddIOp addOp,
-                                PatternRewriter &rewriter) const override {
-    // Check result is tensor<1x...>
-    auto resultType = mlir::dyn_cast<RankedTensorType>(addOp.getType());
-    if (!resultType || !resultType.hasStaticShape()) return failure();
-    if (resultType.getNumElements() != 1) return failure();
-
-    // Check both operands are tensor.from_elements
-    auto lhsFromElements =
-        addOp.getLhs().getDefiningOp<tensor::FromElementsOp>();
-    auto rhsFromElements =
-        addOp.getRhs().getDefiningOp<tensor::FromElementsOp>();
-    if (!lhsFromElements || !rhsFromElements) return failure();
-    if (lhsFromElements.getElements().size() != 1) return failure();
-    if (rhsFromElements.getElements().size() != 1) return failure();
-    // Create scalar add and wrap in from_elements
-    Value scalarAdd = arith::AddIOp::create(rewriter, addOp.getLoc(),
-                                            lhsFromElements.getElements()[0],
-                                            rhsFromElements.getElements()[0]);
-    rewriter.replaceOpWithNewOp<tensor::FromElementsOp>(addOp, resultType,
-                                                        ValueRange{scalarAdd});
-    return success();
-  }
-};
-
-// Pattern 2: tensor.extract (tensor.from_elements %x)[0] -> %x
-// Only for tensor<1x...>
-class FoldExtractFromFromElements final
-    : public OpRewritePattern<tensor::ExtractOp> {
- public:
-  using OpRewritePattern<tensor::ExtractOp>::OpRewritePattern;
-
-  FoldExtractFromFromElements(MLIRContext *context)
-      : OpRewritePattern<tensor::ExtractOp>(context) {}
-
-  LogicalResult matchAndRewrite(tensor::ExtractOp extractOp,
-                                PatternRewriter &rewriter) const override {
-    // Check source is a size-1 tensor
-    auto tensorType =
-        mlir::dyn_cast<RankedTensorType>(extractOp.getTensor().getType());
-    if (!tensorType || !tensorType.hasStaticShape() ||
-        tensorType.getNumElements() != 1)
-      return failure();
-
-    // Check source is tensor.from_elements with single element
-    auto fromElements =
-        extractOp.getTensor().getDefiningOp<tensor::FromElementsOp>();
-    if (!fromElements || fromElements.getElements().size() != 1)
-      return failure();
-
-    rewriter.replaceOp(extractOp, fromElements.getElements()[0]);
-    return success();
-  }
-};
-
-void RecursiveCallVectorization::foldAllOpsInFunc(func::FuncOp &funcOp,
-                                                  MLIRContext *ctx) {
-  RewritePatternSet patterns(ctx);
-  // for (auto *dialect : ctx->getLoadedDialects())
-  //   llvm::outs() << dialect->getNamespace() << "\n";
-  for (auto *dialect : ctx->getLoadedDialects())
-    dialect->getCanonicalizationPatterns(patterns);
-  for (RegisteredOperationName op : ctx->getRegisteredOperations())
-    op.getCanonicalizationPatterns(patterns, ctx);
-  patterns.add<secret::MergeAdjacentGenerics>(ctx);
-  patterns.add<FoldAddOfFromElements, FoldExtractFromFromElements>(ctx);
-
-  // fold constants and apply canonicalization patterns
-  GreedyRewriteConfig config;
-  // Makes compilation faster, but may miss some patterns.
-  config.setUseTopDownTraversal();
-  (void)applyPatternsGreedily(funcOp, std::move(patterns), config);
-
-  // Call DCE for the simplification
-  IRRewriter rewriter(funcOp.getContext());
-  (void)mlir::eraseUnreachableBlocks(rewriter,
-                                     funcOp.getOperation()->getRegions());
 }
 
 void RecursiveCallVectorization::buildRecursiveAttributes(Block *block,

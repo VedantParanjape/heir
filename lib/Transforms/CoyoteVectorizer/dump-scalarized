@@ -1,0 +1,2977 @@
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+[7,967 / 7,970] Compiling lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp; 1s linux-sandbox
+INFO: From Compiling lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:
+In file included from lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:14:
+./lib/Transforms/RecursiveCallVectorization/CoyoteCaller.h:74:15: warning: unused variable 'yieldedVal' [-Wunused-variable]
+   74 |         Value yieldedVal = yieldOp->getOperand(resultIdx);
+      |               ^~~~~~~~~~
+./lib/Transforms/RecursiveCallVectorization/CoyoteCaller.h:134:14: warning: unused variable 'use' [-Wunused-variable]
+  134 |   for (auto &use : inputTensor.getUses()) {
+      |              ^~~
+lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:89:9: warning: unused variable 'outValue' [-Wunused-variable]
+   89 |     int outValue = attr.getInt();
+      |         ^~~~~~~~
+lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:588:9: warning: ignoring return value of type 'LogicalResult' declared with 'nodiscard' attribute [-Wunused-value]
+  588 |         mergeSchedulesWithNW(functionsToMerge, schedulesToMerge, merged,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  589 |                              finalSchedule);
+      |                              ~~~~~~~~~~~~~~
+lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:827:9: warning: ignoring return value of type 'LogicalResult' declared with 'nodiscard' attribute [-Wunused-value]
+  827 |         mergeSchedulesVertically(mergeCallOps, mergeSchedules, finalKernelSchedule);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:1414:7: warning: unused variable 'recursiveCallCounter' [-Wunused-variable]
+ 1414 |   int recursiveCallCounter = 0;
+      |       ^~~~~~~~~~~~~~~~~~~~
+lib/Transforms/RecursiveCallVectorization/RecursiveCallVectorization.cpp:102:13: warning: unused function 'findBiscottiArrayAttribute' [-Wunused-function]
+  102 | static bool findBiscottiArrayAttribute(Value op, StringRef attrName,
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~
+7 warnings generated.
+[7,968 / 7,970] [Prepa] Linking tools/heir-opt
+[7,968 / 7,970] Linking tools/heir-opt; 1s linux-sandbox
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 15.710s, Critical Path: 15.21s
+INFO: 3 processes: 25 action cache hit, 1 internal, 2 linux-sandbox.
+INFO: Build completed successfully, 3 total actions
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+Analyzing block for recursive call vectorization:
+Analyzing block for recursive call vectorization:
+Recursive Call Info for call: %2 = func.call @mm(%0, %1, %c4_i32) {biscotti.call = 0 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>>
+ Progress Arguments:
+  Arg: <block argument> of type 'i32' at index: 2 at index 2
+ Static Argument Values:
+  Value: 4 : i32 at index 2
+ Recursive Calls:
+  Call: %15 = func.call @mm(%7, %11, %2) {biscotti.recursive_call = 0 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 0
+  Call: %16 = func.call @mm(%8, %13, %2) {biscotti.recursive_call = 1 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 1
+  Call: %17 = func.call @mm(%7, %12, %2) {biscotti.recursive_call = 2 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 2
+  Call: %18 = func.call @mm(%8, %14, %2) {biscotti.recursive_call = 3 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 3
+  Call: %19 = func.call @mm(%9, %11, %2) {biscotti.recursive_call = 4 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 4
+  Call: %20 = func.call @mm(%10, %13, %2) {biscotti.recursive_call = 5 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 5
+  Call: %21 = func.call @mm(%9, %12, %2) {biscotti.recursive_call = 6 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 6
+  Call: %22 = func.call @mm(%10, %14, %2) {biscotti.recursive_call = 7 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 7
+ Base Conditions:
+  Op: cf.cond_br %0, ^bb1, ^bb2 {biscotti.base_condition = 0 : i64} at index 32765
+func @mm_clone_0_0 [static args: 4 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_10 [static args: 1 : i32]
+    func @mm_clone_0_11 [static args: 1 : i32]
+    func @mm_clone_0_12 [static args: 1 : i32]
+    func @mm_clone_0_13 [static args: 1 : i32]
+    func @mm_clone_0_14 [static args: 1 : i32]
+    func @mm_clone_0_15 [static args: 1 : i32]
+    func @mm_clone_0_16 [static args: 1 : i32]
+  func @mm_clone_0_2 [static args: 2 : i32]
+    func @mm_clone_0_17 [static args: 1 : i32]
+    func @mm_clone_0_18 [static args: 1 : i32]
+    func @mm_clone_0_19 [static args: 1 : i32]
+    func @mm_clone_0_20 [static args: 1 : i32]
+    func @mm_clone_0_21 [static args: 1 : i32]
+    func @mm_clone_0_22 [static args: 1 : i32]
+    func @mm_clone_0_23 [static args: 1 : i32]
+    func @mm_clone_0_24 [static args: 1 : i32]
+  func @mm_clone_0_3 [static args: 2 : i32]
+    func @mm_clone_0_25 [static args: 1 : i32]
+    func @mm_clone_0_26 [static args: 1 : i32]
+    func @mm_clone_0_27 [static args: 1 : i32]
+    func @mm_clone_0_28 [static args: 1 : i32]
+    func @mm_clone_0_29 [static args: 1 : i32]
+    func @mm_clone_0_30 [static args: 1 : i32]
+    func @mm_clone_0_31 [static args: 1 : i32]
+    func @mm_clone_0_32 [static args: 1 : i32]
+  func @mm_clone_0_4 [static args: 2 : i32]
+    func @mm_clone_0_33 [static args: 1 : i32]
+    func @mm_clone_0_34 [static args: 1 : i32]
+    func @mm_clone_0_35 [static args: 1 : i32]
+    func @mm_clone_0_36 [static args: 1 : i32]
+    func @mm_clone_0_37 [static args: 1 : i32]
+    func @mm_clone_0_38 [static args: 1 : i32]
+    func @mm_clone_0_39 [static args: 1 : i32]
+    func @mm_clone_0_40 [static args: 1 : i32]
+  func @mm_clone_0_5 [static args: 2 : i32]
+    func @mm_clone_0_41 [static args: 1 : i32]
+    func @mm_clone_0_42 [static args: 1 : i32]
+    func @mm_clone_0_43 [static args: 1 : i32]
+    func @mm_clone_0_44 [static args: 1 : i32]
+    func @mm_clone_0_45 [static args: 1 : i32]
+    func @mm_clone_0_46 [static args: 1 : i32]
+    func @mm_clone_0_47 [static args: 1 : i32]
+    func @mm_clone_0_48 [static args: 1 : i32]
+  func @mm_clone_0_6 [static args: 2 : i32]
+    func @mm_clone_0_49 [static args: 1 : i32]
+    func @mm_clone_0_50 [static args: 1 : i32]
+    func @mm_clone_0_51 [static args: 1 : i32]
+    func @mm_clone_0_52 [static args: 1 : i32]
+    func @mm_clone_0_53 [static args: 1 : i32]
+    func @mm_clone_0_54 [static args: 1 : i32]
+    func @mm_clone_0_55 [static args: 1 : i32]
+    func @mm_clone_0_56 [static args: 1 : i32]
+  func @mm_clone_0_7 [static args: 2 : i32]
+    func @mm_clone_0_57 [static args: 1 : i32]
+    func @mm_clone_0_58 [static args: 1 : i32]
+    func @mm_clone_0_59 [static args: 1 : i32]
+    func @mm_clone_0_60 [static args: 1 : i32]
+    func @mm_clone_0_61 [static args: 1 : i32]
+    func @mm_clone_0_62 [static args: 1 : i32]
+    func @mm_clone_0_63 [static args: 1 : i32]
+    func @mm_clone_0_64 [static args: 1 : i32]
+  func @mm_clone_0_8 [static args: 2 : i32]
+    func @mm_clone_0_65 [static args: 1 : i32]
+    func @mm_clone_0_66 [static args: 1 : i32]
+    func @mm_clone_0_67 [static args: 1 : i32]
+    func @mm_clone_0_68 [static args: 1 : i32]
+    func @mm_clone_0_69 [static args: 1 : i32]
+    func @mm_clone_0_70 [static args: 1 : i32]
+    func @mm_clone_0_71 [static args: 1 : i32]
+    func @mm_clone_0_72 [static args: 1 : i32]
+Caching function: mm_clone_0_9
+Removing duplicate function: mm_clone_0_10 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_11 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_12 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_13 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_14 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_15 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_16 (reusing mm_clone_0_9)
+Caching function: mm_clone_0_1
+Removing duplicate function: mm_clone_0_17 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_18 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_19 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_20 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_21 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_22 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_23 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_24 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_2 (reusing mm_clone_0_1)
+Removing duplicate function: mm_clone_0_25 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_26 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_27 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_28 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_29 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_30 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_31 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_32 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_3 (reusing mm_clone_0_1)
+Removing duplicate function: mm_clone_0_33 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_34 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_35 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_36 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_37 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_38 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_39 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_40 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_4 (reusing mm_clone_0_1)
+Removing duplicate function: mm_clone_0_41 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_42 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_43 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_44 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_45 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_46 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_47 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_48 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_5 (reusing mm_clone_0_1)
+Removing duplicate function: mm_clone_0_49 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_50 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_51 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_52 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_53 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_54 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_55 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_56 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_6 (reusing mm_clone_0_1)
+Removing duplicate function: mm_clone_0_57 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_58 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_59 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_60 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_61 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_62 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_63 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_64 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_7 (reusing mm_clone_0_1)
+Removing duplicate function: mm_clone_0_65 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_66 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_67 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_68 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_69 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_70 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_71 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_72 (reusing mm_clone_0_9)
+Removing duplicate function: mm_clone_0_8 (reusing mm_clone_0_1)
+Caching function: mm_clone_0_0
+Recursive Call Info for call: %2 = func.call @mm_clone_0_0(%0, %1, %c4_i32) {biscotti.call = 0 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>>
+ Progress Arguments:
+  Arg: <block argument> of type 'i32' at index: 2 at index 2
+ Static Argument Values:
+  Value: 4 : i32 at index 2
+ Recursive Calls:
+  Call: %1 = func.call @mm_clone_0_1(%0#0, %0#4, %c2_i32) {biscotti.recursive_call = 0 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 0
+  Call: %2 = func.call @mm_clone_0_1(%0#1, %0#6, %c2_i32) {biscotti.recursive_call = 1 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 1
+  Call: %3 = func.call @mm_clone_0_1(%0#0, %0#5, %c2_i32) {biscotti.recursive_call = 2 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 2
+  Call: %4 = func.call @mm_clone_0_1(%0#1, %0#7, %c2_i32) {biscotti.recursive_call = 3 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 3
+  Call: %5 = func.call @mm_clone_0_1(%0#2, %0#4, %c2_i32) {biscotti.recursive_call = 4 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 4
+  Call: %6 = func.call @mm_clone_0_1(%0#3, %0#6, %c2_i32) {biscotti.recursive_call = 5 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 5
+  Call: %7 = func.call @mm_clone_0_1(%0#2, %0#5, %c2_i32) {biscotti.recursive_call = 6 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 6
+  Call: %8 = func.call @mm_clone_0_1(%0#3, %0#7, %c2_i32) {biscotti.recursive_call = 7 : i64} : (!secret.secret<tensor<?xi32>>, !secret.secret<tensor<?xi32>>, i32) -> !secret.secret<tensor<?xi32>> at index 7
+ Base Conditions:
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+== Processing node in recursive call tree...
+func @mm_clone_0_0 [static args: 4 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+    func @mm_clone_0_9 [static args: 1 : i32]
+Trying to merge node with function: mm_clone_0_1
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+   Child node with function: mm_clone_0_9, size: 3
+Node function size: 63
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Inlining mm_clone_0_9 into mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Skipping already merged function: mm_clone_0_1
+Trying to merge node with function: mm_clone_0_0
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+   Child node with function: mm_clone_0_1, size: 63
+Node function size: 573
+   Skipping merge due to large node size.
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+Found mergeable node with parent function: mm_clone_0_1
+Static argument values for this node:
+  Arg index: 2, Value: 2 : i32
+func @mm_clone_0_0 [static args: 4 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+Erasing function: mm_clone_0_64
+Erasing function: mm_clone_0_54
+Erasing function: mm_clone_0_22
+Erasing function: mm_clone_0_6
+Erasing function: mm_clone_0_8
+Erasing function: mm_clone_0_67
+Erasing function: mm_clone_0_27
+Erasing function: mm_clone_0_25
+Erasing function: mm_clone_0_65
+Erasing function: mm_clone_0_17
+Erasing function: mm_clone_0_2
+Erasing function: mm_clone_0_30
+Erasing function: mm_clone_0_21
+Erasing function: mm_clone_0_68
+Erasing function: mm_clone_0_57
+Erasing function: mm_clone_0_52
+Erasing function: mm_clone_0_59
+Erasing function: mm_clone_0_61
+Erasing function: mm_clone_0_62
+Erasing function: mm_clone_0_66
+Erasing function: mm_clone_0_29
+Erasing function: mm_clone_0_10
+Erasing function: mm_clone_0_51
+Erasing function: mm_clone_0_45
+Erasing function: mm_clone_0_69
+Erasing function: mm_clone_0_16
+Erasing function: mm_clone_0_32
+Erasing function: mm_clone_0_36
+Erasing function: mm_clone_0_44
+Erasing function: mm_clone_0_50
+Erasing function: mm_clone_0_28
+Erasing function: mm_clone_0_48
+Erasing function: mm_clone_0_46
+Erasing function: mm_clone_0_42
+Erasing function: mm_clone_0_24
+Erasing function: mm_clone_0_18
+Erasing function: mm_clone_0_13
+Erasing function: mm_clone_0_14
+Erasing function: mm_clone_0_15
+Erasing function: mm_clone_0_43
+Erasing function: mm_clone_0_35
+Erasing function: mm_clone_0_56
+Erasing function: mm_clone_0_26
+Erasing function: mm_clone_0_70
+Erasing function: mm_clone_0_72
+Erasing function: mm_clone_0_23
+Erasing function: mm_clone_0_4
+Erasing function: mm_clone_0_53
+Erasing function: mm_clone_0_19
+Erasing function: mm_clone_0_37
+Erasing function: mm_clone_0_5
+Erasing function: mm_clone_0_63
+Erasing function: mm_clone_0_41
+Erasing function: mm_clone_0_39
+Erasing function: mm_clone_0_49
+Erasing function: mm_clone_0_38
+Erasing function: mm_clone_0_20
+Erasing function: mm_clone_0_33
+Erasing function: mm_clone_0_47
+Erasing function: mm_clone_0_71
+Erasing function: mm_clone_0_60
+Erasing function: mm_clone_0_12
+Erasing function: mm_clone_0_55
+Erasing function: mm_clone_0_58
+Erasing function: mm_clone_0_7
+Erasing function: mm_clone_0_11
+Erasing function: mm_clone_0_34
+Erasing function: mm_clone_0_31
+Erasing function: mm_clone_0_3
+Erasing function: mm
+Erasing function: mm_clone_0_40
+func @mm_clone_0_0 [static args: 4 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+  func @mm_clone_0_1 [static args: 2 : i32]
+Found 8 vectorization c
+[1/9] Identifying and expanding I/O groups...
+  Input groups: 8
+    Group 0: 1 operations (transitively expanded)
+    Group 1: 1 operations (transitively expanded)
+    Group 2: 1 operations (transitively expanded)
+    Group 3: 1 operations (transitively expanded)
+    Group 4: 1 operations (transitively expanded)
+    Group 5: 1 operations (transitively expanded)
+    Group 6: 1 operations (transitively expanded)
+    Group 7: 1 operations (transitively expanded)
+  Output groups: 1
+Found 24 operations total
+
+[1.a/9] Replicating multi-use loads...
+  Operations after replication: 32
+func.func private @mm_clone_0_1(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>) -> !secret.secret<tensor<4xi32>> {
+  %c3 = arith.constant 3 : index
+  %cst = arith.constant dense<0> : tensor<4xi32>
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %0 = secret.generic(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>) {
+  ^body(%input0: i32, %input1: i32, %input2: i32, %input3: i32, %input4: i32, %input5: i32, %input6: i32, %input7: i32):
+    %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %2 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %3 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %4 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %5 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %6 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %7 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %8 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %9 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %10 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %11 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %12 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %13 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %14 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %15 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %16 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %17 = arith.muli %2, %10 : i32
+    %18 = arith.muli %4, %14 : i32
+    %19 = arith.muli %1, %12 : i32
+    %20 = arith.muli %3, %16 : i32
+    %21 = arith.muli %6, %9 : i32
+    %22 = arith.muli %8, %13 : i32
+    %23 = arith.muli %5, %11 : i32
+    %24 = arith.muli %7, %15 : i32
+    %25 = arith.addi %17, %18 : i32
+    %26 = arith.addi %19, %20 : i32
+    %27 = arith.addi %21, %22 : i32
+    %28 = arith.addi %23, %24 : i32
+    %inserted = tensor.insert %25 into %cst[%c0] : tensor<4xi32>
+    %inserted_0 = tensor.insert %26 into %inserted[%c1] : tensor<4xi32>
+    %inserted_1 = tensor.insert %27 into %inserted_0[%c2] : tensor<4xi32>
+    %inserted_2 = tensor.insert %28 into %inserted_1[%c3] : tensor<4xi32>
+    secret.yield %inserted_2 : tensor<4xi32>
+  } -> !secret.secret<tensor<4xi32>>
+  return %0 : !secret.secret<tensor<4xi32>>
+}
+
+[2-8/9] Using Python Coyote scheduler...
+  [Python] Running: python3 /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote/run_coyote_from_circuit.py /tmp/coyote_circuit.txt --verbose  --output /tmp/coyote_python_result.json 2>&1
+  [Python] Reading circuit from /tmp/coyote_circuit.txt...
+  [Python] Parsed 28 instructions
+  [Python] Input groups: [{'arg0:0'}, {'arg1:0'}, {'arg2:0'}, {'arg3:0'}, {'arg4:0'}, {'arg5:0'}, {'arg6:0'}, {'arg7:0'}]
+  [Python] Force lanes: {}
+  [Python]   %0 = arg0:0 ~ arg0:0
+  [Python]   %1 = arg1:0 ~ arg1:0
+  [Python]   %2 = arg2:0 ~ arg2:0
+  [Python]   %3 = arg3:0 ~ arg3:0
+  [Python]   %4 = arg4:0 ~ arg4:0
+  [Python]   %5 = arg5:0 ~ arg5:0
+  [Python]   %6 = arg6:0 ~ arg6:0
+  [Python]   %7 = arg7:0 ~ arg7:0
+  [Python]   %8 = arg0:0 ~ arg0:0
+  [Python]   %9 = arg1:0 ~ arg1:0
+  [Python]   %10 = arg2:0 ~ arg2:0
+  [Python]   %11 = arg3:0 ~ arg3:0
+  [Python]   %12 = arg4:0 ~ arg4:0
+  [Python]   %13 = arg5:0 ~ arg5:0
+  [Python]   %14 = arg6:0 ~ arg6:0
+  [Python]   %15 = arg7:0 ~ arg7:0
+  [Python]   %16 = %8 * %12
+  [Python]   %17 = %9 * %14
+  [Python]   %18 = %0 * %13
+  [Python]   %19 = %1 * %15
+  [Python]   %20 = %10 * %4
+  [Python]   %21 = %11 * %6
+  [Python]   %22 = %2 * %5
+  [Python]   %23 = %3 * %7
+  [Python]   %24 = %16 + %17
+  [Python]   %25 = %18 + %19
+  [Python]   %26 = %20 + %21
+  [Python]   %27 = %22 + %23
+  [Python] []
+  [Python] 210
+  [Python]   [pop 0] cost=2.1 (rot=1.0 ht=1.1), queue=0
+  [Python]     SA=607ms, pop_total=609ms
+  [Python]   [pop 1] cost=2.1 (rot=0.0 ht=2.1), queue=0
+  [Python]   Quotient search: 1 SA calls, 607ms total SA time
+  [Python] Stage (8, 0): 2 instrs, starts at program_length=0
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (9, 1): 2 instrs, starts at program_length=1
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (10, 2): 2 instrs, starts at program_length=2
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (11, 3): 2 instrs, starts at program_length=3
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (12, 4): 2 instrs, starts at program_length=4
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (13, 5): 2 instrs, starts at program_length=5
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (14, 6): 2 instrs, starts at program_length=6
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (15, 7): 2 instrs, starts at program_length=7
+  [Python]   fast_align returned: [0, 0]
+  [Python] Stage (17, 19, 21, 22): 4 instrs, starts at program_length=8
+  [Python]   fast_align returned: [0, 0, 0, 0]
+  [Python] Stage (16, 24, 18, 25, 20, 26, 23, 27): 8 instrs, starts at program_length=9
+  [Python]   fast_align returned: [0, 1, 0, 1, 0, 1, 0, 1]
+  [Python] pre-blend-relax alignment: [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 9, 8, 9, 8, 9, 8, 8, 9, 10, 10, 10, 10]
+  [Python] lanes: [3, 3, 2, 2, 1, 2, 1, 2, 7, 7, 1, 1, 7, 3, 7, 3, 7, 7, 3, 3, 1, 1, 2, 2, 7, 3, 1, 2]
+  [Python] alignment: [2, 3, 2, 3, 4, 4, 6, 6, 2, 3, 2, 3, 4, 4, 6, 6, 9, 8, 9, 8, 9, 8, 9, 8, 10, 10, 10, 10]
+  [Python]
+  [Python] Vectorized code:
+  [Python]   __t0 = [0, arg2:0, arg2:0, arg0:0, 0, 0, 0, arg0:0]
+  [Python]   __v2 = load(__t0)
+  [Python]   __t1 = [0, arg3:0, arg3:0, arg1:0, 0, 0, 0, arg1:0]
+  [Python]   __v3 = load(__t1)
+  [Python]   __t2 = [0, arg4:0, arg5:0, arg5:0, 0, 0, 0, arg4:0]
+  [Python]   __v4 = load(__t2)
+  [Python]   __t3 = [0, arg6:0, arg7:0, arg7:0, 0, 0, 0, arg6:0]
+  [Python]   __v6 = load(__t3)
+  [Python]   __v8 = __v3 * __v6
+  [Python]   __v9 = __v2 * __v4
+  [Python]   __v10 = __v9 + __v8
+  [Python]
+  [Python] Costs: {'rotations': 0, 'blends': 0, 'ct_ct_muls': 2, 'pt_ct_muls': 0, 'adds': 1, 'loads': 4, 'total_instructions': 11}
+  [Python] Written to /tmp/coyote_python_result.json
+  [Python] Schedule: warp=8, lanes=28, depth=11
+Op: %1 = func.call @__coyote_load(%input0) : (i32) -> i32 lane: 3 align: 2
+Op: %3 = func.call @__coyote_load(%input1) : (i32) -> i32 lane: 3 align: 3
+Op: %5 = func.call @__coyote_load(%input2) : (i32) -> i32 lane: 2 align: 2
+Op: %7 = func.call @__coyote_load(%input3) : (i32) -> i32 lane: 2 align: 3
+Op: %9 = func.call @__coyote_load(%input4) : (i32) -> i32 lane: 1 align: 4
+Op: %11 = func.call @__coyote_load(%input5) : (i32) -> i32 lane: 2 align: 4
+Op: %13 = func.call @__coyote_load(%input6) : (i32) -> i32 lane: 1 align: 6
+Op: %15 = func.call @__coyote_load(%input7) : (i32) -> i32 lane: 2 align: 6
+Op: %17 = arith.muli %2, %10 : i32 lane: 7 align: 9
+Op: %18 = arith.muli %4, %14 : i32 lane: 7 align: 8
+Op: %19 = arith.muli %1, %12 : i32 lane: 3 align: 9
+Op: %20 = arith.muli %3, %16 : i32 lane: 3 align: 8
+Op: %21 = arith.muli %6, %9 : i32 lane: 1 align: 9
+Op: %22 = arith.muli %8, %13 : i32 lane: 1 align: 8
+Op: %23 = arith.muli %5, %11 : i32 lane: 2 align: 9
+Op: %24 = arith.muli %7, %15 : i32 lane: 2 align: 8
+Op: %25 = arith.addi %17, %18 : i32 lane: 7 align: 10
+Op: %26 = arith.addi %19, %20 : i32 lane: 3 align: 10
+Op: %27 = arith.addi %21, %22 : i32 lane: 1 align: 10
+Op: %28 = arith.addi %23, %24 : i32 lane: 2 align: 10
+Op: %2 = func.call @__coyote_load(%input0) : (i32) -> i32 lane: 7 align: 2
+Op: %4 = func.call @__coyote_load(%input1) : (i32) -> i32 lane: 7 align: 3
+Op: %6 = func.call @__coyote_load(%input2) : (i32) -> i32 lane: 1 align: 2
+Op: %8 = func.call @__coyote_load(%input3) : (i32) -> i32 lane: 1 align: 3
+Op: %10 = func.call @__coyote_load(%input4) : (i32) -> i32 lane: 7 align: 4
+Op: %12 = func.call @__coyote_load(%input5) : (i32) -> i32 lane: 3 align: 4
+Op: %14 = func.call @__coyote_load(%input6) : (i32) -> i32 lane: 7 align: 6
+Op: %16 = func.call @__coyote_load(%input7) : (i32) -> i32 lane: 3 align: 6
+
+=== Generated MLIR ===
+func.func private @mm_clone_0_1(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>) -> !secret.secret<tensor<4xi32>> {
+  %c3 = arith.constant 3 : index
+  %cst = arith.constant dense<0> : tensor<4xi32>
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %0 = secret.generic(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>) {
+  ^body(%input0: i32, %input1: i32, %input2: i32, %input3: i32, %input4: i32, %input5: i32, %input6: i32, %input7: i32):
+    %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %2 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %3 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %4 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %5 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %6 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %7 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %8 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %9 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %10 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %11 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %12 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %13 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %14 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %15 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %16 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %17 = arith.muli %2, %10 : i32
+    %18 = arith.muli %4, %14 : i32
+    %19 = arith.muli %1, %12 : i32
+    %20 = arith.muli %3, %16 : i32
+    %21 = arith.muli %6, %9 : i32
+    %22 = arith.muli %8, %13 : i32
+    %23 = arith.muli %5, %11 : i32
+    %24 = arith.muli %7, %15 : i32
+    %25 = arith.addi %17, %18 : i32
+    %26 = arith.addi %19, %20 : i32
+    %27 = arith.addi %21, %22 : i32
+    %28 = arith.addi %23, %24 : i32
+    %inserted = tensor.insert %25 into %cst[%c0] : tensor<4xi32>
+    %inserted_0 = tensor.insert %26 into %inserted[%c1] : tensor<4xi32>
+    %inserted_1 = tensor.insert %27 into %inserted_0[%c2] : tensor<4xi32>
+    %inserted_2 = tensor.insert %28 into %inserted_1[%c3] : tensor<4xi32>
+    secret.yield %inserted_2 : tensor<4xi32>
+  } -> !secret.secret<tensor<4xi32>>
+  return %0 : !secret.secret<tensor<4xi32>>
+}
+=====================
+
+=== Coyote Vectorizer Complete ===
+Final schedule: 8 lanes, 11 cycles
+
+func.func private @mm_clone_0_1_nw_merged(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>, %arg8: !secret.secret<i32>, %arg9: !secret.secret<i32>, %arg10: !secret.secret<i32>, %arg11: !secret.secret<i32>, %arg12: !secret.secret<i32>, %arg13: !secret.secret<i32>, %arg14: !secret.secret<i32>, %arg15: !secret.secret<i32>, %arg16: !secret.secret<i32>, %arg17: !secret.secret<i32>, %arg18: !secret.secret<i32>, %arg19: !secret.secret<i32>, %arg20: !secret.secret<i32>, %arg21: !secret.secret<i32>, %arg22: !secret.secret<i32>, %arg23: !secret.secret<i32>, %arg24: !secret.secret<i32>, %arg25: !secret.secret<i32>, %arg26: !secret.secret<i32>, %arg27: !secret.secret<i32>, %arg28: !secret.secret<i32>, %arg29: !secret.secret<i32>, %arg30: !secret.secret<i32>, %arg31: !secret.secret<i32>, %arg32: !secret.secret<i32>, %arg33: !secret.secret<i32>, %arg34: !secret.secret<i32>, %arg35: !secret.secret<i32>, %arg36: !secret.secret<i32>, %arg37: !secret.secret<i32>, %arg38: !secret.secret<i32>, %arg39: !secret.secret<i32>, %arg40: !secret.secret<i32>, %arg41: !secret.secret<i32>, %arg42: !secret.secret<i32>, %arg43: !secret.secret<i32>, %arg44: !secret.secret<i32>, %arg45: !secret.secret<i32>, %arg46: !secret.secret<i32>, %arg47: !secret.secret<i32>, %arg48: !secret.secret<i32>, %arg49: !secret.secret<i32>, %arg50: !secret.secret<i32>, %arg51: !secret.secret<i32>, %arg52: !secret.secret<i32>, %arg53: !secret.secret<i32>, %arg54: !secret.secret<i32>, %arg55: !secret.secret<i32>, %arg56: !secret.secret<i32>, %arg57: !secret.secret<i32>, %arg58: !secret.secret<i32>, %arg59: !secret.secret<i32>, %arg60: !secret.secret<i32>, %arg61: !secret.secret<i32>, %arg62: !secret.secret<i32>, %arg63: !secret.secret<i32>) -> (!secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>) {
+  %cst = arith.constant dense<0> : tensor<4xi32>
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %cst_0 = arith.constant dense<0> : tensor<4xi32>
+  %c0_1 = arith.constant 0 : index
+  %c1_2 = arith.constant 1 : index
+  %c2_3 = arith.constant 2 : index
+  %c3_4 = arith.constant 3 : index
+  %cst_5 = arith.constant dense<0> : tensor<4xi32>
+  %c0_6 = arith.constant 0 : index
+  %c1_7 = arith.constant 1 : index
+  %c2_8 = arith.constant 2 : index
+  %c3_9 = arith.constant 3 : index
+  %cst_10 = arith.constant dense<0> : tensor<4xi32>
+  %c0_11 = arith.constant 0 : index
+  %c1_12 = arith.constant 1 : index
+  %c2_13 = arith.constant 2 : index
+  %c3_14 = arith.constant 3 : index
+  %cst_15 = arith.constant dense<0> : tensor<4xi32>
+  %c0_16 = arith.constant 0 : index
+  %c1_17 = arith.constant 1 : index
+  %c2_18 = arith.constant 2 : index
+  %c3_19 = arith.constant 3 : index
+  %cst_20 = arith.constant dense<0> : tensor<4xi32>
+  %c0_21 = arith.constant 0 : index
+  %c1_22 = arith.constant 1 : index
+  %c2_23 = arith.constant 2 : index
+  %c3_24 = arith.constant 3 : index
+  %cst_25 = arith.constant dense<0> : tensor<4xi32>
+  %c0_26 = arith.constant 0 : index
+  %c1_27 = arith.constant 1 : index
+  %c2_28 = arith.constant 2 : index
+  %c3_29 = arith.constant 3 : index
+  %cst_30 = arith.constant dense<0> : tensor<4xi32>
+  %c0_31 = arith.constant 0 : index
+  %c1_32 = arith.constant 1 : index
+  %c2_33 = arith.constant 2 : index
+  %c3_34 = arith.constant 3 : index
+  %0:32 = secret.generic(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>, %arg8: !secret.secret<i32>, %arg9: !secret.secret<i32>, %arg10: !secret.secret<i32>, %arg11: !secret.secret<i32>, %arg12: !secret.secret<i32>, %arg13: !secret.secret<i32>, %arg14: !secret.secret<i32>, %arg15: !secret.secret<i32>, %arg16: !secret.secret<i32>, %arg17: !secret.secret<i32>, %arg18: !secret.secret<i32>, %arg19: !secret.secret<i32>, %arg20: !secret.secret<i32>, %arg21: !secret.secret<i32>, %arg22: !secret.secret<i32>, %arg23: !secret.secret<i32>, %arg24: !secret.secret<i32>, %arg25: !secret.secret<i32>, %arg26: !secret.secret<i32>, %arg27: !secret.secret<i32>, %arg28: !secret.secret<i32>, %arg29: !secret.secret<i32>, %arg30: !secret.secret<i32>, %arg31: !secret.secret<i32>, %arg32: !secret.secret<i32>, %arg33: !secret.secret<i32>, %arg34: !secret.secret<i32>, %arg35: !secret.secret<i32>, %arg36: !secret.secret<i32>, %arg37: !secret.secret<i32>, %arg38: !secret.secret<i32>, %arg39: !secret.secret<i32>, %arg40: !secret.secret<i32>, %arg41: !secret.secret<i32>, %arg42: !secret.secret<i32>, %arg43: !secret.secret<i32>, %arg44: !secret.secret<i32>, %arg45: !secret.secret<i32>, %arg46: !secret.secret<i32>, %arg47: !secret.secret<i32>, %arg48: !secret.secret<i32>, %arg49: !secret.secret<i32>, %arg50: !secret.secret<i32>, %arg51: !secret.secret<i32>, %arg52: !secret.secret<i32>, %arg53: !secret.secret<i32>, %arg54: !secret.secret<i32>, %arg55: !secret.secret<i32>, %arg56: !secret.secret<i32>, %arg57: !secret.secret<i32>, %arg58: !secret.secret<i32>, %arg59: !secret.secret<i32>, %arg60: !secret.secret<i32>, %arg61: !secret.secret<i32>, %arg62: !secret.secret<i32>, %arg63: !secret.secret<i32>) {
+  ^body(%input0: i32, %input1: i32, %input2: i32, %input3: i32, %input4: i32, %input5: i32, %input6: i32, %input7: i32, %input8: i32, %input9: i32, %input10: i32, %input11: i32, %input12: i32, %input13: i32, %input14: i32, %input15: i32, %input16: i32, %input17: i32, %input18: i32, %input19: i32, %input20: i32, %input21: i32, %input22: i32, %input23: i32, %input24: i32, %input25: i32, %input26: i32, %input27: i32, %input28: i32, %input29: i32, %input30: i32, %input31: i32, %input32: i32, %input33: i32, %input34: i32, %input35: i32, %input36: i32, %input37: i32, %input38: i32, %input39: i32, %input40: i32, %input41: i32, %input42: i32, %input43: i32, %input44: i32, %input45: i32, %input46: i32, %input47: i32, %input48: i32, %input49: i32, %input50: i32, %input51: i32, %input52: i32, %input53: i32, %input54: i32, %input55: i32, %input56: i32, %input57: i32, %input58: i32, %input59: i32, %input60: i32, %input61: i32, %input62: i32, %input63: i32):
+    %1 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %2 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %3 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %4 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %5 = func.call @__coyote_load(%input10) : (i32) -> i32
+    %6 = func.call @__coyote_load(%input10) : (i32) -> i32
+    %7 = func.call @__coyote_load(%input8) : (i32) -> i32
+    %8 = func.call @__coyote_load(%input8) : (i32) -> i32
+    %9 = func.call @__coyote_load(%input18) : (i32) -> i32
+    %10 = func.call @__coyote_load(%input18) : (i32) -> i32
+    %11 = func.call @__coyote_load(%input16) : (i32) -> i32
+    %12 = func.call @__coyote_load(%input16) : (i32) -> i32
+    %13 = func.call @__coyote_load(%input26) : (i32) -> i32
+    %14 = func.call @__coyote_load(%input26) : (i32) -> i32
+    %15 = func.call @__coyote_load(%input24) : (i32) -> i32
+    %16 = func.call @__coyote_load(%input24) : (i32) -> i32
+    %17 = func.call @__coyote_load(%input34) : (i32) -> i32
+    %18 = func.call @__coyote_load(%input34) : (i32) -> i32
+    %19 = func.call @__coyote_load(%input32) : (i32) -> i32
+    %20 = func.call @__coyote_load(%input32) : (i32) -> i32
+    %21 = func.call @__coyote_load(%input42) : (i32) -> i32
+    %22 = func.call @__coyote_load(%input42) : (i32) -> i32
+    %23 = func.call @__coyote_load(%input40) : (i32) -> i32
+    %24 = func.call @__coyote_load(%input40) : (i32) -> i32
+    %25 = func.call @__coyote_load(%input50) : (i32) -> i32
+    %26 = func.call @__coyote_load(%input50) : (i32) -> i32
+    %27 = func.call @__coyote_load(%input48) : (i32) -> i32
+    %28 = func.call @__coyote_load(%input48) : (i32) -> i32
+    %29 = func.call @__coyote_load(%input58) : (i32) -> i32
+    %30 = func.call @__coyote_load(%input58) : (i32) -> i32
+    %31 = func.call @__coyote_load(%input56) : (i32) -> i32
+    %32 = func.call @__coyote_load(%input56) : (i32) -> i32
+    %33 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %34 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %35 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %36 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %37 = func.call @__coyote_load(%input11) : (i32) -> i32
+    %38 = func.call @__coyote_load(%input11) : (i32) -> i32
+    %39 = func.call @__coyote_load(%input9) : (i32) -> i32
+    %40 = func.call @__coyote_load(%input9) : (i32) -> i32
+    %41 = func.call @__coyote_load(%input19) : (i32) -> i32
+    %42 = func.call @__coyote_load(%input19) : (i32) -> i32
+    %43 = func.call @__coyote_load(%input17) : (i32) -> i32
+    %44 = func.call @__coyote_load(%input17) : (i32) -> i32
+    %45 = func.call @__coyote_load(%input27) : (i32) -> i32
+    %46 = func.call @__coyote_load(%input27) : (i32) -> i32
+    %47 = func.call @__coyote_load(%input25) : (i32) -> i32
+    %48 = func.call @__coyote_load(%input25) : (i32) -> i32
+    %49 = func.call @__coyote_load(%input35) : (i32) -> i32
+    %50 = func.call @__coyote_load(%input35) : (i32) -> i32
+    %51 = func.call @__coyote_load(%input33) : (i32) -> i32
+    %52 = func.call @__coyote_load(%input33) : (i32) -> i32
+    %53 = func.call @__coyote_load(%input43) : (i32) -> i32
+    %54 = func.call @__coyote_load(%input43) : (i32) -> i32
+    %55 = func.call @__coyote_load(%input41) : (i32) -> i32
+    %56 = func.call @__coyote_load(%input41) : (i32) -> i32
+    %57 = func.call @__coyote_load(%input51) : (i32) -> i32
+    %58 = func.call @__coyote_load(%input51) : (i32) -> i32
+    %59 = func.call @__coyote_load(%input49) : (i32) -> i32
+    %60 = func.call @__coyote_load(%input49) : (i32) -> i32
+    %61 = func.call @__coyote_load(%input59) : (i32) -> i32
+    %62 = func.call @__coyote_load(%input59) : (i32) -> i32
+    %63 = func.call @__coyote_load(%input57) : (i32) -> i32
+    %64 = func.call @__coyote_load(%input57) : (i32) -> i32
+    %65 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %66 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %67 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %68 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %69 = func.call @__coyote_load(%input12) : (i32) -> i32
+    %70 = func.call @__coyote_load(%input13) : (i32) -> i32
+    %71 = func.call @__coyote_load(%input13) : (i32) -> i32
+    %72 = func.call @__coyote_load(%input12) : (i32) -> i32
+    %73 = func.call @__coyote_load(%input20) : (i32) -> i32
+    %74 = func.call @__coyote_load(%input21) : (i32) -> i32
+    %75 = func.call @__coyote_load(%input21) : (i32) -> i32
+    %76 = func.call @__coyote_load(%input20) : (i32) -> i32
+    %77 = func.call @__coyote_load(%input28) : (i32) -> i32
+    %78 = func.call @__coyote_load(%input29) : (i32) -> i32
+    %79 = func.call @__coyote_load(%input29) : (i32) -> i32
+    %80 = func.call @__coyote_load(%input28) : (i32) -> i32
+    %81 = func.call @__coyote_load(%input36) : (i32) -> i32
+    %82 = func.call @__coyote_load(%input37) : (i32) -> i32
+    %83 = func.call @__coyote_load(%input37) : (i32) -> i32
+    %84 = func.call @__coyote_load(%input36) : (i32) -> i32
+    %85 = func.call @__coyote_load(%input44) : (i32) -> i32
+    %86 = func.call @__coyote_load(%input45) : (i32) -> i32
+    %87 = func.call @__coyote_load(%input45) : (i32) -> i32
+    %88 = func.call @__coyote_load(%input44) : (i32) -> i32
+    %89 = func.call @__coyote_load(%input52) : (i32) -> i32
+    %90 = func.call @__coyote_load(%input53) : (i32) -> i32
+    %91 = func.call @__coyote_load(%input53) : (i32) -> i32
+    %92 = func.call @__coyote_load(%input52) : (i32) -> i32
+    %93 = func.call @__coyote_load(%input60) : (i32) -> i32
+    %94 = func.call @__coyote_load(%input61) : (i32) -> i32
+    %95 = func.call @__coyote_load(%input61) : (i32) -> i32
+    %96 = func.call @__coyote_load(%input60) : (i32) -> i32
+    %97 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %98 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %99 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %100 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %101 = func.call @__coyote_load(%input14) : (i32) -> i32
+    %102 = func.call @__coyote_load(%input15) : (i32) -> i32
+    %103 = func.call @__coyote_load(%input15) : (i32) -> i32
+    %104 = func.call @__coyote_load(%input14) : (i32) -> i32
+    %105 = func.call @__coyote_load(%input22) : (i32) -> i32
+    %106 = func.call @__coyote_load(%input23) : (i32) -> i32
+    %107 = func.call @__coyote_load(%input23) : (i32) -> i32
+    %108 = func.call @__coyote_load(%input22) : (i32) -> i32
+    %109 = func.call @__coyote_load(%input30) : (i32) -> i32
+    %110 = func.call @__coyote_load(%input31) : (i32) -> i32
+    %111 = func.call @__coyote_load(%input31) : (i32) -> i32
+    %112 = func.call @__coyote_load(%input30) : (i32) -> i32
+    %113 = func.call @__coyote_load(%input38) : (i32) -> i32
+    %114 = func.call @__coyote_load(%input39) : (i32) -> i32
+    %115 = func.call @__coyote_load(%input39) : (i32) -> i32
+    %116 = func.call @__coyote_load(%input38) : (i32) -> i32
+    %117 = func.call @__coyote_load(%input46) : (i32) -> i32
+    %118 = func.call @__coyote_load(%input47) : (i32) -> i32
+    %119 = func.call @__coyote_load(%input47) : (i32) -> i32
+    %120 = func.call @__coyote_load(%input46) : (i32) -> i32
+    %121 = func.call @__coyote_load(%input54) : (i32) -> i32
+    %122 = func.call @__coyote_load(%input55) : (i32) -> i32
+    %123 = func.call @__coyote_load(%input55) : (i32) -> i32
+    %124 = func.call @__coyote_load(%input54) : (i32) -> i32
+    %125 = func.call @__coyote_load(%input62) : (i32) -> i32
+    %126 = func.call @__coyote_load(%input63) : (i32) -> i32
+    %127 = func.call @__coyote_load(%input63) : (i32) -> i32
+    %128 = func.call @__coyote_load(%input62) : (i32) -> i32
+    %129 = arith.muli %33, %97 : i32
+    %130 = arith.muli %34, %98 : i32
+    %131 = arith.muli %35, %99 : i32
+    %132 = arith.muli %36, %100 : i32
+    %133 = arith.muli %37, %101 : i32
+    %134 = arith.muli %38, %102 : i32
+    %135 = arith.muli %39, %103 : i32
+    %136 = arith.muli %40, %104 : i32
+    %137 = arith.muli %41, %105 : i32
+    %138 = arith.muli %42, %106 : i32
+    %139 = arith.muli %43, %107 : i32
+    %140 = arith.muli %44, %108 : i32
+    %141 = arith.muli %45, %109 : i32
+    %142 = arith.muli %46, %110 : i32
+    %143 = arith.muli %47, %111 : i32
+    %144 = arith.muli %48, %112 : i32
+    %145 = arith.muli %49, %113 : i32
+    %146 = arith.muli %50, %114 : i32
+    %147 = arith.muli %51, %115 : i32
+    %148 = arith.muli %52, %116 : i32
+    %149 = arith.muli %53, %117 : i32
+    %150 = arith.muli %54, %118 : i32
+    %151 = arith.muli %55, %119 : i32
+    %152 = arith.muli %56, %120 : i32
+    %153 = arith.muli %57, %121 : i32
+    %154 = arith.muli %58, %122 : i32
+    %155 = arith.muli %59, %123 : i32
+    %156 = arith.muli %60, %124 : i32
+    %157 = arith.muli %61, %125 : i32
+    %158 = arith.muli %62, %126 : i32
+    %159 = arith.muli %63, %127 : i32
+    %160 = arith.muli %64, %128 : i32
+    %161 = arith.muli %1, %65 : i32
+    %162 = arith.muli %2, %66 : i32
+    %163 = arith.muli %3, %67 : i32
+    %164 = arith.muli %4, %68 : i32
+    %165 = arith.muli %5, %69 : i32
+    %166 = arith.muli %6, %70 : i32
+    %167 = arith.muli %7, %71 : i32
+    %168 = arith.muli %8, %72 : i32
+    %169 = arith.muli %9, %73 : i32
+    %170 = arith.muli %10, %74 : i32
+    %171 = arith.muli %11, %75 : i32
+    %172 = arith.muli %12, %76 : i32
+    %173 = arith.muli %13, %77 : i32
+    %174 = arith.muli %14, %78 : i32
+    %175 = arith.muli %15, %79 : i32
+    %176 = arith.muli %16, %80 : i32
+    %177 = arith.muli %17, %81 : i32
+    %178 = arith.muli %18, %82 : i32
+    %179 = arith.muli %19, %83 : i32
+    %180 = arith.muli %20, %84 : i32
+    %181 = arith.muli %21, %85 : i32
+    %182 = arith.muli %22, %86 : i32
+    %183 = arith.muli %23, %87 : i32
+    %184 = arith.muli %24, %88 : i32
+    %185 = arith.muli %25, %89 : i32
+    %186 = arith.muli %26, %90 : i32
+    %187 = arith.muli %27, %91 : i32
+    %188 = arith.muli %28, %92 : i32
+    %189 = arith.muli %29, %93 : i32
+    %190 = arith.muli %30, %94 : i32
+    %191 = arith.muli %31, %95 : i32
+    %192 = arith.muli %32, %96 : i32
+    %193 = arith.addi %161, %129 : i32
+    %194 = arith.addi %162, %130 : i32
+    %195 = arith.addi %163, %131 : i32
+    %196 = arith.addi %164, %132 : i32
+    %197 = arith.addi %165, %133 : i32
+    %198 = arith.addi %166, %134 : i32
+    %199 = arith.addi %167, %135 : i32
+    %200 = arith.addi %168, %136 : i32
+    %201 = arith.addi %169, %137 : i32
+    %202 = arith.addi %170, %138 : i32
+    %203 = arith.addi %171, %139 : i32
+    %204 = arith.addi %172, %140 : i32
+    %205 = arith.addi %173, %141 : i32
+    %206 = arith.addi %174, %142 : i32
+    %207 = arith.addi %175, %143 : i32
+    %208 = arith.addi %176, %144 : i32
+    %209 = arith.addi %177, %145 : i32
+    %210 = arith.addi %178, %146 : i32
+    %211 = arith.addi %179, %147 : i32
+    %212 = arith.addi %180, %148 : i32
+    %213 = arith.addi %181, %149 : i32
+    %214 = arith.addi %182, %150 : i32
+    %215 = arith.addi %183, %151 : i32
+    %216 = arith.addi %184, %152 : i32
+    %217 = arith.addi %185, %153 : i32
+    %218 = arith.addi %186, %154 : i32
+    %219 = arith.addi %187, %155 : i32
+    %220 = arith.addi %188, %156 : i32
+    %221 = arith.addi %189, %157 : i32
+    %222 = arith.addi %190, %158 : i32
+    %223 = arith.addi %191, %159 : i32
+    %224 = arith.addi %192, %160 : i32
+    secret.yield %196, %195, %193, %194, %200, %199, %197, %198, %204, %203, %201, %202, %208, %207, %205, %206, %212, %211, %209, %210, %216, %215, %213, %214, %220, %219, %217, %218, %224, %223, %221, %222 : i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32
+  } -> (!secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>)
+  return %0#0, %0#1, %0#2, %0#3, %0#4, %0#5, %0#6, %0#7, %0#8, %0#9, %0#10, %0#11, %0#12, %0#13, %0#14, %0#15, %0#16, %0#17, %0#18, %0#19, %0#20, %0#21, %0#22, %0#23, %0#24, %0#25, %0#26, %0#27, %0#28, %0#29, %0#30, %0#31 : !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>, !secret.secret<i32>
+}
+=== Schedule (warpSize=64, ops=224, depth=7) ===
+
+Cycle 0 (32 ops):
+  lane   8: %1 = func.call @__coyote_load(%input2) : (i32) -> i32
+  lane   9: %5 = func.call @__coyote_load(%input10) : (i32) -> i32
+  lane  10: %9 = func.call @__coyote_load(%input18) : (i32) -> i32
+  lane  11: %13 = func.call @__coyote_load(%input26) : (i32) -> i32
+  lane  12: %17 = func.call @__coyote_load(%input34) : (i32) -> i32
+  lane  13: %21 = func.call @__coyote_load(%input42) : (i32) -> i32
+  lane  14: %25 = func.call @__coyote_load(%input50) : (i32) -> i32
+  lane  15: %29 = func.call @__coyote_load(%input58) : (i32) -> i32
+  lane  16: %2 = func.call @__coyote_load(%input2) : (i32) -> i32
+  lane  17: %6 = func.call @__coyote_load(%input10) : (i32) -> i32
+  lane  18: %10 = func.call @__coyote_load(%input18) : (i32) -> i32
+  lane  19: %14 = func.call @__coyote_load(%input26) : (i32) -> i32
+  lane  20: %18 = func.call @__coyote_load(%input34) : (i32) -> i32
+  lane  21: %22 = func.call @__coyote_load(%input42) : (i32) -> i32
+  lane  22: %26 = func.call @__coyote_load(%input50) : (i32) -> i32
+  lane  23: %30 = func.call @__coyote_load(%input58) : (i32) -> i32
+  lane  24: %3 = func.call @__coyote_load(%input0) : (i32) -> i32
+  lane  25: %7 = func.call @__coyote_load(%input8) : (i32) -> i32
+  lane  26: %11 = func.call @__coyote_load(%input16) : (i32) -> i32
+  lane  27: %15 = func.call @__coyote_load(%input24) : (i32) -> i32
+  lane  28: %19 = func.call @__coyote_load(%input32) : (i32) -> i32
+  lane  29: %23 = func.call @__coyote_load(%input40) : (i32) -> i32
+  lane  30: %27 = func.call @__coyote_load(%input48) : (i32) -> i32
+  lane  31: %31 = func.call @__coyote_load(%input56) : (i32) -> i32
+  lane  56: %4 = func.call @__coyote_load(%input0) : (i32) -> i32
+  lane  57: %8 = func.call @__coyote_load(%input8) : (i32) -> i32
+  lane  58: %12 = func.call @__coyote_load(%input16) : (i32) -> i32
+  lane  59: %16 = func.call @__coyote_load(%input24) : (i32) -> i32
+  lane  60: %20 = func.call @__coyote_load(%input32) : (i32) -> i32
+  lane  61: %24 = func.call @__coyote_load(%input40) : (i32) -> i32
+  lane  62: %28 = func.call @__coyote_load(%input48) : (i32) -> i32
+  lane  63: %32 = func.call @__coyote_load(%input56) : (i32) -> i32
+
+Cycle 1 (32 ops):
+  lane   8: %33 = func.call @__coyote_load(%input3) : (i32) -> i32
+  lane   9: %37 = func.call @__coyote_load(%input11) : (i32) -> i32
+  lane  10: %41 = func.call @__coyote_load(%input19) : (i32) -> i32
+  lane  11: %45 = func.call @__coyote_load(%input27) : (i32) -> i32
+  lane  12: %49 = func.call @__coyote_load(%input35) : (i32) -> i32
+  lane  13: %53 = func.call @__coyote_load(%input43) : (i32) -> i32
+  lane  14: %57 = func.call @__coyote_load(%input51) : (i32) -> i32
+  lane  15: %61 = func.call @__coyote_load(%input59) : (i32) -> i32
+  lane  16: %34 = func.call @__coyote_load(%input3) : (i32) -> i32
+  lane  17: %38 = func.call @__coyote_load(%input11) : (i32) -> i32
+  lane  18: %42 = func.call @__coyote_load(%input19) : (i32) -> i32
+  lane  19: %46 = func.call @__coyote_load(%input27) : (i32) -> i32
+  lane  20: %50 = func.call @__coyote_load(%input35) : (i32) -> i32
+  lane  21: %54 = func.call @__coyote_load(%input43) : (i32) -> i32
+  lane  22: %58 = func.call @__coyote_load(%input51) : (i32) -> i32
+  lane  23: %62 = func.call @__coyote_load(%input59) : (i32) -> i32
+  lane  24: %35 = func.call @__coyote_load(%input1) : (i32) -> i32
+  lane  25: %39 = func.call @__coyote_load(%input9) : (i32) -> i32
+  lane  26: %43 = func.call @__coyote_load(%input17) : (i32) -> i32
+  lane  27: %47 = func.call @__coyote_load(%input25) : (i32) -> i32
+  lane  28: %51 = func.call @__coyote_load(%input33) : (i32) -> i32
+  lane  29: %55 = func.call @__coyote_load(%input41) : (i32) -> i32
+  lane  30: %59 = func.call @__coyote_load(%input49) : (i32) -> i32
+  lane  31: %63 = func.call @__coyote_load(%input57) : (i32) -> i32
+  lane  56: %36 = func.call @__coyote_load(%input1) : (i32) -> i32
+  lane  57: %40 = func.call @__coyote_load(%input9) : (i32) -> i32
+  lane  58: %44 = func.call @__coyote_load(%input17) : (i32) -> i32
+  lane  59: %48 = func.call @__coyote_load(%input25) : (i32) -> i32
+  lane  60: %52 = func.call @__coyote_load(%input33) : (i32) -> i32
+  lane  61: %56 = func.call @__coyote_load(%input41) : (i32) -> i32
+  lane  62: %60 = func.call @__coyote_load(%input49) : (i32) -> i32
+  lane  63: %64 = func.call @__coyote_load(%input57) : (i32) -> i32
+
+Cycle 2 (32 ops):
+  lane   8: %65 = func.call @__coyote_load(%input4) : (i32) -> i32
+  lane   9: %69 = func.call @__coyote_load(%input12) : (i32) -> i32
+  lane  10: %73 = func.call @__coyote_load(%input20) : (i32) -> i32
+  lane  11: %77 = func.call @__coyote_load(%input28) : (i32) -> i32
+  lane  12: %81 = func.call @__coyote_load(%input36) : (i32) -> i32
+  lane  13: %85 = func.call @__coyote_load(%input44) : (i32) -> i32
+  lane  14: %89 = func.call @__coyote_load(%input52) : (i32) -> i32
+  lane  15: %93 = func.call @__coyote_load(%input60) : (i32) -> i32
+  lane  16: %66 = func.call @__coyote_load(%input5) : (i32) -> i32
+  lane  17: %70 = func.call @__coyote_load(%input13) : (i32) -> i32
+  lane  18: %74 = func.call @__coyote_load(%input21) : (i32) -> i32
+  lane  19: %78 = func.call @__coyote_load(%input29) : (i32) -> i32
+  lane  20: %82 = func.call @__coyote_load(%input37) : (i32) -> i32
+  lane  21: %86 = func.call @__coyote_load(%input45) : (i32) -> i32
+  lane  22: %90 = func.call @__coyote_load(%input53) : (i32) -> i32
+  lane  23: %94 = func.call @__coyote_load(%input61) : (i32) -> i32
+  lane  24: %67 = func.call @__coyote_load(%input5) : (i32) -> i32
+  lane  25: %71 = func.call @__coyote_load(%input13) : (i32) -> i32
+  lane  26: %75 = func.call @__coyote_load(%input21) : (i32) -> i32
+  lane  27: %79 = func.call @__coyote_load(%input29) : (i32) -> i32
+  lane  28: %83 = func.call @__coyote_load(%input37) : (i32) -> i32
+  lane  29: %87 = func.call @__coyote_load(%input45) : (i32) -> i32
+  lane  30: %91 = func.call @__coyote_load(%input53) : (i32) -> i32
+  lane  31: %95 = func.call @__coyote_load(%input61) : (i32) -> i32
+  lane  56: %68 = func.call @__coyote_load(%input4) : (i32) -> i32
+  lane  57: %72 = func.call @__coyote_load(%input12) : (i32) -> i32
+  lane  58: %76 = func.call @__coyote_load(%input20) : (i32) -> i32
+  lane  59: %80 = func.call @__coyote_load(%input28) : (i32) -> i32
+  lane  60: %84 = func.call @__coyote_load(%input36) : (i32) -> i32
+  lane  61: %88 = func.call @__coyote_load(%input44) : (i32) -> i32
+  lane  62: %92 = func.call @__coyote_load(%input52) : (i32) -> i32
+  lane  63: %96 = func.call @__coyote_load(%input60) : (i32) -> i32
+
+Cycle 3 (32 ops):
+  lane   8: %97 = func.call @__coyote_load(%input6) : (i32) -> i32
+  lane   9: %101 = func.call @__coyote_load(%input14) : (i32) -> i32
+  lane  10: %105 = func.call @__coyote_load(%input22) : (i32) -> i32
+  lane  11: %109 = func.call @__coyote_load(%input30) : (i32) -> i32
+  lane  12: %113 = func.call @__coyote_load(%input38) : (i32) -> i32
+  lane  13: %117 = func.call @__coyote_load(%input46) : (i32) -> i32
+  lane  14: %121 = func.call @__coyote_load(%input54) : (i32) -> i32
+  lane  15: %125 = func.call @__coyote_load(%input62) : (i32) -> i32
+  lane  16: %98 = func.call @__coyote_load(%input7) : (i32) -> i32
+  lane  17: %102 = func.call @__coyote_load(%input15) : (i32) -> i32
+  lane  18: %106 = func.call @__coyote_load(%input23) : (i32) -> i32
+  lane  19: %110 = func.call @__coyote_load(%input31) : (i32) -> i32
+  lane  20: %114 = func.call @__coyote_load(%input39) : (i32) -> i32
+  lane  21: %118 = func.call @__coyote_load(%input47) : (i32) -> i32
+  lane  22: %122 = func.call @__coyote_load(%input55) : (i32) -> i32
+  lane  23: %126 = func.call @__coyote_load(%input63) : (i32) -> i32
+  lane  24: %99 = func.call @__coyote_load(%input7) : (i32) -> i32
+  lane  25: %103 = func.call @__coyote_load(%input15) : (i32) -> i32
+  lane  26: %107 = func.call @__coyote_load(%input23) : (i32) -> i32
+  lane  27: %111 = func.call @__coyote_load(%input31) : (i32) -> i32
+  lane  28: %115 = func.call @__coyote_load(%input39) : (i32) -> i32
+  lane  29: %119 = func.call @__coyote_load(%input47) : (i32) -> i32
+  lane  30: %123 = func.call @__coyote_load(%input55) : (i32) -> i32
+  lane  31: %127 = func.call @__coyote_load(%input63) : (i32) -> i32
+  lane  56: %100 = func.call @__coyote_load(%input6) : (i32) -> i32
+  lane  57: %104 = func.call @__coyote_load(%input14) : (i32) -> i32
+  lane  58: %108 = func.call @__coyote_load(%input22) : (i32) -> i32
+  lane  59: %112 = func.call @__coyote_load(%input30) : (i32) -> i32
+  lane  60: %116 = func.call @__coyote_load(%input38) : (i32) -> i32
+  lane  61: %120 = func.call @__coyote_load(%input46) : (i32) -> i32
+  lane  62: %124 = func.call @__coyote_load(%input54) : (i32) -> i32
+  lane  63: %128 = func.call @__coyote_load(%input62) : (i32) -> i32
+
+Cycle 4 (32 ops):
+  lane   8: %129 = arith.muli %33, %97 : i32
+  lane   9: %133 = arith.muli %37, %101 : i32
+  lane  10: %137 = arith.muli %41, %105 : i32
+  lane  11: %141 = arith.muli %45, %109 : i32
+  lane  12: %145 = arith.muli %49, %113 : i32
+  lane  13: %149 = arith.muli %53, %117 : i32
+  lane  14: %153 = arith.muli %57, %121 : i32
+  lane  15: %157 = arith.muli %61, %125 : i32
+  lane  16: %130 = arith.muli %34, %98 : i32
+  lane  17: %134 = arith.muli %38, %102 : i32
+  lane  18: %138 = arith.muli %42, %106 : i32
+  lane  19: %142 = arith.muli %46, %110 : i32
+  lane  20: %146 = arith.muli %50, %114 : i32
+  lane  21: %150 = arith.muli %54, %118 : i32
+  lane  22: %154 = arith.muli %58, %122 : i32
+  lane  23: %158 = arith.muli %62, %126 : i32
+  lane  24: %131 = arith.muli %35, %99 : i32
+  lane  25: %135 = arith.muli %39, %103 : i32
+  lane  26: %139 = arith.muli %43, %107 : i32
+  lane  27: %143 = arith.muli %47, %111 : i32
+  lane  28: %147 = arith.muli %51, %115 : i32
+  lane  29: %151 = arith.muli %55, %119 : i32
+  lane  30: %155 = arith.muli %59, %123 : i32
+  lane  31: %159 = arith.muli %63, %127 : i32
+  lane  56: %132 = arith.muli %36, %100 : i32
+  lane  57: %136 = arith.muli %40, %104 : i32
+  lane  58: %140 = arith.muli %44, %108 : i32
+  lane  59: %144 = arith.muli %48, %112 : i32
+  lane  60: %148 = arith.muli %52, %116 : i32
+  lane  61: %152 = arith.muli %56, %120 : i32
+  lane  62: %156 = arith.muli %60, %124 : i32
+  lane  63: %160 = arith.muli %64, %128 : i32
+
+Cycle 5 (32 ops):
+  lane   8: %161 = arith.muli %1, %65 : i32
+  lane   9: %165 = arith.muli %5, %69 : i32
+  lane  10: %169 = arith.muli %9, %73 : i32
+  lane  11: %173 = arith.muli %13, %77 : i32
+  lane  12: %177 = arith.muli %17, %81 : i32
+  lane  13: %181 = arith.muli %21, %85 : i32
+  lane  14: %185 = arith.muli %25, %89 : i32
+  lane  15: %189 = arith.muli %29, %93 : i32
+  lane  16: %162 = arith.muli %2, %66 : i32
+  lane  17: %166 = arith.muli %6, %70 : i32
+  lane  18: %170 = arith.muli %10, %74 : i32
+  lane  19: %174 = arith.muli %14, %78 : i32
+  lane  20: %178 = arith.muli %18, %82 : i32
+  lane  21: %182 = arith.muli %22, %86 : i32
+  lane  22: %186 = arith.muli %26, %90 : i32
+  lane  23: %190 = arith.muli %30, %94 : i32
+  lane  24: %163 = arith.muli %3, %67 : i32
+  lane  25: %167 = arith.muli %7, %71 : i32
+  lane  26: %171 = arith.muli %11, %75 : i32
+  lane  27: %175 = arith.muli %15, %79 : i32
+  lane  28: %179 = arith.muli %19, %83 : i32
+  lane  29: %183 = arith.muli %23, %87 : i32
+  lane  30: %187 = arith.muli %27, %91 : i32
+  lane  31: %191 = arith.muli %31, %95 : i32
+  lane  56: %164 = arith.muli %4, %68 : i32
+  lane  57: %168 = arith.muli %8, %72 : i32
+  lane  58: %172 = arith.muli %12, %76 : i32
+  lane  59: %176 = arith.muli %16, %80 : i32
+  lane  60: %180 = arith.muli %20, %84 : i32
+  lane  61: %184 = arith.muli %24, %88 : i32
+  lane  62: %188 = arith.muli %28, %92 : i32
+  lane  63: %192 = arith.muli %32, %96 : i32
+
+Cycle 6 (32 ops):
+  lane   8: %193 = arith.addi %161, %129 : i32
+  lane   9: %197 = arith.addi %165, %133 : i32
+  lane  10: %201 = arith.addi %169, %137 : i32
+  lane  11: %205 = arith.addi %173, %141 : i32
+  lane  12: %209 = arith.addi %177, %145 : i32
+  lane  13: %213 = arith.addi %181, %149 : i32
+  lane  14: %217 = arith.addi %185, %153 : i32
+  lane  15: %221 = arith.addi %189, %157 : i32
+  lane  16: %194 = arith.addi %162, %130 : i32
+  lane  17: %198 = arith.addi %166, %134 : i32
+  lane  18: %202 = arith.addi %170, %138 : i32
+  lane  19: %206 = arith.addi %174, %142 : i32
+  lane  20: %210 = arith.addi %178, %146 : i32
+  lane  21: %214 = arith.addi %182, %150 : i32
+  lane  22: %218 = arith.addi %186, %154 : i32
+  lane  23: %222 = arith.addi %190, %158 : i32
+  lane  24: %195 = arith.addi %163, %131 : i32
+  lane  25: %199 = arith.addi %167, %135 : i32
+  lane  26: %203 = arith.addi %171, %139 : i32
+  lane  27: %207 = arith.addi %175, %143 : i32
+  lane  28: %211 = arith.addi %179, %147 : i32
+  lane  29: %215 = arith.addi %183, %151 : i32
+  lane  30: %219 = arith.addi %187, %155 : i32
+  lane  31: %223 = arith.addi %191, %159 : i32
+  lane  56: %196 = arith.addi %164, %132 : i32
+  lane  57: %200 = arith.addi %168, %136 : i32
+  lane  58: %204 = arith.addi %172, %140 : i32
+  lane  59: %208 = arith.addi %176, %144 : i32
+  lane  60: %212 = arith.addi %180, %148 : i32
+  lane  61: %216 = arith.addi %184, %152 : i32
+  lane  62: %220 = arith.addi %188, %156 : i32
+  lane  63: %224 = arith.addi %192, %160 : i32
+
+andidates.
+
+=== Coyote Vectorizer Pass ===
+
+Expanding input group with 1 seed ops...
+  Seed op: %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %2 = func.call @__coyote_load(%input1) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %3 = func.call @__coyote_load(%input2) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %4 = func.call @__coyote_load(%input3) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %5 = func.call @__coyote_load(%input4) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %6 = func.call @__coyote_load(%input5) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %7 = func.call @__coyote_load(%input6) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %8 = func.call @__coyote_load(%input7) : (i32) -> i32
+Expanding output group with 4 seed ops...
+  Seed op: %inserted = tensor.insert %17 into %cst[%c0] : tensor<4xi32>
+  Seed op: %inserted_0 = tensor.insert %18 into %inserted[%c1] : tensor<4xi32>
+  Seed op: %inserted_1 = tensor.insert %19 into %inserted_0[%c2] : tensor<4xi32>
+  Seed op: %inserted_2 = tensor.insert %20 into %inserted_1[%c3] : tensor<4xi32>
+Schedule merging candidates:
+  mm_clone_0_0
+    mm_clone_0_1
+    mm_clone_0_1
+    mm_clone_0_1
+    mm_clone_0_1
+    mm_clone_0_1
+    mm_clone_0_1
+    mm_clone_0_1
+Op: %72 = func.call @__coyote_load(%input12) : (i32) -> i32
+Lane: 57
+Op: %95 = func.call @__coyote_load(%input61) : (i32) -> i32
+Lane: 31
+Op: %37 = func.call @__coyote_load(%input11) : (i32) -> i32
+Lane: 9
+Op: %47 = func.call @__coyote_load(%input25) : (i32) -> i32
+Lane: 27
+Op: %208 = arith.addi %176, %144 : i32
+Lane: 59
+Op: %207 = arith.addi %175, %143 : i32
+Lane: 27
+Op: %217 = arith.addi %185, %153 : i32
+Lane: 14
+Op: %39 = func.call @__coyote_load(%input9) : (i32) -> i32
+Lane: 25
+Op: %218 = arith.addi %186, %154 : i32
+Lane: 22
+Op: %73 = func.call @__coyote_load(%input20) : (i32) -> i32
+Lane: 10
+Op: %94 = func.call @__coyote_load(%input61) : (i32) -> i32
+Lane: 23
+Op: %167 = arith.muli %7, %71 : i32
+Lane: 25
+Op: %101 = func.call @__coyote_load(%input14) : (i32) -> i32
+Lane: 9
+Op: %117 = func.call @__coyote_load(%input46) : (i32) -> i32
+Lane: 13
+Op: %99 = func.call @__coyote_load(%input7) : (i32) -> i32
+Lane: 24
+Op: %55 = func.call @__coyote_load(%input41) : (i32) -> i32
+Lane: 29
+Op: %158 = arith.muli %62, %126 : i32
+Lane: 23
+Op: %10 = func.call @__coyote_load(%input18) : (i32) -> i32
+Lane: 18
+Op: %100 = func.call @__coyote_load(%input6) : (i32) -> i32
+Lane: 56
+Op: %61 = func.call @__coyote_load(%input59) : (i32) -> i32
+Lane: 15
+Op: %89 = func.call @__coyote_load(%input52) : (i32) -> i32
+Lane: 14
+Op: %168 = arith.muli %8, %72 : i32
+Lane: 57
+Op: %1 = func.call @__coyote_load(%input2) : (i32) -> i32
+Lane: 8
+Op: %127 = func.call @__coyote_load(%input63) : (i32) -> i32
+Lane: 31
+Op: %126 = func.call @__coyote_load(%input63) : (i32) -> i32
+Lane: 23
+Op: %13 = func.call @__coyote_load(%input26) : (i32) -> i32
+Lane: 11
+Op: %32 = func.call @__coyote_load(%input56) : (i32) -> i32
+Lane: 63
+Op: %102 = func.call @__coyote_load(%input15) : (i32) -> i32
+Lane: 17
+Op: %88 = func.call @__coyote_load(%input44) : (i32) -> i32
+Lane: 61
+Op: %125 = func.call @__coyote_load(%input62) : (i32) -> i32
+Lane: 15
+Op: %28 = func.call @__coyote_load(%input48) : (i32) -> i32
+Lane: 62
+Op: %60 = func.call @__coyote_load(%input49) : (i32) -> i32
+Lane: 62
+Op: %118 = func.call @__coyote_load(%input47) : (i32) -> i32
+Lane: 21
+Op: %43 = func.call @__coyote_load(%input17) : (i32) -> i32
+Lane: 26
+Op: %145 = arith.muli %49, %113 : i32
+Lane: 12
+Op: %189 = arith.muli %29, %93 : i32
+Lane: 15
+Op: %78 = func.call @__coyote_load(%input29) : (i32) -> i32
+Lane: 19
+Op: %188 = arith.muli %28, %92 : i32
+Lane: 62
+Op: %26 = func.call @__coyote_load(%input50) : (i32) -> i32
+Lane: 22
+Op: %146 = arith.muli %50, %114 : i32
+Lane: 20
+Op: %98 = func.call @__coyote_load(%input7) : (i32) -> i32
+Lane: 16
+Op: %185 = arith.muli %25, %89 : i32
+Lane: 14
+Op: %79 = func.call @__coyote_load(%input29) : (i32) -> i32
+Lane: 27
+Op: %56 = func.call @__coyote_load(%input41) : (i32) -> i32
+Lane: 61
+Op: %212 = arith.addi %180, %148 : i32
+Lane: 60
+Op: %83 = func.call @__coyote_load(%input37) : (i32) -> i32
+Lane: 28
+Op: %211 = arith.addi %179, %147 : i32
+Lane: 28
+Op: %57 = func.call @__coyote_load(%input51) : (i32) -> i32
+Lane: 14
+Op: %141 = arith.muli %45, %109 : i32
+Lane: 11
+Op: %30 = func.call @__coyote_load(%input58) : (i32) -> i32
+Lane: 23
+Op: %220 = arith.addi %188, %156 : i32
+Lane: 62
+Op: %186 = arith.muli %26, %90 : i32
+Lane: 22
+Op: %33 = func.call @__coyote_load(%input3) : (i32) -> i32
+Lane: 8
+Op: %190 = arith.muli %30, %94 : i32
+Lane: 23
+Op: %219 = arith.addi %187, %155 : i32
+Lane: 30
+Op: %187 = arith.muli %27, %91 : i32
+Lane: 30
+Op: %183 = arith.muli %23, %87 : i32
+Lane: 29
+Op: %68 = func.call @__coyote_load(%input4) : (i32) -> i32
+Lane: 56
+Op: %124 = func.call @__coyote_load(%input54) : (i32) -> i32
+Lane: 62
+Op: %107 = func.call @__coyote_load(%input23) : (i32) -> i32
+Lane: 26
+Op: %123 = func.call @__coyote_load(%input55) : (i32) -> i32
+Lane: 30
+Op: %3 = func.call @__coyote_load(%input0) : (i32) -> i32
+Lane: 24
+Op: %80 = func.call @__coyote_load(%input28) : (i32) -> i32
+Lane: 59
+Op: %31 = func.call @__coyote_load(%input56) : (i32) -> i32
+Lane: 31
+Op: %116 = func.call @__coyote_load(%input38) : (i32) -> i32
+Lane: 60
+Op: %108 = func.call @__coyote_load(%input22) : (i32) -> i32
+Lane: 58
+Op: %162 = arith.muli %2, %66 : i32
+Lane: 16
+Op: %20 = func.call @__coyote_load(%input32) : (i32) -> i32
+Lane: 60
+Op: %142 = arith.muli %46, %110 : i32
+Lane: 19
+Op: %81 = func.call @__coyote_load(%input36) : (i32) -> i32
+Lane: 12
+Op: %115 = func.call @__coyote_load(%input39) : (i32) -> i32
+Lane: 28
+Op: %161 = arith.muli %1, %65 : i32
+Lane: 8
+Op: %184 = arith.muli %24, %88 : i32
+Lane: 61
+Op: %69 = func.call @__coyote_load(%input12) : (i32) -> i32
+Lane: 9
+Op: %154 = arith.muli %58, %122 : i32
+Lane: 22
+Op: %153 = arith.muli %57, %121 : i32
+Lane: 14
+Op: %23 = func.call @__coyote_load(%input40) : (i32) -> i32
+Lane: 29
+Op: %119 = func.call @__coyote_load(%input47) : (i32) -> i32
+Lane: 29
+Op: %22 = func.call @__coyote_load(%input42) : (i32) -> i32
+Lane: 21
+Op: %14 = func.call @__coyote_load(%input26) : (i32) -> i32
+Lane: 19
+Op: %213 = arith.addi %181, %149 : i32
+Lane: 13
+Op: %120 = func.call @__coyote_load(%input46) : (i32) -> i32
+Lane: 61
+Op: %21 = func.call @__coyote_load(%input42) : (i32) -> i32
+Lane: 13
+Op: %29 = func.call @__coyote_load(%input58) : (i32) -> i32
+Lane: 15
+Op: %214 = arith.addi %182, %150 : i32
+Lane: 21
+Op: %175 = arith.muli %15, %79 : i32
+Lane: 27
+Op: %152 = arith.muli %56, %120 : i32
+Lane: 61
+Op: %53 = func.call @__coyote_load(%input43) : (i32) -> i32
+Lane: 13
+Op: %176 = arith.muli %16, %80 : i32
+Lane: 59
+Op: %151 = arith.muli %55, %119 : i32
+Lane: 29
+Op: %50 = func.call @__coyote_load(%input35) : (i32) -> i32
+Lane: 20
+Op: %157 = arith.muli %61, %125 : i32
+Lane: 15
+Op: %38 = func.call @__coyote_load(%input11) : (i32) -> i32
+Lane: 17
+Op: %215 = arith.addi %183, %151 : i32
+Lane: 29
+Op: %128 = func.call @__coyote_load(%input62) : (i32) -> i32
+Lane: 63
+Op: %6 = func.call @__coyote_load(%input10) : (i32) -> i32
+Lane: 17
+Op: %205 = arith.addi %173, %141 : i32
+Lane: 11
+Op: %170 = arith.muli %10, %74 : i32
+Lane: 18
+Op: %149 = arith.muli %53, %117 : i32
+Lane: 13
+Op: %44 = func.call @__coyote_load(%input17) : (i32) -> i32
+Lane: 58
+Op: %202 = arith.addi %170, %138 : i32
+Lane: 18
+Op: %41 = func.call @__coyote_load(%input19) : (i32) -> i32
+Lane: 10
+Op: %169 = arith.muli %9, %73 : i32
+Lane: 10
+Op: %206 = arith.addi %174, %142 : i32
+Lane: 19
+Op: %150 = arith.muli %54, %118 : i32
+Lane: 21
+Op: %24 = func.call @__coyote_load(%input40) : (i32) -> i32
+Lane: 61
+Op: %156 = arith.muli %60, %124 : i32
+Lane: 62
+Op: %45 = func.call @__coyote_load(%input27) : (i32) -> i32
+Lane: 11
+Op: %201 = arith.addi %169, %137 : i32
+Lane: 10
+Op: %138 = arith.muli %42, %106 : i32
+Lane: 18
+Op: %35 = func.call @__coyote_load(%input1) : (i32) -> i32
+Lane: 24
+Op: %121 = func.call @__coyote_load(%input54) : (i32) -> i32
+Lane: 14
+Op: %70 = func.call @__coyote_load(%input13) : (i32) -> i32
+Lane: 17
+Op: %7 = func.call @__coyote_load(%input8) : (i32) -> i32
+Lane: 25
+Op: %19 = func.call @__coyote_load(%input32) : (i32) -> i32
+Lane: 28
+Op: %11 = func.call @__coyote_load(%input16) : (i32) -> i32
+Lane: 26
+Op: %105 = func.call @__coyote_load(%input22) : (i32) -> i32
+Lane: 10
+Op: %155 = arith.muli %59, %123 : i32
+Lane: 30
+Op: %122 = func.call @__coyote_load(%input55) : (i32) -> i32
+Lane: 22
+Op: %54 = func.call @__coyote_load(%input43) : (i32) -> i32
+Lane: 21
+Op: %137 = arith.muli %41, %105 : i32
+Lane: 10
+Op: %134 = arith.muli %38, %102 : i32
+Lane: 17
+Op: %8 = func.call @__coyote_load(%input8) : (i32) -> i32
+Lane: 57
+Op: %203 = arith.addi %171, %139 : i32
+Lane: 26
+Op: %71 = func.call @__coyote_load(%input13) : (i32) -> i32
+Lane: 25
+Op: %204 = arith.addi %172, %140 : i32
+Lane: 58
+Op: %42 = func.call @__coyote_load(%input19) : (i32) -> i32
+Lane: 18
+Op: %52 = func.call @__coyote_load(%input33) : (i32) -> i32
+Lane: 60
+Op: %93 = func.call @__coyote_load(%input60) : (i32) -> i32
+Lane: 15
+Op: %110 = func.call @__coyote_load(%input31) : (i32) -> i32
+Lane: 19
+Op: %182 = arith.muli %22, %86 : i32
+Lane: 21
+Op: %133 = arith.muli %37, %101 : i32
+Lane: 9
+Op: %86 = func.call @__coyote_load(%input45) : (i32) -> i32
+Lane: 21
+Op: %103 = func.call @__coyote_load(%input15) : (i32) -> i32
+Lane: 25
+Op: %200 = arith.addi %168, %136 : i32
+Lane: 57
+Op: %216 = arith.addi %184, %152 : i32
+Lane: 61
+Op: %104 = func.call @__coyote_load(%input14) : (i32) -> i32
+Lane: 57
+Op: %5 = func.call @__coyote_load(%input10) : (i32) -> i32
+Lane: 9
+Op: %87 = func.call @__coyote_load(%input45) : (i32) -> i32
+Lane: 29
+Op: %46 = func.call @__coyote_load(%input27) : (i32) -> i32
+Lane: 19
+Op: %4 = func.call @__coyote_load(%input0) : (i32) -> i32
+Lane: 56
+Op: %67 = func.call @__coyote_load(%input5) : (i32) -> i32
+Lane: 24
+Op: %92 = func.call @__coyote_load(%input52) : (i32) -> i32
+Lane: 62
+Op: %199 = arith.addi %167, %135 : i32
+Lane: 25
+Op: %66 = func.call @__coyote_load(%input5) : (i32) -> i32
+Lane: 16
+Op: %12 = func.call @__coyote_load(%input16) : (i32) -> i32
+Lane: 58
+Op: %177 = arith.muli %17, %81 : i32
+Lane: 12
+Op: %113 = func.call @__coyote_load(%input38) : (i32) -> i32
+Lane: 12
+Op: %9 = func.call @__coyote_load(%input18) : (i32) -> i32
+Lane: 10
+Op: %181 = arith.muli %21, %85 : i32
+Lane: 13
+Op: %109 = func.call @__coyote_load(%input30) : (i32) -> i32
+Lane: 11
+Op: %173 = arith.muli %13, %77 : i32
+Lane: 11
+Op: %174 = arith.muli %14, %78 : i32
+Lane: 19
+Op: %65 = func.call @__coyote_load(%input4) : (i32) -> i32
+Lane: 8
+Op: %114 = func.call @__coyote_load(%input39) : (i32) -> i32
+Lane: 20
+Op: %172 = arith.muli %12, %76 : i32
+Lane: 58
+Op: %210 = arith.addi %178, %146 : i32
+Lane: 20
+Op: %77 = func.call @__coyote_load(%input28) : (i32) -> i32
+Lane: 11
+Op: %112 = func.call @__coyote_load(%input30) : (i32) -> i32
+Lane: 59
+Op: %64 = func.call @__coyote_load(%input57) : (i32) -> i32
+Lane: 63
+Op: %49 = func.call @__coyote_load(%input35) : (i32) -> i32
+Lane: 12
+Op: %111 = func.call @__coyote_load(%input31) : (i32) -> i32
+Lane: 27
+Op: %17 = func.call @__coyote_load(%input34) : (i32) -> i32
+Lane: 12
+Op: %171 = arith.muli %11, %75 : i32
+Lane: 26
+Op: %36 = func.call @__coyote_load(%input1) : (i32) -> i32
+Lane: 56
+Op: %16 = func.call @__coyote_load(%input24) : (i32) -> i32
+Lane: 59
+Op: %178 = arith.muli %18, %82 : i32
+Lane: 20
+Op: %76 = func.call @__coyote_load(%input20) : (i32) -> i32
+Lane: 58
+Op: %209 = arith.addi %177, %145 : i32
+Lane: 12
+Op: %2 = func.call @__coyote_load(%input2) : (i32) -> i32
+Lane: 16
+Op: %63 = func.call @__coyote_load(%input57) : (i32) -> i32
+Lane: 31
+Op: %131 = arith.muli %35, %99 : i32
+Lane: 24
+Op: %222 = arith.addi %190, %158 : i32
+Lane: 23
+Op: %180 = arith.muli %20, %84 : i32
+Lane: 60
+Op: %48 = func.call @__coyote_load(%input25) : (i32) -> i32
+Lane: 59
+Op: %179 = arith.muli %19, %83 : i32
+Lane: 28
+Op: %160 = arith.muli %64, %128 : i32
+Lane: 63
+Op: %221 = arith.addi %189, %157 : i32
+Lane: 15
+Op: %132 = arith.muli %36, %100 : i32
+Lane: 56
+Op: %62 = func.call @__coyote_load(%input59) : (i32) -> i32
+Lane: 23
+Op: %51 = func.call @__coyote_load(
+[1/9] Identifying and expanding I/O groups...
+  Input groups: 32
+    Group 0: 1 operations (transitively expanded)
+    Group 1: 1 operations (transitively expanded)
+    Group 2: 1 operations (transitively expanded)
+    Group 3: 1 operations (transitively expanded)
+    Group 4: 1 operations (transitively expanded)
+    Group 5: 1 operations (transitively expanded)
+    Group 6: 1 operations (transitively expanded)
+    Group 7: 1 operations (transitively expanded)
+    Group 8: 1 operations (transitively expanded)
+    Group 9: 1 operations (transitively expanded)
+    Group 10: 1 operations (transitively expanded)
+    Group 11: 1 operations (transitively expanded)
+    Group 12: 1 operations (transitively expanded)
+    Group 13: 1 operations (transitively expanded)
+    Group 14: 1 operations (transitively expanded)
+    Group 15: 1 operations (transitively expanded)
+    Group 16: 1 operations (transitively expanded)
+    Group 17: 1 operations (transitively expanded)
+    Group 18: 1 operations (transitively expanded)
+    Group 19: 1 operations (transitively expanded)
+    Group 20: 1 operations (transitively expanded)
+    Group 21: 1 operations (transitively expanded)
+    Group 22: 1 operations (transitively expanded)
+    Group 23: 1 operations (transitively expanded)
+    Group 24: 1 operations (transitively expanded)
+    Group 25: 1 operations (transitively expanded)
+    Group 26: 1 operations (transitively expanded)
+    Group 27: 1 operations (transitively expanded)
+    Group 28: 1 operations (transitively expanded)
+    Group 29: 1 operations (transitively expanded)
+    Group 30: 1 operations (transitively expanded)
+    Group 31: 1 operations (transitively expanded)
+  Output groups: 1
+%input33) : (i32) -> i32
+Lane: 28
+Op: %164 = arith.muli %4, %68 : i32
+Lane: 56
+Op: %15 = func.call @__coyote_load(%input24) : (i32) -> i32
+Lane: 27
+Op: %196 = arith.addi %164, %132 : i32
+Lane: 56
+Op: %193 = arith.addi %161, %129 : i32
+Lane: 8
+Op: %85 = func.call @__coyote_load(%input44) : (i32) -> i32
+Lane: 13
+Op: %18 = func.call @__coyote_load(%input34) : (i32) -> i32
+Lane: 20
+Op: %34 = func.call @__coyote_load(%input3) : (i32) -> i32
+Lane: 16
+Op: %163 = arith.muli %3, %67 : i32
+Lane: 24
+Op: %82 = func.call @__coyote_load(%input37) : (i32) -> i32
+Lane: 20
+Op: %165 = arith.muli %5, %69 : i32
+Lane: 9
+Op: %27 = func.call @__coyote_load(%input48) : (i32) -> i32
+Lane: 30
+Op: %194 = arith.addi %162, %130 : i32
+Lane: 16
+Op: %166 = arith.muli %6, %70 : i32
+Lane: 17
+Op: %136 = arith.muli %40, %104 : i32
+Lane: 57
+Op: %84 = func.call @__coyote_load(%input36) : (i32) -> i32
+Lane: 60
+Op: %159 = arith.muli %63, %127 : i32
+Lane: 31
+Op: %135 = arith.muli %39, %103 : i32
+Lane: 25
+Op: %195 = arith.addi %163, %131 : i32
+Lane: 24
+Op: %139 = arith.muli %43, %107 : i32
+Lane: 26
+Op: %197 = arith.addi %165, %133 : i32
+Lane: 9
+Op: %140 = arith.muli %44, %108 : i32
+Lane: 58
+Op: %223 = arith.addi %191, %159 : i32
+Lane: 31
+Op: %40 = func.call @__coyote_load(%input9) : (i32) -> i32
+Lane: 57
+Op: %74 = func.call @__coyote_load(%input21) : (i32) -> i32
+Lane: 18
+Op: %59 = func.call @__coyote_load(%input49) : (i32) -> i32
+Lane: 30
+Op: %192 = arith.muli %32, %96 : i32
+Lane: 63
+Op: %191 = arith.muli %31, %95 : i32
+Lane: 31
+Op: %224 = arith.addi %192, %160 : i32
+Lane: 63
+Op: %58 = func.call @__coyote_load(%input51) : (i32) -> i32
+Lane: 22
+Op: %143 = arith.muli %47, %111 : i32
+Lane: 27
+Op: %148 = arith.muli %52, %116 : i32
+Lane: 60
+Op: %130 = arith.muli %34, %98 : i32
+Lane: 16
+Op: %96 = func.call @__coyote_load(%input60) : (i32) -> i32
+Lane: 63
+Op: %75 = func.call @__coyote_load(%input21) : (i32) -> i32
+Lane: 26
+Op: %90 = func.call @__coyote_load(%input53) : (i32) -> i32
+Lane: 22
+Op: %144 = arith.muli %48, %112 : i32
+Lane: 59
+Op: %97 = func.call @__coyote_load(%input6) : (i32) -> i32
+Lane: 8
+Op: %129 = arith.muli %33, %97 : i32
+Lane: 8
+Op: %106 = func.call @__coyote_load(%input23) : (i32) -> i32
+Lane: 18
+Op: %198 = arith.addi %166, %134 : i32
+Lane: 17
+Op: %147 = arith.muli %51, %115 : i32
+Lane: 28
+Op: %25 = func.call @__coyote_load(%input50) : (i32) -> i32
+Lane: 14
+Op: %91 = func.call @__coyote_load(%input53) : (i32) -> i32
+Lane: 30
+
+=== Coyote Vectorizer Pass ===
+
+Expanding input group with 1 seed ops...
+  Seed op: %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %2 = func.call @__coyote_load(%input1) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %3 = func.call @__coyote_load(%input2) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %4 = func.call @__coyote_load(%input3) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %5 = func.call @__coyote_load(%input4) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %6 = func.call @__coyote_load(%input5) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %7 = func.call @__coyote_load(%input6) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %8 = func.call @__coyote_load(%input7) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %9 = func.call @__coyote_load(%input8) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %10 = func.call @__coyote_load(%input9) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %11 = func.call @__coyote_load(%input10) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %12 = func.call @__coyote_load(%input11) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %13 = func.call @__coyote_load(%input12) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %14 = func.call @__coyote_load(%input13) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %15 = func.call @__coyote_load(%input14) : (i32) -> i32
+Expanding input group Found 64 operations total
+
+[1.a/9] Replicating multi-use loads...
+  Operations after replication: 64
+func.func private @outlined_reduction_generic0(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>, %arg8: !secret.secret<i32>, %arg9: !secret.secret<i32>, %arg10: !secret.secret<i32>, %arg11: !secret.secret<i32>, %arg12: !secret.secret<i32>, %arg13: !secret.secret<i32>, %arg14: !secret.secret<i32>, %arg15: !secret.secret<i32>, %arg16: !secret.secret<i32>, %arg17: !secret.secret<i32>, %arg18: !secret.secret<i32>, %arg19: !secret.secret<i32>, %arg20: !secret.secret<i32>, %arg21: !secret.secret<i32>, %arg22: !secret.secret<i32>, %arg23: !secret.secret<i32>, %arg24: !secret.secret<i32>, %arg25: !secret.secret<i32>, %arg26: !secret.secret<i32>, %arg27: !secret.secret<i32>, %arg28: !secret.secret<i32>, %arg29: !secret.secret<i32>, %arg30: !secret.secret<i32>, %arg31: !secret.secret<i32>) -> !secret.secret<tensor<16xi32>> {
+  %c0 = arith.constant 0 : index
+  %cst = arith.constant dense<0> : tensor<16xi32>
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %c4 = arith.constant 4 : index
+  %c5 = arith.constant 5 : index
+  %c6 = arith.constant 6 : index
+  %c7 = arith.constant 7 : index
+  %c8 = arith.constant 8 : index
+  %c9 = arith.constant 9 : index
+  %c10 = arith.constant 10 : index
+  %c11 = arith.constant 11 : index
+  %c12 = arith.constant 12 : index
+  %c13 = arith.constant 13 : index
+  %c14 = arith.constant 14 : index
+  %c15 = arith.constant 15 : index
+  %0 = secret.generic(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>, %arg8: !secret.secret<i32>, %arg9: !secret.secret<i32>, %arg10: !secret.secret<i32>, %arg11: !secret.secret<i32>, %arg12: !secret.secret<i32>, %arg13: !secret.secret<i32>, %arg14: !secret.secret<i32>, %arg15: !secret.secret<i32>, %arg16: !secret.secret<i32>, %arg17: !secret.secret<i32>, %arg18: !secret.secret<i32>, %arg19: !secret.secret<i32>, %arg20: !secret.secret<i32>, %arg21: !secret.secret<i32>, %arg22: !secret.secret<i32>, %arg23: !secret.secret<i32>, %arg24: !secret.secret<i32>, %arg25: !secret.secret<i32>, %arg26: !secret.secret<i32>, %arg27: !secret.secret<i32>, %arg28: !secret.secret<i32>, %arg29: !secret.secret<i32>, %arg30: !secret.secret<i32>, %arg31: !secret.secret<i32>) {
+  ^body(%input0: i32, %input1: i32, %input2: i32, %input3: i32, %input4: i32, %input5: i32, %input6: i32, %input7: i32, %input8: i32, %input9: i32, %input10: i32, %input11: i32, %input12: i32, %input13: i32, %input14: i32, %input15: i32, %input16: i32, %input17: i32, %input18: i32, %input19: i32, %input20: i32, %input21: i32, %input22: i32, %input23: i32, %input24: i32, %input25: i32, %input26: i32, %input27: i32, %input28: i32, %input29: i32, %input30: i32, %input31: i32):
+    %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %2 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %3 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %4 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %5 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %6 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %7 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %8 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %9 = func.call @__coyote_load(%input8) : (i32) -> i32
+    %10 = func.call @__coyote_load(%input9) : (i32) -> i32
+    %11 = func.call @__coyote_load(%input10) : (i32) -> i32
+    %12 = func.call @__coyote_load(%input11) : (i32) -> i32
+    %13 = func.call @__coyote_load(%input12) : (i32) -> i32
+    %14 = func.call @__coyote_load(%input13) : (i32) -> i32
+    %15 = func.call @__coyote_load(%input14) : (i32) -> i32
+    %16 = func.call @__coyote_load(%input15) : (i32) -> i32
+    %17 = func.call @__coyote_load(%input16) : (i32) -> i32
+    %18 = func.call @__coyote_load(%input17) : (i32) -> i32
+    %19 = func.call @__coyote_load(%input18) : (i32) -> i32
+    %20 = func.call @__coyote_load(%input19) : (i32) -> i32
+    %21 = func.call @__coyote_load(%input20) : (i32) -> i32
+    %22 = func.call @__coyote_load(%input21) : (i32) -> i32
+    %23 = func.call @__coyote_load(%input22) : (i32) -> i32
+    %24 = func.call @__coyote_load(%input23) : (i32) -> i32
+    %25 = func.call @__coyote_load(%input24) : (i32) -> i32
+    %26 = func.call @__coyote_load(%input25) : (i32) -> i32
+    %27 = func.call @__coyote_load(%input26) : (i32) -> i32
+    %28 = func.call @__coyote_load(%input27) : (i32) -> i32
+    %29 = func.call @__coyote_load(%input28) : (i32) -> i32
+    %30 = func.call @__coyote_load(%input29) : (i32) -> i32
+    %31 = func.call @__coyote_load(%input30) : (i32) -> i32
+    %32 = func.call @__coyote_load(%input31) : (i32) -> i32
+    %33 = arith.addi %1, %5 : i32
+    %34 = arith.addi %2, %6 : i32
+    %35 = arith.addi %3, %7 : i32
+    %36 = arith.addi %4, %8 : i32
+    %37 = arith.addi %9, %13 : i32
+    %38 = arith.addi %10, %14 : i32
+    %39 = arith.addi %11, %15 : i32
+    %40 = arith.addi %12, %16 : i32
+    %41 = arith.addi %17, %21 : i32
+    %42 = arith.addi %18, %22 : i32
+    %43 = arith.addi %19, %23 : i32
+    %44 = arith.addi %20, %24 : i32
+    %45 = arith.addi %25, %29 : i32
+    %46 = arith.addi %26, %30 : i32
+    %47 = arith.addi %27, %31 : i32
+    %48 = arith.addi %28, %32 : i32
+    %inserted = tensor.insert %33 into %cst[%c0] : tensor<16xi32>
+    %inserted_0 = tensor.insert %34 into %inserted[%c1] : tensor<16xi32>
+    %inserted_1 = tensor.insert %37 into %inserted_0[%c2] : tensor<16xi32>
+    %inserted_2 = tensor.insert %38 into %inserted_1[%c3] : tensor<16xi32>
+    %inserted_3 = tensor.insert %35 into %inserted_2[%c4] : tensor<16xi32>
+    %inserted_4 = tensor.insert %36 into %inserted_3[%c5] : tensor<16xi32>
+    %inserted_5 = tensor.insert %39 into %inserted_4[%c6] : tensor<16xi32>
+    %inserted_6 = tensor.insert %40 into %inserted_5[%c7] : tensor<16xi32>
+    %inserted_7 = tensor.insert %41 into %inserted_6[%c8] : tensor<16xi32>
+    %inserted_8 = tensor.insert %42 into %inserted_7[%c9] : tensor<16xi32>
+    %inserted_9 = tensor.insert %45 into %inserted_8[%c10] : tensor<16xi32>
+    %inserted_10 = tensor.insert %46 into %inserted_9[%c11] : tensor<16xi32>
+    %inserted_11 = tensor.insert %43 into %inserted_10[%c12] : tensor<16xi32>
+    %inserted_12 = tensor.insert %44 into %inserted_11[%c13] : tensor<16xi32>
+    %inserted_13 = tensor.insert %47 into %inserted_12[%c14] : tensor<16xi32>
+    %inserted_14 = tensor.insert %48 into %inserted_13[%c15] : tensor<16xi32>
+    secret.yield %inserted_14 : tensor<16xi32>
+  } -> !secret.secret<tensor<16xi32>>
+  return %0 : !secret.secret<tensor<16xi32>>
+}
+
+[2-8/9] Using Python Coyote scheduler...
+  [Python] Running: python3 /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote/run_coyote_from_circuit.py /tmp/coyote_circuit.txt --verbose  --output /tmp/coyote_python_result.json 2>&1
+  [Python] Reading circuit from /tmp/coyote_circuit.txt...
+  [Python] Parsed 48 instructions
+  [Python] Input groups: [{'arg0:0'}, {'arg1:0'}, {'arg2:0'}, {'arg3:0'}, {'arg4:0'}, {'arg5:0'}, {'arg6:0'}, {'arg7:0'}, {'arg8:0'}, {'arg9:0'}, {'arg10:0'}, {'arg11:0'}, {'arg12:0'}, {'arg13:0'}, {'arg14:0'}, {'arg15:0'}, {'arg16:0'}, {'arg17:0'}, {'arg18:0'}, {'a  [Python] rg19:0'}, {'arg20:0'}, {'arg21:0'}, {'arg22:0'}, {'arg23:0'}, {'arg24:0'}, {'arg25:0'}, {'arg26:0'}, {'arg27:0'}, {'arg28:0'}, {'arg29:0'}, {'arg30:0'}, {'arg31:0'}]
+  [Python] Force lanes: {'arg0:0': 56, 'arg1:0': 24, 'arg2:0': 8, 'arg3:0': 16, 'arg4:0': 57, 'arg5:0': 25, 'arg6:0': 9, 'arg7:0': 17, 'arg8:0': 58, 'arg9:0': 26, 'arg10:0': 10, 'arg11:0': 18, 'arg12:0': 59, 'arg13:0': 27, 'arg14:0': 11, 'arg15:0': 19, 'arg16:0': 60  [Python] , 'arg17:0': 28, 'arg18:0': 12, 'arg19:0': 20, 'arg20:0': 61, 'arg21:0': 29, 'arg22:0': 13, 'arg23:0': 21, 'arg24:0': 62, 'arg25:0': 30, 'arg26:0': 14, 'arg27:0': 22, 'arg28:0': 63, 'arg29:0': 31, 'arg30:0': 15, 'arg31:0': 23}
+  [Python]   %0 = arg0:0 ~ arg0:0
+  [Python]   %1 = arg1:0 ~ arg1:0
+  [Python]   %2 = arg2:0 ~ arg2:0
+  [Python]   %3 = arg3:0 ~ arg3:0
+  [Python]   %4 = arg4:0 ~ arg4:0
+  [Python]   %5 = arg5:0 ~ arg5:0
+  [Python]   %6 = arg6:0 ~ arg6:0
+  [Python]   %7 = arg7:0 ~ arg7:0
+  [Python]   %8 = arg8:0 ~ arg8:0
+  [Python]   %9 = arg9:0 ~ arg9:0
+  [Python]   %10 = arg10:0 ~ arg10:0
+  [Python]   %11 = arg11:0 ~ arg11:0
+  [Python]   %12 = arg12:0 ~ arg12:0
+  [Python]   %13 = arg13:0 ~ arg13:0
+  [Python]   %14 = arg14:0 ~ arg14:0
+  [Python]   %15 = arg15:0 ~ arg15:0
+  [Python]   %16 = arg16:0 ~ arg16:0
+  [Python]   %17 = arg17:0 ~ arg17:0
+  [Python]   %18 = arg18:0 ~ arg18:0
+  [Python]   %19 = arg19:0 ~ arg19:0
+  [Python]   %20 = arg20:0 ~ arg20:0
+  [Python]   %21 = arg21:0 ~ arg21:0
+  [Python]   %22 = arg22:0 ~ arg22:0
+  [Python]   %23 = arg23:0 ~ arg23:0
+  [Python]   %24 = arg24:0 ~ arg24:0
+  [Python]   %25 = arg25:0 ~ arg25:0
+  [Python]   %26 = arg26:0 ~ arg26:0
+  [Python]   %27 = arg27:0 ~ arg27:0
+  [Python]   %28 = arg28:0 ~ arg28:0
+  [Python]   %29 = arg29:0 ~ arg29:0
+  [Python]   %30 = arg30:0 ~ arg30:0
+  [Python]   %31 = arg31:0 ~ arg31:0
+  [Python]   %32 = %0 + %4
+  [Python]   %33 = %1 + %5
+  [Python]   %34 = %2 + %6
+  [Python]   %35 = %3 + %7
+  [Python]   %36 = %8 + %12
+  [Python]   %37 = %9 + %13
+  [Python]   %38 = %10 + %14
+  [Python]   %39 = %11 + %15
+  [Python]   %40 = %16 + %20
+  [Python]   %41 = %17 + %21
+  [Python]   %42 = %18 + %22
+  [Python]   %43 = %19 + %23
+  [Python]   %44 = %24 + %28
+  [Python]   %45 = %25 + %29
+  [Python]   %46 = %26 + %30
+  [Python]   %47 = %27 + %31
+  [Python] []
+  [Python] 210
+  [Python]   [pop 0] cost=16.1 (rot=16.0 ht=0.1), queue=0
+  [Python]     SA=1068ms, pop_total=1070ms
+  [Python]   [pop 1] cost=16.1 (rot=16.0 ht=0.1), queue=1
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 2] cost=16.1 (rot=16.0 ht=0.1), queue=2
+  [Python]     SA=1071ms, pop_total=1072ms
+  [Python]   [pop 3] cost=16.1 (rot=16.0 ht=0.1), queue=3
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 4] cost=16.1 (rot=16.0 ht=0.1), queue=4
+  [Python]     SA=1070ms, pop_total=1072ms
+  [Python]   [pop 5] cost=16.1 (rot=16.0 ht=0.1), queue=5
+  [Python]     SA=1058ms, pop_total=1060ms
+  [Python]   [pop 6] cost=16.1 (rot=16.0 ht=0.1), queue=6
+  [Python]     SA=1073ms, pop_total=1074ms
+  [Python]   [pop 7] cost=16.1 (rot=16.0 ht=0.1), queue=7
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 8] cost=16.1 (rot=16.0 ht=0.1), queue=8
+  [Python]     SA=1080ms, pop_total=1081ms
+  [Python]   [pop 9] cost=16.1 (rot=16.0 ht=0.1), queue=9
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 10] cost=16.1 (rot=16.0 ht=0.1), queue=10
+  [Python]     SA=1074ms, pop_total=1075ms
+  [Python]   [pop 11] cost=16.1 (rot=16.0 ht=0.1), queue=11
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 12] cost=16.1 (rot=16.0 ht=0.1), queue=12
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 13] cost=16.1 (rot=16.0 ht=0.1), queue=13
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 14] cost=16.1 (rot=16.0 ht=0.1), queue=14
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 15] cost=16.1 (rot=16.0 ht=0.1), queue=15
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 16] cost=16.2 (rot=16.0 ht=0.2), queue=15
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 17] cost=16.2 (rot=16.0 ht=0.2), queue=16
+  [Python]     SA=1065ms, pop_total=1067ms
+  [Python]   [pop 18] cost=16.2 (rot=16.0 ht=0.2), queue=17
+  [Python]     SA=1054ms, pop_total=1055ms
+  [Python]   [pop 19] cost=16.2 (rot=16.0 ht=0.2), queue=18
+  [Python]     SA=1058ms, pop_total=1060ms
+  [Python]   [pop 20] cost=16.2 (rot=16.0 ht=0.2), queue=19
+  [Python]     SA=1060ms, pop_total=1062ms
+  [Python]   [pop 21] cost=16.2 (rot=16.0 ht=0.2), queue=20
+  [Python]     SA=1055ms, pop_total=1056ms
+  [Python]   [pop 22] cost=16.2 (rot=16.0 ht=0.2), queue=21
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 23] cost=16.2 (rot=16.0 ht=0.2), queue=22
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 24] cost=16.2 (rot=16.0 ht=0.2), queue=23
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 25] cost=16.2 (rot=16.0 ht=0.2), queue=24
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 26] cost=16.2 (rot=16.0 ht=0.2), queue=25
+  [Python]     SA=1055ms, pop_total=1057ms
+  [Python]   [pop 27] cost=16.2 (rot=16.0 ht=0.2), queue=26
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 28] cost=16.2 (rot=16.0 ht=0.2), queue=27
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 29] cost=16.2 (rot=16.0 ht=0.2), queue=28
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 30] cost=16.2 (rot=16.0 ht=0.2), queue=29
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 31] cost=16.2 (rot=16.0 ht=0.2), queue=30
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 32] cost=16.2 (rot=16.0 ht=0.2), queue=31
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 33] cost=16.2 (rot=16.0 ht=0.2), queue=32
+  [Python]     SA=1053ms, pop_total=1055ms
+  [Python]   [pop 34] cost=16.2 (rot=16.0 ht=0.2), queue=33
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 35] cost=16.2 (rot=16.0 ht=0.2), queue=34
+  [Python]     SA=1056ms, pop_total=1057ms
+  [Python]   [pop 36] cost=16.2 (rot=16.0 ht=0.2), queue=35
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 37] cost=16.2 (rot=16.0 ht=0.2), queue=36
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 38] cost=16.2 (rot=16.0 ht=0.2), queue=37
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 39] cost=16.2 (rot=16.0 ht=0.2), queue=38
+  [Python]     SA=1062ms, pop_total=1064ms
+  [Python]   [pop 40] cost=16.2 (rot=16.0 ht=0.2), queue=39
+  [Python]     SA=1060ms, pop_total=1062ms
+  [Python]   [pop 41] cost=16.2 (rot=16.0 ht=0.2), queue=40
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 42] cost=16.2 (rot=16.0 ht=0.2), queue=41
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 43] cost=16.2 (rot=16.0 ht=0.2), queue=42
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 44] cost=16.2 (rot=16.0 ht=0.2), queue=43
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 45] cost=16.2 (rot=16.0 ht=0.2), queue=44
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 46] cost=16.2 (rot=16.0 ht=0.2), queue=45
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 47] cost=16.2 (rot=16.0 ht=0.2), queue=46
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 48] cost=16.2 (rot=16.0 ht=0.2), queue=47
+  [Python]     SA=1064ms, pop_total=1066ms
+  [Python]   [pop 49] cost=16.2 (rot=16.0 ht=0.2), queue=48
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 50] cost=16.2 (rot=16.0 ht=0.2), queue=49
+  [Python]     SA=1052ms, pop_total=1053ms
+  [Python]   [pop 51] cost=16.2 (rot=16.0 ht=0.2), queue=50
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 52] cost=16.2 (rot=16.0 ht=0.2), queue=51
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 53] cost=16.2 (rot=16.0 ht=0.2), queue=52
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 54] cost=16.2 (rot=16.0 ht=0.2), queue=53
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 55] cost=16.2 (rot=16.0 ht=0.2), queue=54
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 56] cost=16.2 (rot=16.0 ht=0.2), queue=55
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 57] cost=16.2 (rot=16.0 ht=0.2), queue=56
+  [Python]     SA=1072ms, pop_total=1073ms
+  [Python]   [pop 58] cost=16.2 (rot=16.0 ht=0.2), queue=57
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 59] cost=16.2 (rot=16.0 ht=0.2), queue=58
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 60] cost=16.2 (rot=16.0 ht=0.2), queue=59
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 61] cost=16.2 (rot=16.0 ht=0.2), queue=60
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 62] cost=16.2 (rot=16.0 ht=0.2), queue=61
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 63] cost=16.2 (rot=16.0 ht=0.2), queue=62
+  [Python]     SA=1069ms, pop_total=1070ms
+  [Python]   [pop 64] cost=16.2 (rot=16.0 ht=0.2), queue=63
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 65] cost=16.2 (rot=16.0 ht=0.2), queue=64
+  [Python]     SA=1074ms, pop_total=1075ms
+  [Python]   [pop 66] cost=16.2 (rot=16.0 ht=0.2), queue=65
+  [Python]     SA=1079ms, pop_total=1080ms
+  [Python]   [pop 67] cost=16.2 (rot=16.0 ht=0.2), queue=66
+  [Python]     SA=1071ms, pop_total=1072ms
+  [Python]   [pop 68] cost=16.2 (rot=16.0 ht=0.2), queue=67
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 69] cost=16.2 (rot=16.0 ht=0.2), queue=68
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 70] cost=16.2 (rot=16.0 ht=0.2), queue=69
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 71] cost=16.2 (rot=16.0 ht=0.2), queue=70
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 72] cost=16.2 (rot=16.0 ht=0.2), queue=71
+  [Python]     SA=1069ms, pop_total=1070ms
+  [Python]   [pop 73] cost=16.2 (rot=16.0 ht=0.2), queue=72
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 74] cost=16.2 (rot=16.0 ht=0.2), queue=73
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 75] cost=16.2 (rot=16.0 ht=0.2), queue=74
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 76] cost=16.2 (rot=16.0 ht=0.2), queue=75
+  [Python]     SA=1071ms, pop_total=1072ms
+  [Python]   [pop 77] cost=16.2 (rot=16.0 ht=0.2), queue=76
+  [Python]     SA=1056ms, pop_total=1058ms
+  [Python]   [pop 78] cost=16.2 (rot=16.0 ht=0.2), queue=77
+  [Python]     SA=1063ms, pop_total=1065ms
+  [Python]   [pop 79] cost=16.2 (rot=16.0 ht=0.2), queue=78
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 80] cost=16.2 (rot=16.0 ht=0.2), queue=79
+  [Python]     SA=1065ms, pop_total=1067ms
+  [Python]   [pop 81] cost=16.2 (rot=16.0 ht=0.2), queue=80
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 82] cost=16.2 (rot=16.0 ht=0.2), queue=81
+  [Python]     SA=1056ms, pop_total=1058ms
+  [Python]   [pop 83] cost=16.2 (rot=16.0 ht=0.2), queue=82
+  [Python]     SA=1067ms, pop_total=1080ms
+  [Python]   [pop 84] cost=16.2 (rot=16.0 ht=0.2), queue=83
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 85] cost=16.2 (rot=16.0 ht=0.2), queue=84
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 86] cost=16.2 (rot=16.0 ht=0.2), queue=85
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 87] cost=16.2 (rot=16.0 ht=0.2), queue=86
+  [Python]     SA=1069ms, pop_total=1070ms
+  [Python]   [pop 88] cost=16.2 (rot=16.0 ht=0.2), queue=87
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 89] cost=16.2 (rot=16.0 ht=0.2), queue=88
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 90] cost=16.2 (rot=16.0 ht=0.2), queue=89
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 91] cost=16.2 (rot=16.0 ht=0.2), queue=90
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 92] cost=16.2 (rot=16.0 ht=0.2), queue=91
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 93] cost=16.2 (rot=16.0 ht=0.2), queue=92
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 94] cost=16.2 (rot=16.0 ht=0.2), queue=93
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 95] cost=16.2 (rot=16.0 ht=0.2), queue=94
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 96] cost=16.2 (rot=16.0 ht=0.2), queue=95
+  [Python]     SA=1055ms, pop_total=1056ms
+  [Python]   [pop 97] cost=16.2 (rot=16.0 ht=0.2), queue=96
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 98] cost=16.2 (rot=16.0 ht=0.2), queue=97
+  [Python]     SA=1058ms, pop_total=1060ms
+  [Python]   [pop 99] cost=16.2 (rot=16.0 ht=0.2), queue=98
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 100] cost=16.2 (rot=16.0 ht=0.2), queue=99
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 101] cost=16.2 (rot=16.0 ht=0.2), queue=100
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 102] cost=16.2 (rot=16.0 ht=0.2), queue=101
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 103] cost=16.2 (rot=16.0 ht=0.2), queue=102
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 104] cost=16.2 (rot=16.0 ht=0.2), queue=103
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 105] cost=16.2 (rot=16.0 ht=0.2), queue=104
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 106] cost=16.2 (rot=16.0 ht=0.2), queue=104
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 107] cost=16.2 (rot=16.0 ht=0.2), queue=105
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 108] cost=16.2 (rot=16.0 ht=0.2), queue=106
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 109] cost=16.2 (rot=16.0 ht=0.2), queue=107
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 110] cost=16.2 (rot=16.0 ht=0.2), queue=108
+  [Python]     SA=1077ms, pop_total=1078ms
+  [Python]   [pop 111] cost=16.2 (rot=16.0 ht=0.2), queue=108
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 112] cost=16.2 (rot=16.0 ht=0.2), queue=109
+  [Python]     SA=1076ms, pop_total=1078ms
+  [Python]   [pop 113] cost=16.2 (rot=16.0 ht=0.2), queue=110
+  [Python]     SA=1080ms, pop_total=1081ms
+  [Python]   [pop 114] cost=16.2 (rot=16.0 ht=0.2), queue=110
+  [Python]     SA=1075ms, pop_total=1076ms
+  [Python]   [pop 115] cost=16.2 (rot=16.0 ht=0.2), queue=111
+  [Python]     SA=1077ms, pop_total=1078ms
+  [Python]   [pop 116] cost=16.2 (rot=16.0 ht=0.2), queue=112
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 117] cost=16.2 (rot=16.0 ht=0.2), queue=113
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 118] cost=16.2 (rot=16.0 ht=0.2), queue=114
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 119] cost=16.2 (rot=16.0 ht=0.2), queue=115
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 120] cost=16.2 (rot=16.0 ht=0.2), queue=116
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 121] cost=16.2 (rot=16.0 ht=0.2), queue=117
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 122] cost=16.2 (rot=16.0 ht=0.2), queue=118
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 123] cost=16.2 (rot=16.0 ht=0.2), queue=119
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 124] cost=16.2 (rot=16.0 ht=0.2), queue=120
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 125] cost=16.2 (rot=16.0 ht=0.2), queue=121
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 126] cost=16.2 (rot=16.0 ht=0.2), queue=122
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 127] cost=16.2 (rot=16.0 ht=0.2), queue=123
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 128] cost=16.2 (rot=16.0 ht=0.2), queue=124
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 129] cost=16.2 (rot=16.0 ht=0.2), queue=125
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 130] cost=16.2 (rot=16.0 ht=0.2), queue=126
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 131] cost=16.2 (rot=16.0 ht=0.2), queue=126
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 132] cost=16.2 (rot=16.0 ht=0.2), queue=127
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 133] cost=16.2 (rot=16.0 ht=0.2), queue=128
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 134] cost=16.2 (rot=16.0 ht=0.2), queue=129
+  [Python]     SA=1058ms, pop_total=1060ms
+  [Python]   [pop 135] cost=16.2 (rot=16.0 ht=0.2), queue=130
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 136] cost=16.2 (rot=16.0 ht=0.2), queue=131
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 137] cost=16.2 (rot=16.0 ht=0.2), queue=132
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 138] cost=16.2 (rot=16.0 ht=0.2), queue=133
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 139] cost=16.2 (rot=16.0 ht=0.2), queue=134
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 140] cost=16.2 (rot=16.0 ht=0.2), queue=135
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 141] cost=16.2 (rot=16.0 ht=0.2), queue=136
+  [Python]     SA=1064ms, pop_total=1066ms
+  [Python]   [pop 142] cost=16.2 (rot=16.0 ht=0.2), queue=137
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 143] cost=16.2 (rot=16.0 ht=0.2), queue=138
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 144] cost=16.2 (rot=16.0 ht=0.2), queue=139
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 145] cost=16.2 (rot=16.0 ht=0.2), queue=140
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 146] cost=16.2 (rot=16.0 ht=0.2), queue=141
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 147] cost=16.2 (rot=16.0 ht=0.2), queue=142
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 148] cost=16.2 (rot=16.0 ht=0.2), queue=143
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 149] cost=16.2 (rot=16.0 ht=0.2), queue=144
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 150] cost=16.2 (rot=16.0 ht=0.2), queue=145
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 151] cost=16.2 (rot=16.0 ht=0.2), queue=146
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 152] cost=16.2 (rot=16.0 ht=0.2), queue=147
+  [Python]     SA=1054ms, pop_total=1055ms
+  [Python]   [pop 153] cost=16.2 (rot=16.0 ht=0.2), queue=148
+  [Python]     SA=1062ms, pop_total=1063ms
+  [Python]   [pop 154] cost=16.2 (rot=16.0 ht=0.2), queue=149
+  [Python]     SA=1055ms, pop_total=1056ms
+  [Python]   [pop 155] cost=16.2 (rot=16.0 ht=0.2), queue=150
+  [Python]     SA=1057ms, pop_total=1059ms
+  [Python]   [pop 156] cost=16.2 (rot=16.0 ht=0.2), queue=151
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 157] cost=16.2 (rot=16.0 ht=0.2), queue=152
+  [Python]     SA=1052ms, pop_total=1053ms
+  [Python]   [pop 158] cost=16.2 (rot=16.0 ht=0.2), queue=153
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 159] cost=16.2 (rot=16.0 ht=0.2), queue=154
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 160] cost=16.2 (rot=16.0 ht=0.2), queue=155
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 161] cost=16.2 (rot=16.0 ht=0.2), queue=156
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 162] cost=16.2 (rot=16.0 ht=0.2), queue=157
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 163] cost=16.2 (rot=16.0 ht=0.2), queue=158
+  [Python]     SA=1078ms, pop_total=1080ms
+  [Python]   [pop 164] cost=16.2 (rot=16.0 ht=0.2), queue=159
+  [Python]     SA=1054ms, pop_total=1055ms
+  [Python]   [pop 165] cost=16.2 (rot=16.0 ht=0.2), queue=160
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 166] cost=16.2 (rot=16.0 ht=0.2), queue=161
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 167] cost=16.2 (rot=16.0 ht=0.2), queue=162
+  [Python]     SA=1059ms, pop_total=1061ms
+  [Python]   [pop 168] cost=16.2 (rot=16.0 ht=0.2), queue=163
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 169] cost=16.2 (rot=16.0 ht=0.2), queue=164
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 170] cost=16.2 (rot=16.0 ht=0.2), queue=165
+  [Python]     SA=1056ms, pop_total=1057ms
+  [Python]   [pop 171] cost=16.2 (rot=16.0 ht=0.2), queue=166
+  [Python]     SA=1059ms, pop_total=1060ms
+  [Python]   [pop 172] cost=16.2 (rot=16.0 ht=0.2), queue=167
+  [Python]     SA=1063ms, pop_total=1064ms
+  [Python]   [pop 173] cost=16.2 (rot=16.0 ht=0.2), queue=168
+  [Python]     SA=1065ms, pop_total=1067ms
+  [Python]   [pop 174] cost=16.2 (rot=16.0 ht=0.2), queue=169
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 175] cost=16.2 (rot=16.0 ht=0.2), queue=170
+  [Python]     SA=1067ms, pop_total=1068ms
+  [Python]   [pop 176] cost=16.2 (rot=16.0 ht=0.2), queue=171
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 177] cost=16.2 (rot=16.0 ht=0.2), queue=172
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 178] cost=16.2 (rot=16.0 ht=0.2), queue=173
+  [Python]     SA=1051ms, pop_total=1052ms
+  [Python]   [pop 179] cost=16.2 (rot=16.0 ht=0.2), queue=174
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 180] cost=16.2 (rot=16.0 ht=0.2), queue=174
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 181] cost=16.2 (rot=16.0 ht=0.2), queue=175
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 182] cost=16.2 (rot=16.0 ht=0.2), queue=176
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 183] cost=16.2 (rot=16.0 ht=0.2), queue=177
+  [Python]     SA=1056ms, pop_total=1057ms
+  [Python]   [pop 184] cost=16.2 (rot=16.0 ht=0.2), queue=177
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 185] cost=16.2 (rot=16.0 ht=0.2), queue=178
+  [Python]     SA=1057ms, pop_total=1058ms
+  [Python]   [pop 186] cost=16.2 (rot=16.0 ht=0.2), queue=179
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 187] cost=16.2 (rot=16.0 ht=0.2), queue=180
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 188] cost=16.2 (rot=16.0 ht=0.2), queue=180
+  [Python]     SA=1070ms, pop_total=1071ms
+  [Python]   [pop 189] cost=16.2 (rot=16.0 ht=0.2), queue=181
+  [Python]     SA=1066ms, pop_total=1067ms
+  [Python]   [pop 190] cost=16.2 (rot=16.0 ht=0.2), queue=182
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 191] cost=16.2 (rot=16.0 ht=0.2), queue=183
+  [Python]     SA=1061ms, pop_total=1062ms
+  [Python]   [pop 192] cost=16.2 (rot=16.0 ht=0.2), queue=184
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 193] cost=16.2 (rot=16.0 ht=0.2), queue=185
+  [Python]     SA=1064ms, pop_total=1065ms
+  [Python]   [pop 194] cost=16.2 (rot=16.0 ht=0.2), queue=186
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 195] cost=16.2 (rot=16.0 ht=0.2), queue=187
+  [Python]     SA=1068ms, pop_total=1069ms
+  [Python]   [pop 196] cost=16.2 (rot=16.0 ht=0.2), queue=188
+  [Python]     SA=1060ms, pop_total=1061ms
+  [Python]   [pop 197] cost=16.2 (rot=16.0 ht=0.2), queue=189
+  [Python]     SA=1065ms, pop_total=1066ms
+  [Python]   [pop 198] cost=16.2 (rot=16.0 ht=0.2), queue=190
+  [Python]     SA=1058ms, pop_total=1059ms
+  [Python]   [pop 199] cost=16.2 (rot=16.0 ht=0.2), queue=191
+  [Python]     SA=1066ms, pop_total=1068ms
+  [Python]   Quotient search: 200 SA calls, 212617ms total SA time
+  [Python] Stage (0,): 1 instrs, starts at program_length=0
+  [Python]   fast_align returned: [0]
+  [Python] Stage (1,): 1 instrs, starts at program_length=1
+  [Python]   fast_align returned: [0]
+  [Python] Stage (2,): 1 instrs, starts at program_length=2
+  [Python]   fast_align returned: [0]
+  [Python] Stage (3,): 1 instrs, starts at program_length=3
+  [Python]   fast_align returned: [0]
+  [Python] Stage (4,): 1 instrs, starts at program_length=4
+  [Python]   fast_align returned: [0]
+  [Python] Stage (5,): 1 instrs, starts at program_length=5
+  [Python]   fast_align returned: [0]
+  [Python] Stage (6,): 1 instrs, starts at program_length=6
+  [Python]   fast_align returned: [0]
+  [Python] Stage (7,): 1 instrs, starts at program_length=7
+  [Python]   fast_align returned: [0]
+  [Python] Stage (8,): 1 instrs, starts at program_length=8
+  [Python]   fast_align returned: [0]
+  [Python] Stage (9,): 1 instrs, starts at program_length=9
+  [Python]   fast_align returned: [0]
+  [Python] Stage (10,): 1 instrs, starts at program_length=10
+  [Python]   fast_align returned: [0]
+  [Python] Stage (11,): 1 instrs, starts at program_length=11
+  [Python]   fast_align returned: [0]
+  [Python] Stage (12,): 1 instrs, starts at program_length=12
+  [Python]   fast_align returned: [0]
+  [Python] Stage (13,): 1 instrs, starts at program_length=13
+  [Python]   fast_align returned: [0]
+  [Python] Stage (14,): 1 instrs, starts at program_length=14
+  [Python]   fast_align returned: [0]
+  [Python] Stage (15,): 1 instrs, starts at program_length=15
+  [Python]   fast_align returned: [0]
+  [Python] Stage (16,): 1 instrs, starts at program_length=16
+  [Python]   fast_align returned: [0]
+  [Python] Stage (17,): 1 instrs, starts at program_length=17
+  [Python]   fast_align returned: [0]
+  [Python] Stage (18,): 1 instrs, starts at program_length=18
+  [Python]   fast_align returned: [0]
+  [Python] Stage (19,): 1 instrs, starts at program_length=19
+  [Python]   fast_align returned: [0]
+  [Python] Stage (20,): 1 instrs, starts at program_length=20
+  [Python]   fast_align returned: [0]
+  [Python] Stage (21,): 1 instrs, starts at program_length=21
+  [Python]   fast_align returned: [0]
+  [Python] Stage (22,): 1 instrs, starts at program_length=22
+  [Python]   fast_align returned: [0]
+  [Python] Stage (23,): 1 instrs, starts at program_length=23
+  [Python]   fast_align returned: [0]
+  [Python] Stage (24,): 1 instrs, starts at program_length=24
+  [Python]   fast_align returned: [0]
+  [Python] Stage (25,): 1 instrs, starts at program_length=25
+  [Python]   fast_align returned: [0]
+  [Python] Stage (26,): 1 instrs, starts at program_length=26
+  [Python]   fast_align returned: [0]
+  [Python] Stage (27,): 1 instrs, starts at program_length=27
+  [Python]   fast_align returned: [0]
+  [Python] Stage (28,): 1 instrs, starts at program_length=28
+  [Python]   fast_align returned: [0]
+  [Python] Stage (29,): 1 instrs, starts at program_length=29
+  [Python]   fast_align returned: [0]
+  [Python] Stage (30,): 1 instrs, starts at program_length=30
+  [Python]   fast_align returned: [0]
+  [Python] Stage (31,): 1 instrs, starts at program_length=31
+  [Python]   fast_align returned: [0]
+  [Python] Stage (32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47): 16 instrs, starts at program_length=32
+  [Python]   fast_align returned: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  [Python] pre-blend-relax alignment: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
+  [Python] lanes: [56, 24, 8, 16, 57, 25, 9, 17, 58, 26, 10, 18, 59, 27, 11, 19, 60, 28, 12, 20, 61, 29, 13, 21, 62, 30, 14, 22, 63, 31, 15, 23, 56, 24, 9, 16, 58, 27, 10, 18, 61, 28, 12, 20, 62, 31, 15, 22]
+  [Python] alignment: [3, 3, 3, 3, 7, 7, 7, 7, 3, 3, 3, 3, 7, 7, 7, 7, 3, 3, 3, 3, 7, 7, 7, 7, 3, 3, 3, 3, 7, 7, 7, 7, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
+  [Python]
+  [Python] Vectorized code:
+  [Python]   __t0 = [0, 0, 0, 0, 0, 0, 0, 0, arg2:0, 0, arg10:0, 0, arg18:0, 0, arg26:0, 0, arg3:0, 0, arg11:0, 0, arg19:0, 0, arg27:0, 0, arg1:0, 0, arg9:0, 0, arg17:0, 0, arg25:0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, arg0:0, 0  [Python] , arg8:0, 0, arg16:0, 0, arg24:0, 0]
+  [Python]   __v3 = load(__t0)
+  [Python]   __s0 = __v3 >> 1
+  [Python]   __t1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, arg6:0, 0, arg14:0, 0, arg22:0, 0, arg30:0, 0, arg7:0, 0, arg15:0, 0, arg23:0, 0, arg31:0, 0, arg5:0, 0, arg13:0, 0, arg21:0, 0, arg29:0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, arg4:  [Python] 0, 0, arg12:0, 0, arg20:0, 0, arg28:0]
+  [Python]   __v7 = load(__t1)
+  [Python]   __s1 = __v7 >> -1
+  [Python]   __t2 = blend(__s0@0000000001000001000000000001000100000000000000000000000000000100, __v3@0000000000101000101010101000100000000000000000000000000010100010)
+  [Python]   __t3 = blend(__v7@0000000001000001000000000001000100000000000000000000000000000100, __s1@0000000000101000101010101000100000000000000000000000000010100010)
+  [Python]   __v32 = __t2 + __t3
+  [Python]
+  [Python] Costs: {'rotations': 2, 'blends': 2, 'ct_ct_muls': 0, 'pt_ct_muls': 4, 'adds': 3, 'loads': 2, 'total_instructions': 9}
+  [Python] Written to /tmp/coyote_python_result.json
+  [Python] Schedule: warp=64, lanes=48, depth=33
+Op: %1 = func.call @__coyote_load(%input0) : (i32) -> i32 lane: 56 align: 3
+Op: %2 = func.call @__coyote_load(%input1) : (i32) -> i32 lane: 24 align: 3
+Op: %3 = func.call @__coyote_load(%input2) : (i32) -> i32 lane: 8 align: 3
+Op: %4 = func.call @__coyote_load(%input3) : (i32) -> i32 lane: 16 align: 3
+Op: %5 = func.call @__coyote_load(%input4) : (i32) -> i32 lane: 57 align: 7
+Op: %6 = func.call @__coyote_load(%input5) : (i32) -> i32 lane: 25 align: 7
+Op: %7 = func.call @__coyote_load(%input6) : (i32) -> i32 lane: 9 align: 7
+Op: %8 = func.call @__coyote_load(%input7) : (i32) -> i32 lane: 17 align: 7
+Op: %9 = func.call @__coyote_load(%input8) : (i32) -> i32 lane: 58 align: 3
+Op: %10 = func.call @__coyote_load(%input9) : (i32) -> i32 lane: 26 align: 3
+Op: %11 = func.call @__coyote_load(%input10) : (i32) -> i32 lane: 10 align: 3
+Op: %12 = func.call @__coyote_load(%input11) : (i32) -> i32 lane: 18 align: 3
+Op: %13 = func.call @__coyote_load(%input12) : (i32) -> i32 lane: 59 align: 7
+Op: %14 = func.call @__coyote_load(%input13) : (i32) -> i32 lane: 27 align: 7
+Op: %15 = func.call @__coyote_load(%input14) : (i32) -> i32 lane: 11 align: 7
+Op: %16 = func.call @__coyote_load(%input15) : (i32) -> i32 lane: 19 align: 7
+Op: %17 = func.call @__coyote_load(%input16) : (i32) -> i32 lane: 60 align: 3
+Op: %18 = func.call @__coyote_load(%input17) : (i32) -> i32 lane: 28 align: 3
+Op: %19 = func.call @__coyote_load(%input18) : (i32) -> i32 lane: 12 align: 3
+Op: %20 = func.call @__coyote_load(%input19) : (i32) -> i32 lane: 20 align: 3
+Op: %21 = func.call @__coyote_load(%input20) : (i32) -> i32 lane: 61 align: 7
+Op: %22 = func.call @__coyote_load(%input21) : (i32) -> i32 lane: 29 align: 7
+Op: %23 = func.call @__coyote_load(%input22) : (i32) -> i32 lane: 13 align: 7
+Op: %24 = func.call @__coyote_load(%input23) : (i32) -> i32 lane: 21 align: 7
+Op: %25 = func.call @__coyote_load(%input24) : (i32) -> i32 lane: 62 align: 3
+Op: %26 = func.call @__coyote_load(%input25) : (i32) -> i32 lane: 30 align: 3
+Op: %27 = func.call @__coyote_load(%input26) : (i32) -> i32 lane: 14 align: 3
+Op: %28 = func.call @__coyote_load(%input27) : (i32) -> i32 lane: 22 align: 3
+Op: %29 = func.call @__coyote_load(%input28) : (i32) -> i32 lane: 63 align: 7
+Op: %30 = func.call @__coyote_load(%input29) : (i32) -> i32 lane: 31 align: 7
+Op: %31 = func.call @__coyote_load(%input30) : (i32) -> i32 lane: 15 align: 7
+Op: %32 = func.call @__coyote_load(%input31) : (i32) -> i32 lane: 23 align: 7
+Op: %33 = arith.addi %1, %5 : i32 lane: 56 align: 32
+Op: %34 = arith.addi %2, %6 : i32 lane: 24 align: 32
+Op: %35 = arith.addi %3, %7 : i32 lane: 9 align: 32
+Op: %36 = arith.addi %4, %8 : i32 lane: 16 align: 32
+Op: %37 = arith.addi %9, %13 : i32 lane: 58 align: 32
+Op: %38 = arith.addi %10, %14 : i32 lane: 27 align: 32
+Op: %39 = arith.addi %11, %15 : i32 lane: 10 align: 32
+Op: %40 = arith.addi %12, %16 : i32 lane: 18 align: 32
+Op: %41 = arith.addi %17, %21 : i32 lane: 61 align: 32
+Op: %42 = arith.addi %18, %22 : i32 lane: 28 align: 32
+Op: %43 = arith.addi %19, %23 : i32 lane: 12 align: 32
+Op: %44 = arith.addi %20, %24 : i32 lane: 20 align: 32
+Op: %45 = arith.addi %25, %29 : i32 lane: 62 align: 32
+Op: %46 = arith.addi %26, %30 : i32 lane: 31 align: 32
+Op: %47 = arith.addi %27, %31 : i32 lane: 15 align: 32
+Op: %48 = arith.addi %28, %32 : i32 lane: 22 align: 32
+
+=== Generated MLIR ===
+func.func private @outlined_reduction_generic0(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>, %arg8: !secret.secret<i32>, %arg9: !secret.secret<i32>, %arg10: !secret.secret<i32>, %arg11: !secret.secret<i32>, %arg12: !secret.secret<i32>, %arg13: !secret.secret<i32>, %arg14: !secret.secret<i32>, %arg15: !secret.secret<i32>, %arg16: !secret.secret<i32>, %arg17: !secret.secret<i32>, %arg18: !secret.secret<i32>, %arg19: !secret.secret<i32>, %arg20: !secret.secret<i32>, %arg21: !secret.secret<i32>, %arg22: !secret.secret<i32>, %arg23: !secret.secret<i32>, %arg24: !secret.secret<i32>, %arg25: !secret.secret<i32>, %arg26: !secret.secret<i32>, %arg27: !secret.secret<i32>, %arg28: !secret.secret<i32>, %arg29: !secret.secret<i32>, %arg30: !secret.secret<i32>, %arg31: !secret.secret<i32>) -> !secret.secret<tensor<16xi32>> {
+  %c0 = arith.constant 0 : index
+  %cst = arith.constant dense<0> : tensor<16xi32>
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %c4 = arith.constant 4 : index
+  %c5 = arith.constant 5 : index
+  %c6 = arith.constant 6 : index
+  %c7 = arith.constant 7 : index
+  %c8 = arith.constant 8 : index
+  %c9 = arith.constant 9 : index
+  %c10 = arith.constant 10 : index
+  %c11 = arith.constant 11 : index
+  %c12 = arith.constant 12 : index
+  %c13 = arith.constant 13 : index
+  %c14 = arith.constant 14 : index
+  %c15 = arith.constant 15 : index
+  %0 = secret.generic(%arg0: !secret.secret<i32>, %arg1: !secret.secret<i32>, %arg2: !secret.secret<i32>, %arg3: !secret.secret<i32>, %arg4: !secret.secret<i32>, %arg5: !secret.secret<i32>, %arg6: !secret.secret<i32>, %arg7: !secret.secret<i32>, %arg8: !secret.secret<i32>, %arg9: !secret.secret<i32>, %arg10: !secret.secret<i32>, %arg11: !secret.secret<i32>, %arg12: !secret.secret<i32>, %arg13: !secret.secret<i32>, %arg14: !secret.secret<i32>, %arg15: !secret.secret<i32>, %arg16: !secret.secret<i32>, %arg17: !secret.secret<i32>, %arg18: !secret.secret<i32>, %arg19: !secret.secret<i32>, %arg20: !secret.secret<i32>, %arg21: !secret.secret<i32>, %arg22: !secret.secret<i32>, %arg23: !secret.secret<i32>, %arg24: !secret.secret<i32>, %arg25: !secret.secret<i32>, %arg26: !secret.secret<i32>, %arg27: !secret.secret<i32>, %arg28: !secret.secret<i32>, %arg29: !secret.secret<i32>, %arg30: !secret.secret<i32>, %arg31: !secret.secret<i32>) {
+  ^body(%input0: i32, %input1: i32, %input2: i32, %input3: i32, %input4: i32, %input5: i32, %input6: i32, %input7: i32, %input8: i32, %input9: i32, %input10: i32, %input11: i32, %input12: i32, %input13: i32, %input14: i32, %input15: i32, %input16: i32, %input17: i32, %input18: i32, %input19: i32, %input20: i32, %input21: i32, %input22: i32, %input23: i32, %input24: i32, %input25: i32, %input26: i32, %input27: i32, %input28: i32, %input29: i32, %input30: i32, %input31: i32):
+    %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+    %2 = func.call @__coyote_load(%input1) : (i32) -> i32
+    %3 = func.call @__coyote_load(%input2) : (i32) -> i32
+    %4 = func.call @__coyote_load(%input3) : (i32) -> i32
+    %5 = func.call @__coyote_load(%input4) : (i32) -> i32
+    %6 = func.call @__coyote_load(%input5) : (i32) -> i32
+    %7 = func.call @__coyote_load(%input6) : (i32) -> i32
+    %8 = func.call @__coyote_load(%input7) : (i32) -> i32
+    %9 = func.call @__coyote_load(%input8) : (i32) -> i32
+    %10 = func.call @__coyote_load(%input9) : (i32) -> i32
+    %11 = func.call @__coyote_load(%input10) : (i32) -> i32
+    %12 = func.call @__coyote_load(%input11) : (i32) -> i32
+    %13 = func.call @__coyote_load(%input12) : (i32) -> i32
+    %14 = func.call @__coyote_load(%input13) : (i32) -> i32
+    %15 = func.call @__coyote_load(%input14) : (i32) -> i32
+    %16 = func.call @__coyote_load(%input15) : (i32) -> i32
+    %17 = func.call @__coyote_load(%input16) : (i32) -> i32
+    %18 = func.call @__coyote_load(%input17) : (i32) -> i32
+    %19 = func.call @__coyote_load(%input18) : (i32) -> i32
+    %20 = func.call @__coyote_load(%input19) : (i32) -> i32
+    %21 = func.call @__coyote_load(%input20) : (i32) -> i32
+    %22 = func.call @__coyote_load(%input21) : (i32) -> i32
+    %23 = func.call @__coyote_load(%input22) : (i32) -> i32
+    %24 = func.call @__coyote_load(%input23) : (i32) -> i32
+    %25 = func.call @__coyote_load(%input24) : (i32) -> i32
+    %26 = func.call @__coyote_load(%input25) : (i32) -> i32
+    %27 = func.call @__coyote_load(%input26) : (i32) -> i32
+    %28 = func.call @__coyote_load(%input27) : (i32) -> i32
+    %29 = func.call @__coyote_load(%input28) : (i32) -> i32
+    %30 = func.call @__coyote_load(%input29) : (i32) -> i32
+    %31 = func.call @__coyote_load(%input30) : (i32) -> i32
+    %32 = func.call @__coyote_load(%input31) : (i32) -> i32
+    %33 = arith.addi %1, %5 : i32
+    %34 = arith.addi %2, %6 : i32
+    %35 = arith.addi %3, %7 : i32
+    %36 = arith.addi %4, %8 : i32
+    %37 = arith.addi %9, %13 : i32
+    %38 = arith.addi %10, %14 : i32
+    %39 = arith.addi %11, %15 : i32
+    %40 = arith.addi %12, %16 : i32
+    %41 = arith.addi %17, %21 : i32
+    %42 = arith.addi %18, %22 : i32
+    %43 = arith.addi %19, %23 : i32
+    %44 = arith.addi %20, %24 : i32
+    %45 = arith.addi %25, %29 : i32
+    %46 = arith.addi %26, %30 : i32
+    %47 = arith.addi %27, %31 : i32
+    %48 = arith.addi %28, %32 : i32
+    %inserted = tensor.insert %33 into %cst[%c0] : tensor<16xi32>
+    %inserted_0 = tensor.insert %34 into %inserted[%c1] : tensor<16xi32>
+    %inserted_1 = tensor.insert %37 into %inserted_0[%c2] : tensor<16xi32>
+    %inserted_2 = tensor.insert %38 into %inserted_1[%c3] : tensor<16xi32>
+    %inserted_3 = tensor.insert %35 into %inserted_2[%c4] : tensor<16xi32>
+    %inserted_4 = tensor.insert %36 into %inserted_3[%c5] : tensor<16xi32>
+    %inserted_5 = tensor.insert %39 into %inserted_4[%c6] : tensor<16xi32>
+    %inserted_6 = tensor.insert %40 into %inserted_5[%c7] : tensor<16xi32>
+    %inserted_7 = tensor.insert %41 into %inserted_6[%c8] : tensor<16xi32>
+    %inserted_8 = tensor.insert %42 into %inserted_7[%c9] : tensor<16xi32>
+    %inserted_9 = tensor.insert %45 into %inserted_8[%c10] : tensor<16xi32>
+    %inserted_10 = tensor.insert %46 into %inserted_9[%c11] : tensor<16xi32>
+    %inserted_11 = tensor.insert %43 into %inserted_10[%c12] : tensor<16xi32>
+    %inserted_12 = tensor.insert %44 into %inserted_11[%c13] : tensor<16xi32>
+    %inserted_13 = tensor.insert %47 into %inserted_12[%c14] : tensor<16xi32>
+    %inserted_14 = tensor.insert %48 into %inserted_13[%c15] : tensor<16xi32>
+    secret.yield %inserted_14 : tensor<16xi32>
+  } -> !secret.secret<tensor<16xi32>>
+  return %0 : !secret.secret<tensor<16xi32>>
+}
+=====================
+
+=== Coyote Vectorizer Complete ===
+Final schedule: 64 lanes, 33 cycles
+
+=== Schedule (warpSize=64, ops=48, depth=33) ===
+
+Cycle 3 (16 ops):
+  lane   8: %3 = func.call @__coyote_load(%input2) : (i32) -> i32
+  lane  10: %11 = func.call @__coyote_load(%input10) : (i32) -> i32
+  lane  12: %19 = func.call @__coyote_load(%input18) : (i32) -> i32
+  lane  14: %27 = func.call @__coyote_load(%input26) : (i32) -> i32
+  lane  16: %4 = func.call @__coyote_load(%input3) : (i32) -> i32
+  lane  18: %12 = func.call @__coyote_load(%input11) : (i32) -> i32
+  lane  20: %20 = func.call @__coyote_load(%input19) : (i32) -> i32
+  lane  22: %28 = func.call @__coyote_load(%input27) : (i32) -> i32
+  lane  24: %2 = func.call @__coyote_load(%input1) : (i32) -> i32
+  lane  26: %10 = func.call @__coyote_load(%input9) : (i32) -> i32
+  lane  28: %18 = func.call @__coyote_load(%input17) : (i32) -> i32
+  lane  30: %26 = func.call @__coyote_load(%input25) : (i32) -> i32
+  lane  56: %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+  lane  58: %9 = func.call @__coyote_load(%input8) : (i32) -> i32
+  lane  60: %17 = func.call @__coyote_load(%input16) : (i32) -> i32
+  lane  62: %25 = func.call @__coyote_load(%input24) : (i32) -> i32
+
+Cycle 7 (16 ops):
+  lane   9: %7 = func.call @__coyote_load(%input6) : (i32) -> i32
+  lane  11: %15 = func.call @__coyote_load(%input14) : (i32) -> i32
+  lane  13: %23 = func.call @__coyote_load(%input22) : (i32) -> i32
+  lane  15: %31 = func.call @__coyote_load(%input30) : (i32) -> i32
+  lane  17: %8 = func.call @__coyote_load(%input7) : (i32) -> i32
+  lane  19: %16 = func.call @__coyote_load(%input15) : (i32) -> i32
+  lane  21: %24 = func.call @__coyote_load(%input23) : (i32) -> i32
+  lane  23: %32 = func.call @__coyote_load(%input31) : (i32) -> i32
+  lane  25: %6 = func.call @__coyote_load(%input5) : (i32) -> i32
+  lane  27: %14 = func.call @__coyote_load(%input13) : (i32) -> i32
+  lane  29: %22 = func.call @__coyote_load(%input21) : (i32) -> i32
+  lane  31: %30 = func.call @__coyote_load(%input29) : (i32) -> i32
+  lane  57: %5 = func.call @__coyote_load(%input4) : (i32) -> i32
+  lane  59: %13 = func.call @__coyote_load(%input12) : (i32) -> i32
+  lane  61: %21 = func.call @__coyote_load(%input20) : (i32) -> i32
+  lane  63: %29 = func.call @__coyote_load(%input28) : (i32) -> i32
+
+Cycle 32 (16 ops):
+  lane   9: %35 = arith.addi %3, %7 : i32
+  lane  10: %39 = arith.addi %11, %15 : i32
+  lane  12: %43 = arith.addi %19, %23 : i32
+  lane  15: %47 = arith.addi %27, %31 : i32
+  lane  16: %36 = arith.addi %4, %8 : i32
+  lane  18: %40 = arith.addi %12, %16 : i32
+  lane  20: %44 = arith.addi %20, %24 : i32
+  lane  22: %48 = arith.addi %28, %32 : i32
+  lane  24: %34 = arith.addi %2, %6 : i32
+  lane  27: %38 = arith.addi %10, %14 : i32
+  lane  28: %42 = arith.addi %18, %22 : i32
+  lane  31: %46 = arith.addi %26, %30 : i32
+  lane  56: %33 = arith.addi %1, %5 : i32
+  lane  58: %37 = arith.addi %9, %13 : i32
+  lane  61: %41 = arith.addi %17, %21 : i32
+  lane  62: %45 = arith.addi %25, %29 : i32
+
+=== Schedule (warpSize=0, ops=272, depth=39) ===
+
+Cycle 0 (32 ops):
+  lane   8: %1 = func.call @__coyote_load(%input2) : (i32) -> i32
+  lane   9: %5 = func.call @__coyote_load(%input10) : (i32) -> i32
+  lane  10: %9 = func.call @__coyote_load(%input18) : (i32) -> i32
+  lane  11: %13 = func.call @__coyote_load(%input26) : (i32) -> i32
+  lane  12: %17 = func.call @__coyote_load(%input34) : (i32) -> i32
+  lane  13: %21 = func.call @__coyote_load(%input42) : (i32) -> i32
+  lane  14: %25 = func.call @__coyote_load(%input50) : (i32) -> i32
+  lane  15: %29 = func.call @__coyote_load(%input58) : (i32) -> i32
+  lane  16: %2 = func.call @__coyote_load(%input2) : (i32) -> i32
+  lane  17: %6 = func.call @__coyote_load(%input10) : (i32) -> i32
+  lane  18: %10 = func.call @__coyote_load(%input18) : (i32) -> i32
+  lane  19: %14 = func.call @__coyote_load(%input26) : (i32) -> i32
+  lane  20: %18 = func.call @__coyote_load(%input34) : (i32) -> i32
+  lane  21: %22 = func.call @__coyote_load(%input42) : (i32) -> i32
+  lane  22: %26 = func.call @__coyote_load(%input50) : (i32) -> i32
+  lane  23: %30 = func.call @__coyote_load(%input58) : (i32) -> i32
+  lane  24: %3 = func.call @__coyote_load(%input0) : (i32) -> i32
+  lane  25: %7 = func.call @__coyote_load(%input8) : (i32) -> i32
+  lane  26: %11 = func.call @__coyote_load(%input16) : (i32) -> i32
+  lane  27: %15 = func.call @__coyote_load(%input24) : (i32) -> i32
+  lane  28: %19 = func.call @__coyote_load(%input32) : (i32) -> i32
+  lane  29: %23 = func.call @__coyote_load(%input40) : (i32) -> i32
+  lane  30: %27 = func.call @__coyote_load(%input48) : (i32) -> i32
+  lane  31: %31 = func.call @__coyote_load(%input56) : (i32) -> i32
+  lane  56: %4 = func.call @__coyote_load(%input0) : (i32) -> i32
+  lane  57: %8 = func.call @__coyote_load(%input8) : (i32) -> i32
+  lane  58: %12 = func.call @__coyote_load(%input16) : (i32) -> i32
+  lane  59: %16 = func.call @__coyote_load(%input24) : (i32) -> i32
+  lane  60: %20 = func.call @__coyote_load(%input32) : (i32) -> i32
+  lane  61: %24 = func.call @__coyote_load(%input40) : (i32) -> i32
+  lane  62: %28 = func.call @__coyote_load(%input48) : (i32) -> i32
+  lane  63: %32 = func.call @__coyote_load(%input56) : (i32) -> i32
+
+Cycle 1 (32 ops):
+  lane   8: %33 = func.call @__coyote_load(%input3) : (i32) -> i32
+  lane   9: %37 = func.call @__coyote_load(%input11) : (i32) -> i32
+  lane  10: %41 = func.call @__coyote_load(%input19) : (i32) -> i32
+  lane  11: %45 = func.call @__coyote_load(%input27) : (i32) -> i32
+  lane  12: %49 = func.call @__coyote_load(%input35) : (i32) -> i32
+  lane  13: %53 = func.call @__coyote_load(%input43) : (i32) -> i32
+  lane  14: %57 = func.call @__coyote_load(%input51) : (i32) -> i32
+  lane  15: %61 = func.call @__coyote_load(%input59) : (i32) -> i32
+  lane  16: %34 = func.call @__coyote_load(%input3) : (i32) -> i32
+  lane  17: %38 = func.call @__coyote_load(%input11) : (i32) -> i32
+  lane  18: %42 = func.call @__coyote_load(%input19) : (i32) -> i32
+  lane  19: %46 = func.call @__coyote_load(%input27) : (i32) -> i32
+  lane  20: %50 = func.call @__coyote_load(%input35) : (i32) -> i32
+  lane  21: %54 = func.call @__coyote_load(%input43) : (i32) -> i32
+  lane  22: %58 = func.call @__coyote_load(%input51) : (i32) -> i32
+  lane  23: %62 = func.call @__coyote_load(%input59) : (i32) -> i32
+  lane  24: %35 = func.call @__coyote_load(%input1) : (i32) -> i32
+  lane  25: %39 = func.call @__coyote_load(%input9) : (i32) -> i32
+  lane  26: %43 = func.call @__coyote_load(%input17) : (i32) -> i32
+  lane  27: %47 = func.call @__coyote_load(%input25) : (i32) -> i32
+  lane  28: %51 = func.call @__coyote_load(%input33) : (i32) -> i32
+  lane  29: %55 = func.call @__coyote_load(%input41) : (i32) -> i32
+  lane  30: %59 = func.call @__coyote_load(%input49) : (i32) -> i32
+  lane  31: %63 = func.call @__coyote_load(%input57) : (i32) -> i32
+  lane  56: %36 = func.call @__coyote_load(%input1) : (i32) -> i32
+  lane  57: %40 = func.call @__coyote_load(%input9) : (i32) -> i32
+  lane  58: %44 = func.call @__coyote_load(%input17) : (i32) -> i32
+  lane  59: %48 = func.call @__coyote_load(%input25) : (i32) -> i32
+  lane  60: %52 = func.call @__coyote_load(%input33) : (i32) -> i32
+  lane  61: %56 = func.call @__coyote_load(%input41) : (i32) -> i32
+  lane  62: %60 = func.call @__coyote_load(%input49) : (i32) -> i32
+  lane  63: %64 = func.call @__coyote_load(%input57) : (i32) -> i32
+
+Cycle 2 (32 ops):
+  lane   8: %65 = func.call @__coyote_load(%input4) : (i32) -> i32
+  lane   9: %69 = func.call @__coyote_load(%input12) : (i32) -> i32
+  lane  10: %73 = func.call @__coyote_load(%input20) : (i32) -> i32
+  lane  11: %77 = func.call @__coyote_load(%input28) : (i32) -> i32
+  lane  12: %81 = func.call @__coyote_load(%input36) : (i32) -> i32
+  lane  13: %85 = func.call @__coyote_load(%input44) : (i32) -> i32
+  lane  14: %89 = func.call @__coyote_load(%input52) : (i32) -> i32
+  lane  15: %93 = func.call @__coyote_load(%input60) : (i32) -> i32
+  lane  16: %66 = func.call @__coyote_load(%input5) : (i32) -> i32
+  lane  17: %70 = func.call @__coyote_load(%input13) : (i32) -> i32
+  lane  18: %74 = func.call @__coyote_load(%input21) : (i32) -> i32
+  lane  19: %78 = func.call @__coyote_load(%input29) : (i32) -> i32
+  lane  20: %82 = func.call @__coyote_load(%input37) : (i32) -> i32
+  lane  21: %86 = func.call @__coyote_load(%input45) : (i32) -> i32
+  lane  22: %90 = func.call @__coyote_load(%input53) : (i32) -> i32
+  lane  23: %94 = func.call @__coyote_load(%input61) : (i32) -> i32
+  lane  24: %67 = func.call @__coyote_load(%input5) : (i32) -> i32
+  lane  25: %71 = func.call @__coyote_load(%input13) : (i32) -> i32
+  lane  26: %75 = func.call @__coyote_load(%input21) : (i32) -> i32
+  lane  27: %79 = func.call @__coyote_load(%input29) : (i32) -> i32
+  lane  28: %83 = func.call @__coyote_load(%input37) : (i32) -> i32
+  lane  29: %87 = func.call @__coyote_load(%input45) : (i32) -> i32
+  lane  30: %91 = func.call @__coyote_load(%input53) : (i32) -> i32
+  lane  31: %95 = func.call @__coyote_load(%input61) : (i32) -> i32
+  lane  56: %68 = func.call @__coyote_load(%input4) : (i32) -> i32
+  lane  57: %72 = func.call @__coyote_load(%input12) : (i32) -> i32
+  lane  58: %76 = func.call @__coyote_load(%input20) : (i32) -> i32
+  lane  59: %80 = func.call @__coyote_load(%input28) : (i32) -> i32
+  lane  60: %84 = func.call @__coyote_load(%input36) : (i32) -> i32
+  lane  61: %88 = func.call @__coyote_load(%input44) : (i32) -> i32
+  lane  62: %92 = func.call @__coyote_load(%input52) : (i32) -> i32
+  lane  63: %96 = func.call @__coyote_load(%input60) : (i32) -> i32
+
+Cycle 3 (32 ops):
+  lane   8: %97 = func.call @__coyote_load(%input6) : (i32) -> i32
+  lane   9: %101 = func.call @__coyote_load(%input14) : (i32) -> i32
+  lane  10: %105 = func.call @__coyote_load(%input22) : (i32) -> i32
+  lane  11: %109 = func.call @__coyote_load(%input30) : (i32) -> i32
+  lane  12: %113 = func.call @__coyote_load(%input38) : (i32) -> i32
+  lane  13: %117 = func.call @__coyote_load(%input46) : (i32) -> i32
+  lane  14: %121 = func.call @__coyote_load(%input54) : (i32) -> i32
+  lane  15: %125 = func.call @__coyote_load(%input62) : (i32) -> i32
+  lane  16: %98 = func.call @__coyote_load(%input7) : (i32) -> i32
+  lane  17: %102 = func.call @__coyote_load(%input15) : (i32) -> i32
+  lane  18: %106 = func.call @__coyote_load(%input23) : (i32) -> i32
+  lane  19: %110 = func.call @__coyote_load(%input31) : (i32) -> i32
+  lane  20: %114 = func.call @__coyote_load(%input39) : (i32) -> i32
+  lane  21: %118 = func.call @__coyote_load(%input47) : (i32) -> i32
+  lane  22: %122 = func.call @__coyote_load(%input55) : (i32) -> i32
+  lane  23: %126 = func.call @__coyote_load(%input63) : (i32) -> i32
+  lane  24: %99 = func.call @__coyote_load(%input7) : (i32) -> i32
+  lane  25: %103 = func.call @__coyote_load(%input15) : (i32) -> i32
+  lane  26: %107 = func.call @__coyote_load(%input23) : (i32) -> i32
+  lane  27: %111 = func.call @__coyote_load(%input31) : (i32) -> i32
+  lane  28: %115 = func.call @__coyote_load(%input39) : (i32) -> i32
+  lane  29: %119 = func.call @__coyote_load(%input47) : (i32) -> i32
+  lane  30: %123 = func.call @__coyote_load(%input55) : (i32) -> i32
+  lane  31: %127 = func.call @__coyote_load(%input63) : (i32) -> i32
+  lane  56: %100 = func.call @__coyote_load(%input6) : (i32) -> i32
+  lane  57: %104 = func.call @__coyote_load(%input14) : (i32) -> i32
+  lane  58: %108 = func.call @__coyote_load(%input22) : (i32) -> i32
+  lane  59: %112 = func.call @__coyote_load(%input30) : (i32) -> i32
+  lane  60: %116 = func.call @__coyote_load(%input38) : (i32) -> i32
+  lane  61: %120 = func.call @__coyote_load(%input46) : (i32) -> i32
+  lane  62: %124 = func.call @__coyote_load(%input54) : (i32) -> i32
+  lane  63: %128 = func.call @__coyote_load(%input62) : (i32) -> i32
+
+Cycle 4 (32 ops):
+  lane   8: %129 = arith.muli %33, %97 : i32
+  lane   9: %133 = arith.muli %37, %101 : i32
+  lane  10: %137 = arith.muli %41, %105 : i32
+  lane  11: %141 = arith.muli %45, %109 : i32
+  lane  12: %145 = arith.muli %49, %113 : i32
+  lane  13: %149 = arith.muli %53, %117 : i32
+  lane  14: %153 = arith.muli %57, %121 : i32
+  lane  15: %157 = arith.muli %61, %125 : i32
+  lane  16: %130 = arith.muli %34, %98 : i32
+  lane  17: %134 = arith.muli %38, %102 : i32
+  lane  18: %138 = arith.muli %42, %106 : i32
+  lane  19: %142 = arith.muli %46, %110 : i32
+  lane  20: %146 = arith.muli %50, %114 : i32
+  lane  21: %150 = arith.muli %54, %118 : i32
+  lane  22: %154 = arith.muli %58, %122 : i32
+  lane  23: %158 = arith.muli %62, %126 : i32
+  lane  24: %131 = arith.muli %35, %99 : i32
+  lane  25: %135 = arith.muli %39, %103 : i32
+  lane  26: %139 = arith.muli %43, %107 : i32
+  lane  27: %143 = arith.muli %47, %111 : i32
+  lane  28: %147 = arith.muli %51, %115 : i32
+  lane  29: %151 = arith.muli %55, %119 : i32
+  lane  30: %155 = arith.muli %59, %123 : i32
+  lane  31: %159 = arith.muli %63, %127 : i32
+  lane  56: %132 = arith.muli %36, %100 : i32
+  lane  57: %136 = arith.muli %40, %104 : i32
+  lane  58: %140 = arith.muli %44, %108 : i32
+  lane  59: %144 = arith.muli %48, %112 : i32
+  lane  60: %148 = arith.muli %52, %116 : i32
+  lane  61: %152 = arith.muli %56, %120 : i32
+  lane  62: %156 = arith.muli %60, %124 : i32
+  lane  63: %160 = arith.muli %64, %128 : i32
+
+Cycle 5 (32 ops):
+  lane   8: %161 = arith.muli %1, %65 : i32
+  lane   9: %165 = arith.muli %5, %69 : i32
+  lane  10: %169 = arith.muli %9, %73 : i32
+  lane  11: %173 = arith.muli %13, %77 : i32
+  lane  12: %177 = arith.muli %17, %81 : i32
+  lane  13: %181 = arith.muli %21, %85 : i32
+  lane  14: %185 = arith.muli %25, %89 : i32
+  lane  15: %189 = arith.muli %29, %93 : i32
+  lane  16: %162 = arith.muli %2, %66 : i32
+  lane  17: %166 = arith.muli %6, %70 : i32
+  lane  18: %170 = arith.muli %10, %74 : i32
+  lane  19: %174 = arith.muli %14, %78 : i32
+  lane  20: %178 = arith.muli %18, %82 : i32
+  lane  21: %182 = arith.muli %22, %86 : i32
+  lane  22: %186 = arith.muli %26, %90 : i32
+  lane  23: %190 = arith.muli %30, %94 : i32
+  lane  24: %163 = arith.muli %3, %67 : i32
+  lane  25: %167 = arith.muli %7, %71 : i32
+  lane  26: %171 = arith.muli %11, %75 : i32
+  lane  27: %175 = arith.muli %15, %79 : i32
+  lane  28: %179 = arith.muli %19, %83 : i32
+  lane  29: %183 = arith.muli %23, %87 : i32
+  lane  30: %187 = arith.muli %27, %91 : i32
+  lane  31: %191 = arith.muli %31, %95 : i32
+  lane  56: %164 = arith.muli %4, %68 : i32
+  lane  57: %168 = arith.muli %8, %72 : i32
+  lane  58: %172 = arith.muli %12, %76 : i32
+  lane  59: %176 = arith.muli %16, %80 : i32
+  lane  60: %180 = arith.muli %20, %84 : i32
+  lane  61: %184 = arith.muli %24, %88 : i32
+  lane  62: %188 = arith.muli %28, %92 : i32
+  lane  63: %192 = arith.muli %32, %96 : i32
+
+Cycle 6 (32 ops):
+  lane   8: %193 = arith.addi %161, %129 : i32
+  lane   9: %197 = arith.addi %165, %133 : i32
+  lane  10: %201 = arith.addi %169, %137 : i32
+  lane  11: %205 = arith.addi %173, %141 : i32
+  lane  12: %209 = arith.addi %177, %145 : i32
+  lane  13: %213 = arith.addi %181, %149 : i32
+  lane  14: %217 = arith.addi %185, %153 : i32
+  lane  15: %221 = arith.addi %189, %157 : i32
+  lane  16: %194 = arith.addi %162, %130 : i32
+  lane  17: %198 = arith.addi %166, %134 : i32
+  lane  18: %202 = arith.addi %170, %138 : i32
+  lane  19: %206 = arith.addi %174, %142 : i32
+  lane  20: %210 = arith.addi %178, %146 : i32
+  lane  21: %214 = arith.addi %182, %150 : i32
+  lane  22: %218 = arith.addi %186, %154 : i32
+  lane  23: %222 = arith.addi %190, %158 : i32
+  lane  24: %195 = arith.addi %163, %131 : i32
+  lane  25: %199 = arith.addi %167, %135 : i32
+  lane  26: %203 = arith.addi %171, %139 : i32
+  lane  27: %207 = arith.addi %175, %143 : i32
+  lane  28: %211 = arith.addi %179, %147 : i32
+  lane  29: %215 = arith.addi %183, %151 : i32
+  lane  30: %219 = arith.addi %187, %155 : i32
+  lane  31: %223 = arith.addi %191, %159 : i32
+  lane  56: %196 = arith.addi %164, %132 : i32
+  lane  57: %200 = arith.addi %168, %136 : i32
+  lane  58: %204 = arith.addi %172, %140 : i32
+  lane  59: %208 = arith.addi %176, %144 : i32
+  lane  60: %212 = arith.addi %180, %148 : i32
+  lane  61: %216 = arith.addi %184, %152 : i32
+  lane  62: %220 = arith.addi %188, %156 : i32
+  lane  63: %224 = arith.addi %192, %160 : i32
+
+Cycle 9 (16 ops):
+  lane   8: %3 = func.call @__coyote_load(%input2) : (i32) -> i32
+  lane  10: %11 = func.call @__coyote_load(%input10) : (i32) -> i32
+  lane  12: %19 = func.call @__coyote_load(%input18) : (i32) -> i32
+  lane  14: %27 = func.call @__coyote_load(%input26) : (i32) -> i32
+  lane  16: %4 = func.call @__coyote_load(%input3) : (i32) -> i32
+  lane  18: %12 = func.call @__coyote_load(%input11) : (i32) -> i32
+  lane  20: %20 = func.call @__coyote_load(%input19) : (i32) -> i32
+  lane  22: %28 = func.call @__coyote_load(%input27) : (i32) -> i32
+  lane  24: %2 = func.call @__coyote_load(%input1) : (i32) -> i32
+  lane  26: %10 = func.call @__coyote_load(%input9) : (i32) -> i32
+  lane  28: %18 = func.call @__coyote_load(%input17) : (i32) -> i32
+  lane  30: %26 = func.call @__coyote_load(%input25) : (i32) -> i32
+  lane  56: %1 = func.call @__coyote_load(%input0) : (i32) -> i32
+  lane  58: %9 = func.call @__coyote_load(%input8) : (i32) -> i32
+  lane  60: %17 = func.call @__coyote_load(%input16) : (i32) -> i32
+  lane  62: %25 = func.call @__coyote_load(%input24) : (i32) -> i32
+
+Cycle 13 (16 ops):
+  lane   9: %7 = func.call @__coyote_load(%input6) : (i32) -> i32
+  lane  11: %15 = func.call @__coyote_load(%input14) : (i32) -> i32
+  lane  13: %23 = func.call @__coyote_load(%input22) : (i32) -> i32
+  lane  15: %31 = func.call @__coyote_load(%input30) : (i32) -> i32
+  lane  17: %8 = func.call @__coyote_load(%input7) : (i32) -> i32
+  lane  19: %16 = func.call @__coyote_load(%input15) : (i32) -> i32
+  lane  21: %24 = func.call @__coyote_load(%input23) : (i32) -> i32
+  lane  23: %32 = func.call @__coyote_load(%input31) : (i32) -> i32
+  lane  25: %6 = func.call @__coyote_load(%input5) : (i32) -> i32
+  lane  27: %14 = func.call @__coyote_load(%input13) : (i32) -> i32
+  lane  29: %22 = func.call @__coyote_load(%input21) : (i32) -> i32
+  lane  31: %30 = func.call @__coyote_load(%input29) : (i32) -> i32
+  lane  57: %5 = func.call @__coyote_load(%input4) : (i32) -> i32
+  lane  59: %13 = func.call @__coyote_load(%input12) : (i32) -> i32
+  lane  61: %21 = func.call @__coyote_load(%input20) : (i32) -> i32
+  lane  63: %29 = func.call @__coyote_load(%input28) : (i32) -> i32
+
+Cycle 38 (16 ops):
+  lane   9: %35 = arith.addi %3, %7 : i32
+  lane  10: %39 = arith.addi %11, %15 : i32
+  lane  12: %43 = arith.addi %19, %23 : i32
+  lane  15: %47 = arith.addi %27, %31 : i32
+  lane  16: %36 = arith.addi %4, %8 : i32
+  lane  18: %40 = arith.addi %12, %16 : i32
+  lane  20: %44 = arith.addi %20, %24 : i32
+  lane  22: %48 = arith.addi %28, %32 : i32
+  lane  24: %34 = arith.addi %2, %6 : i32
+  lane  27: %38 = arith.addi %10, %14 : i32
+  lane  28: %42 = arith.addi %18, %22 : i32
+  lane  31: %46 = arith.addi %26, %30 : i32
+  lane  56: %33 = arith.addi %1, %5 : i32
+  lane  58: %37 = arith.addi %9, %13 : i32
+  lane  61: %41 = arith.addi %17, %21 : i32
+  lane  62: %45 = arith.addi %25, %29 : i32
+
+with 1 seed ops...
+  Seed op: %16 = func.call @__coyote_load(%input15) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %17 = func.call @__coyote_load(%input16) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %18 = func.call @__coyote_load(%input17) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %19 = func.call @__coyote_load(%input18) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %20 = func.call @__coyote_load(%input19) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %21 = func.call @__coyote_load(%input20) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %22 = func.call @__coyote_load(%input21) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %23 = func.call @__coyote_load(%input22) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %24 = func.call @__coyote_load(%input23) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %25 = func.call @__coyote_load(%input24) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %26 = func.call @__coyote_load(%input25) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %27 = func.call @__coyote_load(%input26) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %28 = func.call @__coyote_load(%input27) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %29 = func.call @__coyote_load(%input28) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %30 = func.call @__coyote_load(%input29) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %31 = func.call @__coyote_load(%input30) : (i32) -> i32
+Expanding input group with 1 seed ops...
+  Seed op: %32 = func.call @__coyote_load(%input31) : (i32) -> i32
+Expanding output group with 16 seed ops...
+  Seed op: %inserted = tensor.insert %33 into %cst[%c0] : tensor<16xi32>
+  Seed op: %inserted_0 = tensor.insert %34 into %inserted[%c1] : tensor<16xi32>
+  Seed op: %inserted_1 = tensor.insert %37 into %inserted_0[%c2] : tensor<16xi32>
+  Seed op: %inserted_2 = tensor.insert %38 into %inserted_1[%c3] : tensor<16xi32>
+  Seed op: %inserted_3 = tensor.insert %35 into %inserted_2[%c4] : tensor<16xi32>
+  Seed op: %inserted_4 = tensor.insert %36 into %inserted_3[%c5] : tensor<16xi32>
+  Seed op: %inserted_5 = tensor.insert %39 into %inserted_4[%c6] : tensor<16xi32>
+  Seed op: %inserted_6 = tensor.insert %40 into %inserted_5[%c7] : tensor<16xi32>
+  Seed op: %inserted_7 = tensor.insert %41 into %inserted_6[%c8] : tensor<16xi32>
+  Seed op: %inserted_8 = tensor.insert %42 into %inserted_7[%c9] : tensor<16xi32>
+  Seed op: %inserted_9 = tensor.insert %45 into %inserted_8[%c10] : tensor<16xi32>
+  Seed op: %inserted_10 = tensor.insert %46 into %inserted_9[%c11] : tensor<16xi32>
+  Seed op: %inserted_11 = tensor.insert %43 into %inserted_10[%c12] : tensor<16xi32>
+  Seed op: %inserted_12 = tensor.insert %44 into %inserted_11[%c13] : tensor<16xi32>
+  Seed op: %inserted_13 = tensor.insert %47 into %inserted_12[%c14] : tensor<16xi32>
+  Seed op: %inserted_14 = tensor.insert %48 into %inserted_13[%c15] : tensor<16xi32>

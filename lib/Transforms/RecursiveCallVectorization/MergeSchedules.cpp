@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "lib/Dialect/Secret/IR/SecretOps.h"
+#include "lib/Transforms/RecursiveCallVectorization/Utils.h"
 #include "llvm/include/llvm/ADT/DenseMap.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/DenseSet.h"              // from @llvm-project
 #include "llvm/include/llvm/ADT/SetVector.h"             // from @llvm-project
@@ -52,589 +53,6 @@ static Operation *getSecretGenericOp(func::FuncOp func) {
   });
   return result;
 }
-
-//===----------------------------------------------------------------------===//
-// Step 1: Extract operations in topological order using CircuitGraph
-//===----------------------------------------------------------------------===//
-
-llvm::SmallVector<Operation *> extractSortedOps(func::FuncOp func) {
-  Block *body = getSecretGenericBody(func);
-  if (!body) return {};
-
-  // Collect schedulable ops (skip secret.yield and other terminators)
-  llvm::SetVector<Operation *> opSet;
-  for (Operation &op : *body) {
-    if (op.getName().getStringRef() == "secret.yield") continue;
-    opSet.insert(&op);
-  }
-
-  if (opSet.empty()) return {};
-
-  // Use MLIR's built-in topological sort
-  auto sorted = mlir::topologicalSort(opSet);
-
-  return llvm::SmallVector<Operation *>(sorted.begin(), sorted.end());
-}
-
-//===----------------------------------------------------------------------===//
-// Step 2: NW scoring
-//===----------------------------------------------------------------------===//
-
-/// Trace an operand back to its "origin": if it's a block argument of the
-/// body (ciphertext), return its arg number; if it's defined by an op in the
-/// sorted sequence, return that op's index. Returns -1000 for
-/// external/plaintext values (func args used via implicit capture, etc.).
-static int64_t traceOrigin(Value val,
-                           const llvm::DenseMap<Operation *, int64_t> &opIndex,
-                           Block *bodyBlock) {
-  if (auto blockArg = dyn_cast<BlockArgument>(val)) {
-    // Only body block args (ciphertext) get a stable origin index.
-    // Func-level block args (plaintext, captured implicitly) are external.
-    if (blockArg.getOwner() == bodyBlock) return -(blockArg.getArgNumber() + 1);
-    return -1000;  // plaintext func arg
-  }
-
-  Operation *defOp = val.getDefiningOp();
-  if (defOp) {
-    auto it = opIndex.find(defOp);
-    if (it != opIndex.end()) return it->second;
-  }
-  return -1000;  // external / unknown
-}
-
-/// Check if two constants have identical values.
-static bool sameConstantValue(Operation *a, Operation *b) {
-  auto constA = dyn_cast<arith::ConstantOp>(a);
-  auto constB = dyn_cast<arith::ConstantOp>(b);
-  if (!constA || !constB) return false;
-  return constA.getValue() == constB.getValue();
-}
-
-/// Score two operations for NW alignment.
-/// bodyBlockA/bodyBlockB are the secret.generic body blocks, used to
-/// distinguish ciphertext block args from plaintext implicit captures.
-static int scoreOps(Operation *a, Operation *b,
-                    const llvm::DenseMap<Operation *, int64_t> &indexA,
-                    const llvm::DenseMap<Operation *, int64_t> &indexB,
-                    Block *bodyBlockA, Block *bodyBlockB,
-                    const NWScoreConfig &config) {
-  llvm::StringRef nameA = a->getName().getStringRef();
-  llvm::StringRef nameB = b->getName().getStringRef();
-
-  // Different dialect entirely
-  auto dialectA = nameA.split('.').first;
-  auto dialectB = nameB.split('.').first;
-
-  if (dialectA != dialectB) return config.mismatch;
-
-  // Same dialect, different opcode
-  if (nameA != nameB) return config.matchClass;
-
-  // Same opcode — check operand structure for exact match
-  // Special case: constants match exactly if they have the same value
-  if (isa<arith::ConstantOp>(a)) {
-    return sameConstantValue(a, b) ? config.matchExact : config.matchOpcode;
-  }
-
-  // For other ops: check operand origins AND plaintext constraints.
-  // If any operand is plaintext (external to the body), the ops can only merge
-  // if the plaintext values are compile-time constants with equal values.
-  if (a->getNumOperands() == b->getNumOperands()) {
-    bool allMatch = true;
-    for (unsigned i = 0; i < a->getNumOperands(); ++i) {
-      Value opndA = a->getOperand(i);
-      Value opndB = b->getOperand(i);
-      int64_t originA = traceOrigin(opndA, indexA, bodyBlockA);
-      int64_t originB = traceOrigin(opndB, indexB, bodyBlockB);
-
-      // If either operand is external (plaintext), check if both are the
-      // same compile-time constant. If not, can't merge.
-      if (originA == -1000 || originB == -1000) {
-        Operation *defA = opndA.getDefiningOp();
-        Operation *defB = opndB.getDefiningOp();
-        if (!defA || !defB || !sameConstantValue(defA, defB)) {
-          return config.mismatch;  // different or unknown plaintext
-        }
-        // Same constant value — this operand is fine, continue checking
-        continue;
-      }
-
-      if (originA != originB) {
-        allMatch = false;
-        break;
-      }
-    }
-    if (allMatch) return config.matchExact;
-  }
-
-  return config.matchOpcode;
-}
-
-//===----------------------------------------------------------------------===//
-// Step 2: Needleman-Wunsch DP + traceback
-//===----------------------------------------------------------------------===//
-
-llvm::SmallVector<AlignmentEntry> runNeedlemanWunsch(
-    llvm::ArrayRef<Operation *> seqA, llvm::ArrayRef<Operation *> seqB,
-    const NWScoreConfig &config) {
-  int M = seqA.size();
-  int N = seqB.size();
-
-  // Infer body blocks from the ops themselves
-  Block *bodyBlockA = M > 0 ? seqA[0]->getBlock() : nullptr;
-  Block *bodyBlockB = N > 0 ? seqB[0]->getBlock() : nullptr;
-
-  // Build op->index maps for origin tracing
-  llvm::DenseMap<Operation *, int64_t> indexA, indexB;
-  for (int i = 0; i < M; ++i) indexA[seqA[i]] = i;
-  for (int j = 0; j < N; ++j) indexB[seqB[j]] = j;
-
-  // DP matrix
-  std::vector<std::vector<int>> dp(M + 1, std::vector<int>(N + 1, 0));
-  for (int i = 1; i <= M; ++i) dp[i][0] = i * config.gapPenalty;
-  for (int j = 1; j <= N; ++j) dp[0][j] = j * config.gapPenalty;
-
-  for (int i = 1; i <= M; ++i) {
-    for (int j = 1; j <= N; ++j) {
-      int matchScore =
-          dp[i - 1][j - 1] + scoreOps(seqA[i - 1], seqB[j - 1], indexA, indexB,
-                                      bodyBlockA, bodyBlockB, config);
-      int gapA = dp[i - 1][j] + config.gapPenalty;
-      int gapB = dp[i][j - 1] + config.gapPenalty;
-      dp[i][j] = std::max({matchScore, gapA, gapB});
-    }
-  }
-
-  // Traceback
-  llvm::SmallVector<AlignmentEntry> alignment;
-  int i = M, j = N;
-
-  while (i > 0 || j > 0) {
-    AlignmentEntry entry;
-
-    if (i > 0 && j > 0) {
-      int diagScore = scoreOps(seqA[i - 1], seqB[j - 1], indexA, indexB,
-                               bodyBlockA, bodyBlockB, config);
-      if (dp[i][j] == dp[i - 1][j - 1] + diagScore) {
-        // Diagonal move — only treat as Match if score >= matchOpcode
-        if (diagScore >= config.matchOpcode) {
-          entry.kind = AlignmentEntry::Match;
-          entry.opA = seqA[i - 1];
-          entry.opB = seqB[j - 1];
-          alignment.push_back(entry);
-        } else {
-          // Downgrade: emit both as gaps
-          entry.kind = AlignmentEntry::GapB;
-          entry.opA = seqA[i - 1];
-          alignment.push_back(entry);
-          AlignmentEntry entryB;
-          entryB.kind = AlignmentEntry::GapA;
-          entryB.opB = seqB[j - 1];
-          alignment.push_back(entryB);
-        }
-        --i;
-        --j;
-        continue;
-      }
-    }
-
-    if (i > 0 && dp[i][j] == dp[i - 1][j] + config.gapPenalty) {
-      entry.kind = AlignmentEntry::GapB;
-      entry.opA = seqA[i - 1];
-      alignment.push_back(entry);
-      --i;
-    } else {
-      entry.kind = AlignmentEntry::GapA;
-      entry.opB = seqB[j - 1];
-      alignment.push_back(entry);
-      --j;
-    }
-  }
-
-  // Reverse: traceback produces entries in reverse order
-  std::reverse(alignment.begin(), alignment.end());
-  return alignment;
-}
-
-//===----------------------------------------------------------------------===//
-// Step 3: Build merged function (pure alignment — no type changes)
-//===----------------------------------------------------------------------===//
-
-LogicalResult mergeWithNeedlemanWunsch(func::FuncOp funcA, func::FuncOp funcB,
-                                       func::FuncOp &result,
-                                       const NWScoreConfig &config) {
-  // --- Validate: signatures must be identical (pure alignment, no widening)
-  // ---
-  if (funcA.getFunctionType() != funcB.getFunctionType()) {
-    llvm::errs() << "NW Merge: function types do not match\n";
-    return failure();
-  }
-
-  Block *bodyA = getSecretGenericBody(funcA);
-  Block *bodyB = getSecretGenericBody(funcB);
-  if (!bodyA || !bodyB) {
-    llvm::errs() << "NW Merge: could not find secret.generic body\n";
-    return failure();
-  }
-
-  Operation *genericA = getSecretGenericOp(funcA);
-  Operation *genericB = getSecretGenericOp(funcB);
-  if (!genericA || !genericB) return failure();
-
-  // --- Step 1: Extract + topo sort ---
-  auto seqA = extractSortedOps(funcA);
-  auto seqB = extractSortedOps(funcB);
-
-  if (seqA.empty() && seqB.empty()) return failure();
-
-  // --- Step 2: Run NW alignment ---
-  auto alignment = runNeedlemanWunsch(seqA, seqB, config);
-
-  // --- Step 3: Build merged function (same signature as A; yield A's values)
-  // ---
-  MLIRContext *ctx = funcA.getContext();
-  Location loc = funcA.getLoc();
-  OpBuilder builder(ctx);
-
-  FunctionType mergedFuncType = funcA.getFunctionType();
-  std::string mergedName =
-      (funcA.getName() + "_nw_merged_" + funcB.getName()).str();
-  auto mergedFunc = func::FuncOp::create(loc, mergedName, mergedFuncType);
-
-  // Copy attributes from A (signature-dependent attrs are unchanged here, but
-  // we still skip them defensively in case A and B differ).
-  for (auto attr : funcA->getAttrs()) {
-    if (attr.getName() == "sym_name" || attr.getName() == "function_type")
-      continue;
-    mergedFunc->setAttr(attr.getName(), attr.getValue());
-  }
-
-  Block *funcBody = mergedFunc.addEntryBlock();
-  builder.setInsertionPointToStart(funcBody);
-
-  // Map both A's and B's func args 1:1 to the merged func args (same types).
-  IRMapping outerRemapA, outerRemapB;
-  Block &funcEntryA = funcA.front();
-  Block &funcEntryB = funcB.front();
-  for (unsigned i = 0; i < funcEntryA.getNumArguments(); ++i) {
-    outerRemapA.map(funcEntryA.getArgument(i), funcBody->getArgument(i));
-    outerRemapB.map(funcEntryB.getArgument(i), funcBody->getArgument(i));
-  }
-
-  // Clone any non-func-arg operands of A's/B's secret.generic into the merged
-  // func body so they can be passed as merged-generic operands.
-  for (Value origOperand : genericA->getOperands()) {
-    if (!outerRemapA.contains(origOperand)) {
-      if (Operation *defOp = origOperand.getDefiningOp()) {
-        Operation *cloned = builder.clone(*defOp);
-        outerRemapA.map(origOperand, cloned->getResult(0));
-      }
-    }
-  }
-  for (Value origOperand : genericB->getOperands()) {
-    if (!outerRemapB.contains(origOperand)) {
-      if (Operation *defOp = origOperand.getDefiningOp()) {
-        Operation *cloned = builder.clone(*defOp);
-        outerRemapB.map(origOperand, cloned->getResult(0));
-      }
-    }
-  }
-
-  // Build the merged secret.generic. Operands = A's, then any extra from B.
-  // Block arg types come straight from the originals (no widening).
-  SmallVector<Value> genericOperands;
-  auto *genericBlock = new Block();
-
-  for (unsigned i = 0; i < genericA->getNumOperands(); ++i) {
-    genericOperands.push_back(
-        outerRemapA.lookupOrDefault(genericA->getOperand(i)));
-    genericBlock->addArgument(bodyA->getArgument(i).getType(), loc);
-  }
-  unsigned numArgsFromA = genericA->getNumOperands();
-  for (unsigned i = numArgsFromA; i < genericB->getNumOperands(); ++i) {
-    genericOperands.push_back(
-        outerRemapB.lookupOrDefault(genericB->getOperand(i)));
-    genericBlock->addArgument(bodyB->getArgument(i).getType(), loc);
-  }
-
-  // Merged generic result types = A's generic result types (same signature).
-  SmallVector<Type> mergedGenericResultTypes(genericA->getResultTypes().begin(),
-                                             genericA->getResultTypes().end());
-
-  OperationState genericState(loc, "secret.generic");
-  genericState.addOperands(genericOperands);
-  genericState.addTypes(mergedGenericResultTypes);
-  genericState.addRegion()->push_back(genericBlock);
-  Operation *mergedGeneric = builder.create(genericState);
-
-  builder.setInsertionPointToStart(genericBlock);
-
-  // Map A's and B's inner block args to the merged block args.
-  IRMapping remapA, remapB;
-  for (unsigned i = 0; i < bodyA->getNumArguments(); ++i)
-    remapA.map(bodyA->getArgument(i), genericBlock->getArgument(i));
-  for (unsigned i = 0; i < bodyB->getNumArguments(); ++i) {
-    // B shares the leading args with A (identical signatures imply identical
-    // block arg counts and types); any extras go to B's appended block args.
-    unsigned mergedIdx = (i < numArgsFromA) ? i : i;
-    remapB.map(bodyB->getArgument(i), genericBlock->getArgument(mergedIdx));
-  }
-
-  // Handle implicit captures of func-level values inside the body.
-  auto cloneOuterDeps = [&](Block *origBody, IRMapping &remap,
-                            IRMapping &outerRemap) {
-    OpBuilder outerBuilder(ctx);
-    outerBuilder.setInsertionPoint(mergedGeneric);
-    for (Operation &op : *origBody) {
-      for (Value operand : op.getOperands()) {
-        if (remap.contains(operand)) continue;
-        if (isa<BlockArgument>(operand)) {
-          if (outerRemap.contains(operand))
-            remap.map(operand, outerRemap.lookup(operand));
-          continue;
-        }
-        Operation *defOp = operand.getDefiningOp();
-        if (!defOp || defOp->getBlock() == origBody) continue;
-        Operation *cloned = outerBuilder.clone(*defOp, outerRemap);
-        remap.map(operand, cloned->getResult(0));
-      }
-    }
-  };
-
-  cloneOuterDeps(bodyA, remapA, outerRemapA);
-  cloneOuterDeps(bodyB, remapB, outerRemapB);
-
-  // Walk alignment and clone operations as-is (no type changes).
-  Operation *yieldA = bodyA->getTerminator();
-  for (const auto &entry : alignment) {
-    switch (entry.kind) {
-      case AlignmentEntry::Match: {
-        // Emit opA once; B's downstream uses share A's results.
-        Operation *cloned = builder.clone(*entry.opA, remapA);
-        for (unsigned k = 0; k < entry.opB->getNumResults(); ++k)
-          remapB.map(entry.opB->getResult(k), cloned->getResult(k));
-        break;
-      }
-      case AlignmentEntry::GapA:
-        builder.clone(*entry.opB, remapB);
-        break;
-      case AlignmentEntry::GapB:
-        builder.clone(*entry.opA, remapA);
-        break;
-    }
-  }
-
-  // Build secret.yield from A's yield values (same signature as A).
-  SmallVector<Value> yieldOperands;
-  for (Value v : yieldA->getOperands())
-    yieldOperands.push_back(remapA.lookupOrDefault(v));
-
-  OperationState yieldState(loc, "secret.yield");
-  yieldState.addOperands(yieldOperands);
-  builder.create(yieldState);
-
-  // Build func.return.
-  builder.setInsertionPointAfter(mergedGeneric);
-  SmallVector<Value> returnOperands(mergedGeneric->getResults().begin(),
-                                    mergedGeneric->getResults().end());
-  func::ReturnOp::create(builder, loc, returnOperands);
-
-  result = mergedFunc;
-  return success();
-}
-
-//===----------------------------------------------------------------------===//
-// Step 3b: Schedule-level merge — N-way with pairwise NW + final interleave
-//===----------------------------------------------------------------------===//
-
-namespace {
-/// One step's worth of pairwise NW merge: takes a "running" func + its
-/// origins (which original kernels each running op represents) and merges
-/// with a fresh kernel `funcB` at kernel index `kernelIdxB`.
-///
-/// Outputs a new merged function whose body contains cloned ops. Populates
-/// `newOrigins` with a list of (kernelIdx, originalOpInThatKernel) per cloned
-/// op, representing which kernels' computations the merged op corresponds to.
-LogicalResult pairwiseScheduleMergeStep(
-    func::FuncOp runningFunc,
-    const llvm::DenseMap<Operation *,
-                         llvm::SmallVector<std::pair<unsigned, Operation *>, 8>>
-        &runningOrigins,
-    llvm::ArrayRef<Operation *> runningSeq, func::FuncOp funcB,
-    llvm::ArrayRef<Operation *> seqB, unsigned kernelIdxB,
-    const NWScoreConfig &config, func::FuncOp &newMergedFunc,
-    llvm::SmallVector<Operation *> &newSeq,
-    llvm::DenseMap<Operation *,
-                   llvm::SmallVector<std::pair<unsigned, Operation *>, 8>>
-        &newOrigins) {
-  using Origin = std::pair<unsigned, Operation *>;
-  using OriginList = llvm::SmallVector<Origin, 8>;
-
-  Block *bodyA = getSecretGenericBody(runningFunc);
-  Block *bodyB = getSecretGenericBody(funcB);
-  if (!bodyA || !bodyB) {
-    llvm::errs() << "NW Merge: could not find secret.generic body\n";
-    return failure();
-  }
-
-  Operation *genericA = getSecretGenericOp(runningFunc);
-  Operation *genericB = getSecretGenericOp(funcB);
-  if (!genericA || !genericB) return failure();
-
-  auto alignment = runNeedlemanWunsch(runningSeq, seqB, config);
-
-  MLIRContext *ctx = runningFunc.getContext();
-  Location loc = runningFunc.getLoc();
-  OpBuilder builder(ctx);
-
-  FunctionType mergedFuncType = runningFunc.getFunctionType();
-  std::string mergedName =
-      (runningFunc.getName() + "_nw_" + funcB.getName()).str();
-  newMergedFunc = func::FuncOp::create(loc, mergedName, mergedFuncType);
-
-  for (auto attr : runningFunc->getAttrs()) {
-    if (attr.getName() == "sym_name" || attr.getName() == "function_type")
-      continue;
-    newMergedFunc->setAttr(attr.getName(), attr.getValue());
-  }
-
-  Block *funcBody = newMergedFunc.addEntryBlock();
-  builder.setInsertionPointToStart(funcBody);
-
-  IRMapping outerRemapA, outerRemapB;
-  Block &funcEntryA = runningFunc.front();
-  Block &funcEntryB = funcB.front();
-  for (unsigned i = 0; i < funcEntryA.getNumArguments(); ++i) {
-    outerRemapA.map(funcEntryA.getArgument(i), funcBody->getArgument(i));
-    outerRemapB.map(funcEntryB.getArgument(i), funcBody->getArgument(i));
-  }
-
-  for (Value origOperand : genericA->getOperands()) {
-    if (!outerRemapA.contains(origOperand)) {
-      if (Operation *defOp = origOperand.getDefiningOp()) {
-        Operation *cloned = builder.clone(*defOp);
-        outerRemapA.map(origOperand, cloned->getResult(0));
-      }
-    }
-  }
-  for (Value origOperand : genericB->getOperands()) {
-    if (!outerRemapB.contains(origOperand)) {
-      if (Operation *defOp = origOperand.getDefiningOp()) {
-        Operation *cloned = builder.clone(*defOp);
-        outerRemapB.map(origOperand, cloned->getResult(0));
-      }
-    }
-  }
-
-  SmallVector<Value> genericOperands;
-  auto *genericBlock = new Block();
-  for (unsigned i = 0; i < genericA->getNumOperands(); ++i) {
-    genericOperands.push_back(
-        outerRemapA.lookupOrDefault(genericA->getOperand(i)));
-    genericBlock->addArgument(bodyA->getArgument(i).getType(), loc);
-  }
-  unsigned numArgsFromA = genericA->getNumOperands();
-  for (unsigned i = numArgsFromA; i < genericB->getNumOperands(); ++i) {
-    genericOperands.push_back(
-        outerRemapB.lookupOrDefault(genericB->getOperand(i)));
-    genericBlock->addArgument(bodyB->getArgument(i).getType(), loc);
-  }
-
-  SmallVector<Type> mergedGenericResultTypes(genericA->getResultTypes().begin(),
-                                             genericA->getResultTypes().end());
-
-  OperationState genericState(loc, "secret.generic");
-  genericState.addOperands(genericOperands);
-  genericState.addTypes(mergedGenericResultTypes);
-  genericState.addRegion()->push_back(genericBlock);
-  Operation *mergedGeneric = builder.create(genericState);
-
-  builder.setInsertionPointToStart(genericBlock);
-
-  IRMapping remapA, remapB;
-  for (unsigned i = 0; i < bodyA->getNumArguments(); ++i)
-    remapA.map(bodyA->getArgument(i), genericBlock->getArgument(i));
-  for (unsigned i = 0; i < bodyB->getNumArguments(); ++i) {
-    unsigned mergedIdx = (i < numArgsFromA) ? i : i;
-    remapB.map(bodyB->getArgument(i), genericBlock->getArgument(mergedIdx));
-  }
-
-  auto cloneOuterDeps = [&](Block *origBody, IRMapping &remap,
-                            IRMapping &outerRemap) {
-    OpBuilder outerBuilder(ctx);
-    outerBuilder.setInsertionPoint(mergedGeneric);
-    for (Operation &op : *origBody) {
-      for (Value operand : op.getOperands()) {
-        if (remap.contains(operand)) continue;
-        if (isa<BlockArgument>(operand)) {
-          if (outerRemap.contains(operand))
-            remap.map(operand, outerRemap.lookup(operand));
-          continue;
-        }
-        Operation *defOp = operand.getDefiningOp();
-        if (!defOp || defOp->getBlock() == origBody) continue;
-        Operation *cloned = outerBuilder.clone(*defOp, outerRemap);
-        remap.map(operand, cloned->getResult(0));
-      }
-    }
-  };
-  cloneOuterDeps(bodyA, remapA, outerRemapA);
-  cloneOuterDeps(bodyB, remapB, outerRemapB);
-
-  // Walk alignment: clone ops + update origins.
-  Operation *yieldA = bodyA->getTerminator();
-  newSeq.clear();
-  for (const auto &entry : alignment) {
-    Operation *cloned = nullptr;
-    OriginList ol;
-    switch (entry.kind) {
-      case AlignmentEntry::Match: {
-        cloned = builder.clone(*entry.opA, remapA);
-        for (unsigned k = 0; k < entry.opB->getNumResults(); ++k)
-          remapB.map(entry.opB->getResult(k), cloned->getResult(k));
-        // origins[cloned] = origins[opA] ∪ {(kernelIdxB, opB)}
-        auto it = runningOrigins.find(entry.opA);
-        if (it != runningOrigins.end())
-          ol.append(it->second.begin(), it->second.end());
-        ol.push_back({kernelIdxB, entry.opB});
-        break;
-      }
-      case AlignmentEntry::GapA: {
-        cloned = builder.clone(*entry.opB, remapB);
-        ol.push_back({kernelIdxB, entry.opB});
-        break;
-      }
-      case AlignmentEntry::GapB: {
-        cloned = builder.clone(*entry.opA, remapA);
-        auto it = runningOrigins.find(entry.opA);
-        if (it != runningOrigins.end())
-          ol.append(it->second.begin(), it->second.end());
-        break;
-      }
-    }
-    if (cloned) {
-      newOrigins[cloned] = std::move(ol);
-      newSeq.push_back(cloned);
-    }
-  }
-
-  // Build secret.yield from A's yield values.
-  SmallVector<Value> yieldOperands;
-  for (Value v : yieldA->getOperands())
-    yieldOperands.push_back(remapA.lookupOrDefault(v));
-
-  OperationState yieldState(loc, "secret.yield");
-  yieldState.addOperands(yieldOperands);
-  builder.create(yieldState);
-
-  builder.setInsertionPointAfter(mergedGeneric);
-  SmallVector<Value> returnOperands(mergedGeneric->getResults().begin(),
-                                    mergedGeneric->getResults().end());
-  func::ReturnOp::create(builder, loc, returnOperands);
-
-  return success();
-}
-}  // namespace
 
 //===----------------------------------------------------------------------===//
 // Step 3b: Schedule-level merge — NW on (cycle, op_type) sequences + mod-N
@@ -1453,6 +871,165 @@ Value createNewInsertOpsFromSeedOps(SmallVector<cipherTextSlot> &ctxt,
   }
 
   return seedOp->getResult(0);
+}
+
+void cloneInlineCall(func::CallOp call, IRMapping &mapping) {
+  ModuleOp module = call->getParentOfType<ModuleOp>();
+  auto callee = module.lookupSymbol<func::FuncOp>(call.getCallee());
+  if (!callee || callee.isExternal()) return;
+
+  Block &calleeEntry = callee.front();
+  OpBuilder builder(call);
+
+  // Map callee's entry block args -> call's operands.
+  for (auto [arg, operand] :
+       llvm::zip(calleeEntry.getArguments(), call.getArgOperands())) {
+    mapping.map(arg, operand);
+  }
+
+  // Clone every op in the callee's entry block (except the return)
+  // before the call site, remapping through `mapping`.
+  func::ReturnOp returnOp;
+  for (Operation &op : calleeEntry) {
+    if (auto ret = dyn_cast<func::ReturnOp>(&op)) {
+      returnOp = ret;
+      break;
+    }
+    builder.clone(op, mapping);
+  }
+
+  // Replace the call's results with the cloned return values.
+  if (returnOp) {
+    for (auto [result, retVal] :
+         llvm::zip(call.getResults(), returnOp.getOperands())) {
+      result.replaceAllUsesWith(mapping.lookup(retVal));
+    }
+  }
+
+  // Erase the call (but NOT the callee function).
+  call.erase();
+}
+
+LogicalResult mergeSchedulesVertically(llvm::ArrayRef<func::CallOp> calls,
+                                       llvm::ArrayRef<Schedule> schedules,
+                                       Schedule &mergedSchedule) {
+  if (schedules.empty()) return failure();
+
+  // emit every op in `schedule.instructions` with `coyote.lane` and
+  // `coyote.cycle` integer attributes, so the schedule data survives IR
+  // mutations that recreate ops (clone, replace) as long as those mutations
+  // preserve the NamedAttrList — which standard clone-based rewrites do.
+  //
+  // Pair with `rebuildScheduleFromAttrs` to recover the Schedule after
+  // running canonicalization or other rewrite passes.
+  auto emitScheduleAttrs = [](func::FuncOp func, const Schedule &schedule,
+                              uint64_t offset) {
+    MLIRContext *ctx = func.getContext();
+    auto i64Ty = IntegerType::get(ctx, 64);
+    for (Operation *op : schedule.instructions) {
+      if (!op || !op->getBlock()) continue;  // skip dangling/detached
+      // Confirm the op lives inside this function (defensive — should always
+      // hold by the time you call this).
+      if (op->getParentOfType<func::FuncOp>() != func) continue;
+
+      auto laneIt = schedule.lanes.find(op);
+      if (laneIt != schedule.lanes.end())
+        op->setAttr("coyote.lane", IntegerAttr::get(i64Ty, laneIt->second));
+
+      auto cycleIt = schedule.alignment.find(op);
+      if (cycleIt != schedule.alignment.end())
+        op->setAttr("coyote.cycle",
+                    IntegerAttr::get(i64Ty, cycleIt->second + offset));
+    }
+  };
+
+  auto rebuildScheduleFromAttrs = [](func::FuncOp func, Schedule &s) {
+    SmallVector<std::pair<int64_t, Operation *>> entries;
+    func.walk([&](Operation *op) {
+      auto laneAttr = op->getAttrOfType<IntegerAttr>("coyote.lane");
+      auto cycleAttr = op->getAttrOfType<IntegerAttr>("coyote.cycle");
+      if (!laneAttr || !cycleAttr) return;
+      s.lanes[op] = laneAttr.getInt();
+      s.alignment[op] = cycleAttr.getInt();
+      entries.push_back({cycleAttr.getInt(), op});
+    });
+    // Order instructions by cycle so the list is meaningful for downstream
+    // consumers that iterate.
+    llvm::sort(entries,
+               [](const auto &a, const auto &b) { return a.first < b.first; });
+    for (auto &[_, op] : entries) s.instructions.push_back(op);
+  };
+
+  auto stripScheduleAttrs = [](func::FuncOp func) {
+    func.walk([](Operation *op) {
+      op->removeAttr("coyote.lane");
+      op->removeAttr("coyote.cycle");
+    });
+  };
+
+  assert(calls.size() == schedules.size() &&
+         "calls and schedules size mismatch");
+  assert(std::all_of(schedules.begin(), schedules.end(),
+                     [&](const Schedule &s) {
+                       return s.warpSize == schedules[0].warpSize;
+                     }) &&
+         "All schedules must have the same warp size");
+  mergedSchedule.warpSize = schedules[0].warpSize;
+
+  func::FuncOp parentFunc = calls[0]->getParentOfType<func::FuncOp>();
+  ModuleOp mod = parentFunc->getParentOfType<ModuleOp>();
+
+  // inline calls
+  int64_t offset = 0;
+  for (unsigned i = 0; i < calls.size(); ++i) {
+    auto mod = calls[i]->getParentOfType<ModuleOp>();
+    func::FuncOp calledFunc = getEnclosingFunction(calls[i], mod);
+    func::FuncOp parentFunc = calls[i]->getParentOfType<func::FuncOp>();
+
+    emitScheduleAttrs(calledFunc, schedules[i], offset);
+    offset += schedules[i].maxStep() + 1;
+  }
+
+  SmallVector<IRMapping> mappings(calls.size());
+  for (unsigned i = 0; i < calls.size(); i++) {
+    cloneInlineCall(calls[i], mappings[i]);
+  }
+
+  foldAllOpsInFunc(parentFunc, mod->getContext());
+  rebuildScheduleFromAttrs(parentFunc, mergedSchedule);
+  stripScheduleAttrs(parentFunc);
+
+  // auto findClonedOp = [](Operation *origOp, IRMapping &m) -> Operation * {
+  //   // Op-to-op is not auto-populated; use result-value mapping.
+  //   if (origOp->getNumResults() == 0) return nullptr;
+  //   Value mapped = m.lookup(origOp->getResult(0));
+  //   return mapped ? mapped.getDefiningOp() : nullptr;
+  // };
+
+  // for (int i = 0; i < schedules.size(); i++) {
+  //   for (Operation *op : schedules[i].instructions) {
+  //     Operation *mappedOp = findClonedOp(op, mappings[i]);
+  //     if (!mappedOp) continue;
+  //     mergedSchedule.instructions.push_back(mappedOp);
+  //   }
+  // }
+
+  // int64_t offset = 0;
+  // for (int i = 0; i < schedules.size(); i++) {
+  //   for (const auto &[op, lane] : schedules[i].lanes) {
+  //     Operation *mappedOp = findClonedOp(op, mappings[i]);
+  //     if (!mappedOp) continue;
+  //     mergedSchedule.lanes[mappedOp] = lane;
+  //   }
+  //   for (const auto &[op, cycle] : schedules[i].alignment) {
+  //     Operation *mappedOp = findClonedOp(op, mappings[i]);
+  //     if (!mappedOp) continue;
+  //     mergedSchedule.alignment[mappedOp] = cycle + offset;
+  //   }
+  //   offset += schedules[i].maxStep() + 1;
+  // }
+
+  return success();
 }
 
 }  // namespace heir

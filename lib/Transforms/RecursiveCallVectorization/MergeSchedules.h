@@ -40,23 +40,6 @@ struct NWScoreConfig {
   int gapPenalty = -2;  // insertion/deletion
 };
 
-/// Merge two func::FuncOp with identical function types using NW alignment.
-///
-/// This is pure alignment — no type widening, no signature changes. The merged
-/// function has the **same signature as funcA (== funcB)** and yields A's
-/// values. The body contains:
-/// - Matched operations emitted once (A's version); B's downstream uses are
-///   remapped to share A's results.
-/// - Gap operations from both sides emitted as-is.
-///
-/// The widening / re-wiring for SIMD packing is left to a separate pass.
-///
-/// The merged function is created detached; the caller must insert it into
-/// the module (e.g. `module.push_back(merged)`).
-LogicalResult mergeWithNeedlemanWunsch(
-    func::FuncOp funcA, func::FuncOp funcB, func::FuncOp &result,
-    const NWScoreConfig &config = NWScoreConfig());
-
 /// Merge N pre-vectorized kernels at the **Schedule level** using NW.
 ///
 /// Internally performs pairwise NW alignment from left to right:
@@ -108,15 +91,6 @@ LogicalResult mergeWithNeedlemanWunsch(
 LogicalResult mergeSchedulesWithNW(
     llvm::ArrayRef<func::FuncOp> funcs, llvm::ArrayRef<Schedule> schedules,
     func::FuncOp &mergedFunc, Schedule &mergedSchedule,
-    const NWScoreConfig &config = NWScoreConfig());
-
-/// Extract operations from a func's secret.generic body in topological order.
-/// Exposed for testing.
-llvm::SmallVector<Operation *> extractSortedOps(func::FuncOp func);
-
-/// Run NW alignment on two operation sequences. Exposed for testing.
-llvm::SmallVector<AlignmentEntry> runNeedlemanWunsch(
-    llvm::ArrayRef<Operation *> seqA, llvm::ArrayRef<Operation *> seqB,
     const NWScoreConfig &config = NWScoreConfig());
 
 /// Merge multiple tensor insert chains into a single wider chain.
@@ -176,6 +150,9 @@ Value createNewInsertOpsFromSeedOps(SmallVector<cipherTextSlot> &ctxt,
                                     RankedTensorType mergedType,
                                     OpBuilder builder);
 
+LogicalResult mergeSchedulesVertically(llvm::ArrayRef<func::CallOp> funcs,
+                                       llvm::ArrayRef<Schedule> schedules,
+                                       Schedule &mergedSchedule);
 }  // namespace heir
 }  // namespace mlir
 

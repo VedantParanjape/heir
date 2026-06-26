@@ -258,7 +258,7 @@ class BlendOptimizer {
 // Standalone wrappers
 //===----------------------------------------------------------------------===//
 
-void optimizeBlends(Schedule &schedule, unsigned rounds) {
+inline void optimizeBlends(Schedule &schedule, unsigned rounds) {
   BlendOptimizer optimizer;
   optimizer.optimize(schedule, rounds);
 }
@@ -289,7 +289,7 @@ void optimizeBlends(Schedule &schedule, unsigned rounds) {
 ///   result[consLane] = src[consLane + shift] = src[prodLane]
 ///   => shift = prodLane - consLane
 /// (Negative shift = right rotation, which is equivalent.)
-void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
+inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   if (schedule.instructions.empty()) return;
 
   unsigned W = schedule.warpSize;
@@ -317,30 +317,86 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   }
   auto vecType = RankedTensorType::get({1, (int64_t)W}, elemType);
 
+  // Helpers for __coyote_load identification.
+  auto isCoyoteLoad = [](Operation *op) -> bool {
+    auto call = dyn_cast_if_present<func::CallOp>(op);
+    return call && call.getCallee() == "__coyote_load";
+  };
+  // If `op` is a __coyote_load that wraps a tensor.extract, return the extract.
+  auto loadInputExtract = [&](Operation *op) -> tensor::ExtractOp {
+    if (!isCoyoteLoad(op)) return {};
+    auto call = cast<func::CallOp>(op);
+    return call->getOperand(0).getDefiningOp<tensor::ExtractOp>();
+  };
+
   // --- Expand argument types from tensor<1xN> to tensor<1xW> ---
-  llvm::DenseMap<Value, llvm::SmallVector<Operation *>> srcToExtracts;
+  // Group scheduled "input load" ops by (source tensor, cycle). Splitting by
+  // cycle is essential: a single lane may receive different scalars at
+  // different cycles, so each cycle needs its own packed input vector. An
+  // input load is either a tensor.extract or a __coyote_load(extract) wrap;
+  // both are treated uniformly here, with the call op as the schedule key.
+  llvm::DenseMap<std::pair<Value, int64_t>, llvm::SmallVector<Operation *>>
+      srcCycleToExtracts;
+  llvm::SetVector<Value> distinctSources;
   for (auto *op : schedule.instructions) {
+    Value source;
     if (auto extractOp = dyn_cast<tensor::ExtractOp>(op)) {
-      Value source = extractOp.getTensor();
-      srcToExtracts[source].push_back(op);
+      source = extractOp.getTensor();
+    } else if (auto ext = loadInputExtract(op)) {
+      // __coyote_load wrapping an extract: use the call op as the schedule
+      // key, source from the underlying extract's tensor.
+      source = ext.getTensor();
+    } else {
+      continue;
     }
+    int64_t cycle = schedule.alignment.lookup(op);
+    srcCycleToExtracts[{source, cycle}].push_back(op);
+    distinctSources.insert(source);
   }
 
   auto secretVecType = secret::SecretType::get(vecType);
   Operation *genericOp = scheduleBlock->getParentOp();
 
-  for (auto &[source, extractOps] : srcToExtracts) {
-    if (extractOps.empty()) continue;
-
-    // Expand inner block arg type to vecType
+  // Track which block args we widened so we know which extracts to retarget.
+  // Widening is per source tensor (not per cycle): each input is widened once.
+  llvm::DenseSet<BlockArgument> widenedBlockArgs;
+  for (Value source : distinctSources) {
     if (auto blockArg = dyn_cast<BlockArgument>(source)) {
       blockArg.setType(vecType);
+      widenedBlockArgs.insert(blockArg);
 
       // Expand corresponding outer func arg type
       unsigned innerIdx = blockArg.getArgNumber();
       Value outerOperand = genericOp->getOperand(innerIdx);
       if (auto funcArg = dyn_cast<BlockArgument>(outerOperand))
         funcArg.setType(secretVecType);
+    }
+  }
+
+  // Rewrite any tensor.extract that reads from a widened block arg to use
+  // 2-D indices ([0, origIdx]) — the original IR has 1-D extracts because
+  // the input was tensor<NxT>; after widening to tensor<1xWxT> they need to
+  // address the extra leading dim.
+  if (!widenedBlockArgs.empty()) {
+    OpBuilder ib(scheduleBlock, scheduleBlock->begin());
+    Value zeroIdx = arith::ConstantIndexOp::create(ib, loc, 0);
+
+    SmallVector<tensor::ExtractOp> toRewrite;
+    scheduleBlock->walk([&](tensor::ExtractOp ext) {
+      auto ba = dyn_cast<BlockArgument>(ext.getTensor());
+      if (!ba || !widenedBlockArgs.count(ba)) return;
+      if (ext.getIndices().size() != 1) return;  // already multi-dim, skip
+      toRewrite.push_back(ext);
+    });
+
+    for (tensor::ExtractOp ext : toRewrite) {
+      OpBuilder eb(ext);
+      SmallVector<Value> newIndices{zeroIdx};
+      for (Value idx : ext.getIndices()) newIndices.push_back(idx);
+      auto newExt = tensor::ExtractOp::create(eb, ext.getLoc(), ext.getTensor(),
+                                              newIndices);
+      ext.getResult().replaceAllUsesWith(newExt.getResult());
+      ext.erase();
     }
   }
 
@@ -354,21 +410,29 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   func.setType(FunctionType::get(ctx, newArgTypes, {secretVecType}));
 
   // --- Input handling via assign_layout (same-type: 1xW → 1xW) ---
-  // Each extract op (after replicateMultiUseExtracts) has a unique scheduled
-  // lane.  We place each extract's slot directly into its scheduled lane,
-  // matching Python's approach where the input vector has each element
-  // pre-positioned exactly where the schedule needs it (with replication
-  // for slots used by multiple consumers).
+  // One assign_layout per (source tensor, cycle) bucket. Splitting by cycle
+  // ensures each lane can receive a different scalar at each cycle, instead
+  // of colliding into a single packed vector — which would force consumers
+  // at different cycles to read identical operands.
   llvm::DenseMap<Operation *, int64_t> extractLayoutLane;
 
-  for (auto &[source, extractOps] : srcToExtracts) {
+  for (auto &[key, extractOps] : srcCycleToExtracts) {
     if (extractOps.empty()) continue;
+    Value source = key.first;
 
-    // Build layout: for each extract, map its slot to its scheduled lane.
+    // Build layout: for each input-load op, map its slot to its scheduled
+    // lane. The op may be a tensor.extract directly, or a __coyote_load that
+    // wraps an extract — in the latter case we read the slot from the wrapped
+    // extract but use the call op's scheduled lane.
     SmallVector<int64_t> layoutData;
     int64_t numMappings = 0;
     for (auto *op : extractOps) {
-      auto extractOp = cast<tensor::ExtractOp>(op);
+      tensor::ExtractOp extractOp;
+      if (auto e = dyn_cast<tensor::ExtractOp>(op))
+        extractOp = e;
+      else
+        extractOp = loadInputExtract(op);
+      if (!extractOp) continue;
       auto indices = extractOp.getIndices();
       auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
       int64_t slot = constIdx ? constIdx.value() : 0;
@@ -478,9 +542,22 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     auto opsAtStep = schedule.getStep(step);
     if (opsAtStep.empty()) continue;
 
-    if (llvm::all_of(opsAtStep,
-                     [](Operation *op) { return isa<tensor::ExtractOp>(op); }))
+    // Skip steps that are entirely input loads (either tensor.extract or
+    // __coyote_load wrapping one) — they were handled by the assign_layout
+    // pass above and already have opVec entries.
+    if (llvm::all_of(opsAtStep, [&](Operation *op) {
+          return isa<tensor::ExtractOp>(op) || (bool)loadInputExtract(op);
+        }))
       continue;
+
+    // Special case: a step of __coyote_load calls wrapping arith results.
+    // These are SIMD-level identity: opVec[call] = rotated source vector.
+    if (llvm::all_of(opsAtStep, isCoyoteLoad)) {
+      Value lhsVec = buildOperandVec(opsAtStep, 0);
+      if (!lhsVec) continue;
+      for (auto *op : opsAtStep) opVec[op] = lhsVec;
+      continue;
+    }
 
     Value lhsVec = buildOperandVec(opsAtStep, 0);
     Value rhsVec = buildOperandVec(opsAtStep, 1);
@@ -507,9 +584,8 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
       continue;
     }
 
-    for (auto *op : opsAtStep) {
+    for (auto *op : opsAtStep)
       if (!isa<tensor::ExtractOp>(op)) opVec[op] = result;
-    }
   }
 
   // --- Output handling via assign_layout (inverse permutation) ---
@@ -570,6 +646,32 @@ void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
         }
         if (isLast) insertOp.getResult().replaceAllUsesWith(finalVec);
       });
+    }
+  }
+
+  // --- Dead scalar IR sweep ---
+  // The scheduled scalar ops, their feeding tensor.extract/__coyote_load chain,
+  // and the consuming tensor.insert chain are now superseded by the SIMD ops
+  // we just emitted. They form chains where each op is the only user of its
+  // predecessor, so a single use_empty() pass won't unwind them — iterate to
+  // fixpoint.
+  auto isDeadCandidate = [&](Operation *op) {
+    if (schedule.lanes.contains(op)) return true;
+    if (isa<tensor::ExtractOp, tensor::InsertOp>(op)) return true;
+    if (auto call = dyn_cast<func::CallOp>(op))
+      if (call.getCallee() == "__coyote_load") return true;
+    return false;
+  };
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    SmallVector<Operation *> dead;
+    scheduleBlock->walk([&](Operation *op) {
+      if (isDeadCandidate(op) && op->use_empty()) dead.push_back(op);
+    });
+    for (Operation *op : dead) {
+      op->erase();
+      changed = true;
     }
   }
 }
