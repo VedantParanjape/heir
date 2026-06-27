@@ -268,6 +268,8 @@ struct ConvertFunc : public ContextAwareFuncConversion {
     rewriter.modifyOpInPlace(op, [&] {
       setMaterializedAttr(op);
       for (int i = 0; i < op.getNumArguments(); ++i) {
+        // Respect an original-type spec set by an upstream pass.
+        if (op.getArgAttr(i, kOriginalTypeAttrName)) continue;
         auto layoutAttr = op.getArgAttr(i, kLayoutAttrName);
         if (!layoutAttr || !isa<LayoutAttr, ArrayAttr>(layoutAttr)) {
           continue;

@@ -1742,9 +1742,9 @@ LogicalResult OpenFhePkeEmitter::printOperation(tensor::SplatOp op) {
 LogicalResult OpenFhePkeEmitter::printOperation(tensor::FromElementsOp op) {
   // std::vector<CiphertextType> result = {input[0], ..., input[n]};
   auto result = op.getResult();
-  if (result.getType().getRank() != 1) {
-    return failure();
-  }
+  // if (result.getType().getRank() != 1) {
+  //   return failure();
+  // }
   os << "const ";
   if (failed(emitTypedAssignPrefix(result, op->getLoc()))) {
     return failure();

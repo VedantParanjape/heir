@@ -329,12 +329,11 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     return call->getOperand(0).getDefiningOp<tensor::ExtractOp>();
   };
 
-  // --- Expand argument types from tensor<1xN> to tensor<1xW> ---
-  // Group scheduled "input load" ops by (source tensor, cycle). Splitting by
-  // cycle is essential: a single lane may receive different scalars at
-  // different cycles, so each cycle needs its own packed input vector. An
-  // input load is either a tensor.extract or a __coyote_load(extract) wrap;
-  // both are treated uniformly here, with the call op as the schedule key.
+  // --- Group scheduled "input load" ops by (source tensor, cycle). ---
+  // Splitting by cycle is essential: a single lane may receive different
+  // scalars at different cycles, so each cycle needs its own packed input
+  // ciphertext. An input load is either a tensor.extract or a __coyote_load
+  // wrapping an extract; both are treated uniformly.
   llvm::DenseMap<std::pair<Value, int64_t>, llvm::SmallVector<Operation *>>
       srcCycleToExtracts;
   llvm::SetVector<Value> distinctSources;
@@ -343,8 +342,6 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     if (auto extractOp = dyn_cast<tensor::ExtractOp>(op)) {
       source = extractOp.getTensor();
     } else if (auto ext = loadInputExtract(op)) {
-      // __coyote_load wrapping an extract: use the call op as the schedule
-      // key, source from the underlying extract's tensor.
       source = ext.getTensor();
     } else {
       continue;
@@ -357,76 +354,46 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   auto secretVecType = secret::SecretType::get(vecType);
   Operation *genericOp = scheduleBlock->getParentOp();
 
-  // Track which block args we widened so we know which extracts to retarget.
-  // Widening is per source tensor (not per cycle): each input is widened once.
-  llvm::DenseSet<BlockArgument> widenedBlockArgs;
-  for (Value source : distinctSources) {
-    if (auto blockArg = dyn_cast<BlockArgument>(source)) {
-      blockArg.setType(vecType);
-      widenedBlockArgs.insert(blockArg);
-
-      // Expand corresponding outer func arg type
-      unsigned innerIdx = blockArg.getArgNumber();
-      Value outerOperand = genericOp->getOperand(innerIdx);
-      if (auto funcArg = dyn_cast<BlockArgument>(outerOperand))
-        funcArg.setType(secretVecType);
-    }
+  // --- Capture original per-source info BEFORE any mutation ---
+  // Each distinct source is a body block arg of secret.generic, mapped 1:1
+  // to an outer func arg via genericOp's operand at the same index.
+  struct OrigSourceInfo {
+    BlockArgument bodyArg;   // body block arg (typed as the bare tensor)
+    Type origPlaintextType;  // body block arg type (bare, no `secret`)
+    unsigned operandIdx;     // operand index in genericOp / func arg idx
+  };
+  llvm::SmallVector<OrigSourceInfo> origInfos;
+  for (Value src : distinctSources) {
+    auto bodyArg = dyn_cast<BlockArgument>(src);
+    if (!bodyArg) continue;
+    OrigSourceInfo info;
+    info.bodyArg = bodyArg;
+    info.origPlaintextType = bodyArg.getType();
+    info.operandIdx = bodyArg.getArgNumber();
+    origInfos.push_back(info);
   }
+  llvm::DenseMap<BlockArgument, OrigSourceInfo *> bodyArgToInfo;
+  for (auto &info : origInfos) bodyArgToInfo[info.bodyArg] = &info;
 
-  // Rewrite any tensor.extract that reads from a widened block arg to use
-  // 2-D indices ([0, origIdx]) — the original IR has 1-D extracts because
-  // the input was tensor<NxT>; after widening to tensor<1xWxT> they need to
-  // address the extra leading dim.
-  if (!widenedBlockArgs.empty()) {
-    OpBuilder ib(scheduleBlock, scheduleBlock->begin());
-    Value zeroIdx = arith::ConstantIndexOp::create(ib, loc, 0);
-
-    SmallVector<tensor::ExtractOp> toRewrite;
-    scheduleBlock->walk([&](tensor::ExtractOp ext) {
-      auto ba = dyn_cast<BlockArgument>(ext.getTensor());
-      if (!ba || !widenedBlockArgs.count(ba)) return;
-      if (ext.getIndices().size() != 1) return;  // already multi-dim, skip
-      toRewrite.push_back(ext);
-    });
-
-    for (tensor::ExtractOp ext : toRewrite) {
-      OpBuilder eb(ext);
-      SmallVector<Value> newIndices{zeroIdx};
-      for (Value idx : ext.getIndices()) newIndices.push_back(idx);
-      auto newExt = tensor::ExtractOp::create(eb, ext.getLoc(), ext.getTensor(),
-                                              newIndices);
-      ext.getResult().replaceAllUsesWith(newExt.getResult());
-      ext.erase();
-    }
-  }
-
-  // Update secret.generic result type
-  genericOp->getResult(0).setType(secretVecType);
-
-  // Update func signature
-  SmallVector<Type> newArgTypes;
-  for (unsigned i = 0; i < func.getNumArguments(); ++i)
-    newArgTypes.push_back(func.getArgument(i).getType());
-  func.setType(FunctionType::get(ctx, newArgTypes, {secretVecType}));
-
-  // --- Input handling via assign_layout (same-type: 1xW → 1xW) ---
-  // One assign_layout per (source tensor, cycle) bucket. Splitting by cycle
-  // ensures each lane can receive a different scalar at each cycle, instead
-  // of colliding into a single packed vector — which would force consumers
-  // at different cycles to read identical operands.
-  llvm::DenseMap<Operation *, int64_t> extractLayoutLane;
-
-  for (auto &[key, extractOps] : srcCycleToExtracts) {
-    if (extractOps.empty()) continue;
-    Value source = key.first;
-
-    // Build layout: for each input-load op, map its slot to its scheduled
-    // lane. The op may be a tensor.extract directly, or a __coyote_load that
-    // wraps an extract — in the latter case we read the slot from the wrapped
-    // extract but use the call op's scheduled lane.
+  // --- Plan buckets, one per (source, cycle), in stable order ---
+  struct Bucket {
+    OrigSourceInfo *info;
+    int64_t cycle;
+    llvm::SmallVector<Operation *> inputLoadOps;
+    DenseIntElementsAttr layoutAttr;
+  };
+  llvm::SmallVector<Bucket> buckets;
+  for (auto &[key, ops] : srcCycleToExtracts) {
+    auto bodyArg = dyn_cast<BlockArgument>(key.first);
+    if (!bodyArg || !bodyArgToInfo.count(bodyArg)) continue;
+    Bucket b;
+    b.info = bodyArgToInfo[bodyArg];
+    b.cycle = key.second;
+    b.inputLoadOps = ops;
+    // Build the slot→lane permutation attribute for this bucket.
     SmallVector<int64_t> layoutData;
     int64_t numMappings = 0;
-    for (auto *op : extractOps) {
+    for (auto *op : ops) {
       tensor::ExtractOp extractOp;
       if (auto e = dyn_cast<tensor::ExtractOp>(op))
         extractOp = e;
@@ -437,9 +404,6 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
       auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
       int64_t slot = constIdx ? constIdx.value() : 0;
       int64_t lane = schedule.lanes.lookup(op);
-
-      extractLayoutLane[op] = lane;
-
       layoutData.push_back(0);
       layoutData.push_back(slot);
       layoutData.push_back(0);
@@ -448,13 +412,76 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     }
     auto layoutAttrType =
         RankedTensorType::get({numMappings, 4}, builder.getI64Type());
-    auto layoutAttr = DenseIntElementsAttr::get(layoutAttrType, layoutData);
-
-    Value permuted =
-        tensor_ext::AssignLayoutOp::create(builder, loc, source, layoutAttr);
-
-    for (auto *op : extractOps) opVec[op] = permuted;
+    b.layoutAttr = DenseIntElementsAttr::get(layoutAttrType, layoutData);
+    buckets.push_back(b);
   }
+  llvm::sort(buckets, [](const Bucket &a, const Bucket &b) {
+    if (a.info->operandIdx != b.info->operandIdx)
+      return a.info->operandIdx < b.info->operandIdx;
+    return a.cycle < b.cycle;
+  });
+
+  // --- Refactor kernel signature: one secret-wide arg per bucket ---
+  // For each bucket: append a new func arg of secretVecType annotated with
+  // tensor_ext.original_type<originalBareType, bucketLayout>, append the
+  // matching new operand to secret.generic, and append a new body block arg
+  // of vecType. Wire opVec for each input-load op to its bucket's body arg.
+  // AddClientInterface will read the OriginalTypeAttrs and emit one
+  // encryption helper per bucket — the boundary layout work moves to the
+  // client interface, and the kernel body sees pre-packed ciphertexts.
+  llvm::SmallVector<BlockArgument> bucketBodyArgs;
+  bucketBodyArgs.reserve(buckets.size());
+  StringAttr origTypeAttrName =
+      StringAttr::get(ctx, "tensor_ext.original_type");
+  // Also attach `tensor_ext.layout` carrying the same DenseIntElementsAttr.
+  // This survives a (patched) LayoutPropagation that respects existing layouts,
+  // and — being a DenseIntElementsAttr rather than a LayoutAttr — causes
+  // ConvertFunc::finalizeFuncOpModification to skip its overwrite of
+  // `tensor_ext.original_type`. End result: AddClientInterface sees our
+  // bucket permutation and generates the correct per-bucket encrypt helpers.
+  StringAttr layoutAttrName = StringAttr::get(ctx, "tensor_ext.layout");
+  for (const Bucket &bucket : buckets) {
+    auto origTypeAttr = tensor_ext::OriginalTypeAttr::get(
+        ctx, bucket.info->origPlaintextType, bucket.layoutAttr);
+    auto argAttrs = DictionaryAttr::get(
+        ctx, {NamedAttribute(origTypeAttrName, origTypeAttr),
+              NamedAttribute(layoutAttrName, bucket.layoutAttr)});
+
+    unsigned newFuncIdx = func.getNumArguments();
+    func.insertArgument(newFuncIdx, secretVecType, argAttrs, loc);
+    Value newFuncArg = func.getArgument(newFuncIdx);
+
+    // Append as new operand to the secret.generic (variadic $inputs).
+    SmallVector<Value> newOperands(genericOp->getOperands().begin(),
+                                   genericOp->getOperands().end());
+    newOperands.push_back(newFuncArg);
+    genericOp->setOperands(newOperands);
+
+    BlockArgument newBodyArg = scheduleBlock->addArgument(vecType, loc);
+    bucketBodyArgs.push_back(newBodyArg);
+  }
+
+  // Update secret.generic result type and the func return type.
+  genericOp->getResult(0).setType(secretVecType);
+  SmallVector<Type> newFuncArgTypes;
+  for (unsigned i = 0; i < func.getNumArguments(); ++i)
+    newFuncArgTypes.push_back(func.getArgument(i).getType());
+  func.setType(FunctionType::get(ctx, newFuncArgTypes, {secretVecType}));
+
+  // Wire opVec: each input-load op resolves to its bucket's body block arg.
+  llvm::DenseMap<Operation *, int64_t> extractLayoutLane;
+  for (size_t i = 0; i < buckets.size(); ++i) {
+    BlockArgument bodyArg = bucketBodyArgs[i];
+    for (Operation *op : buckets[i].inputLoadOps) {
+      opVec[op] = bodyArg;
+      extractLayoutLane[op] = schedule.lanes.lookup(op);
+    }
+  }
+
+  // Stash the count of original args so we can erase them after the rest of
+  // the lowering finishes (the original tensor.extracts / __coyote_load calls
+  // that still reference them get DCE'd by the existing dead-IR sweep below).
+  unsigned origArgCount = origInfos.size();
 
   // --- Rotation cache ---
   using RotKey = std::pair<void *, int64_t>;
@@ -468,9 +495,16 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     auto it = rotCache.find(key);
     if (it != rotCache.end()) return it->second;
 
-    Value shiftVal = arith::ConstantOp::create(
-        builder, loc, builder.getIntegerAttr(builder.getI32Type(), shift));
-    Value rotated = tensor_ext::RotateOp::create(builder, loc, vec, shiftVal);
+    // Emit the shift as `index` (not i32). tensor_ext::RotateOp attaches the
+    // IndexTypesNeedNoLayoutImpl interface which tells layout-propagation
+    // that an `index`-typed shift does not need a layout. Without a layout,
+    // convert-to-ciphertext-semantics leaves the scalar shift alone instead
+    // of widening it to tensor<1x64xi32>, which would break the eventual
+    // bgv.rotate_cols verifier (it expects a scalar dynamic_shift).
+    Value shiftVal =
+        arith::ConstantIndexOp::create(builder, loc, shift).getResult();
+    Value rotated =
+        tensor_ext::RotateOp::create(builder, loc, vec, shiftVal).getResult();
     rotCache[key] = rotated;
     return rotated;
   };
@@ -673,6 +707,27 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
       op->erase();
       changed = true;
     }
+  }
+
+  // --- Erase the original (pre-bucket-refactor) kernel args ---
+  // After the DCE sweep above, the original tensor.extract / __coyote_load
+  // chains that referenced the original body block args are gone. We can
+  // now drop the original block args (positions 0..origArgCount-1) along
+  // with their matching secret.generic operands and outer func args.
+  if (origArgCount > 0) {
+    // Drop original operands of secret.generic at positions 0..origArgCount-1.
+    SmallVector<Value> survivingOperands;
+    for (unsigned i = origArgCount; i < genericOp->getNumOperands(); ++i)
+      survivingOperands.push_back(genericOp->getOperand(i));
+    genericOp->setOperands(survivingOperands);
+
+    // Drop original body block args at the same positions.
+    for (unsigned i = 0; i < origArgCount; ++i) scheduleBlock->eraseArgument(0);
+
+    // Drop original func args (positions 0..origArgCount-1).
+    llvm::BitVector funcArgsToErase(func.getNumArguments());
+    for (unsigned i = 0; i < origArgCount; ++i) funcArgsToErase.set(i);
+    func.eraseArguments(funcArgsToErase);
   }
 }
 
