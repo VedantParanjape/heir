@@ -362,6 +362,7 @@ class ColumnAssigner {
 
 void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
                       const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes,
+                      const uint64_t forcedWarpSize,
                       bool ShouldThisLowerToMLIR) {
   llvm::outs() << "\n=== Coyote Vectorizer Pass ===\n\n";
 
@@ -447,7 +448,9 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //==========================================================================
   llvm::errs() << "\n[2-8/9] Using Python Coyote scheduler...\n";
   {
-    auto pySchedule = runPythonScheduler(operations, inputGroups, forcedLanes);
+    llvm::outs() << "WARP SIZE: " << forcedWarpSize << "\n";
+    auto pySchedule = runPythonScheduler(operations, inputGroups, forcedLanes,
+                                         forcedWarpSize);
     if (!pySchedule) {
       llvm::errs() << "  Python scheduler failed, aborting.\n";
       return;

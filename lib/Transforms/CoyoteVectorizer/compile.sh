@@ -1,6 +1,6 @@
 bazel run //tools:heir-opt -- \
   /local/scratch/a/paranjav/biscotti/heir/kernel-mm4-final.mlir \
-  --mlir-to-bfv='ciphertext-degree=64 plaintext-modulus=65537' \
+  --mlir-to-bfv='ciphertext-degree=64 plaintext-modulus=65537 split-preprocessing=8' \
   --scheme-to-openfhe \
   -o /local/scratch/a/paranjav/biscotti/heir/output-openfhe.mlir
 

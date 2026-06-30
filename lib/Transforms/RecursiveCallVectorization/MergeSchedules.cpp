@@ -736,15 +736,15 @@ void findScheduleMergingCandidates(
     recursiveProgramNode *node,
     DenseMap<recursiveProgramNode *, SmallVector<recursiveProgramNode *>>
         &candidates,
-    DenseSet<func::CallOp> &visited) {
+    DenseSet<recursiveProgramNode *> &visited) {
   if (!node) return;
 
   for (recursiveProgramNode *child : node->children)
     findScheduleMergingCandidates(child, candidates, visited);
 
-  if (node->children.empty() && !visited.count(node->caller))
+  if (node->children.empty() && !visited.count(node) && node->parent)
     candidates[node->parent].push_back(node);
-  visited.insert(node->caller);
+  visited.insert(node);
 }
 
 static void collectTensorInsertChain(Value inputTensor,

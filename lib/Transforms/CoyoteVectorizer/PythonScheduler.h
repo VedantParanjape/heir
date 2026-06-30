@@ -62,7 +62,8 @@ std::optional<Schedule> runPythonScheduler(
     llvm::ArrayRef<Operation*> operations,
     llvm::ArrayRef<llvm::SmallVector<Operation*>> inputGroups,
     const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes =
-        llvm::DenseMap<BlockArgument, int64_t>()) {
+        llvm::DenseMap<BlockArgument, int64_t>(),
+    const uint64_t forcedWarpSize = 0) {
   // Locate the bridge script.
   std::string scriptPath;
   if (const char* envPath = std::getenv("COYOTE_PYTHON_PATH")) {
@@ -197,10 +198,13 @@ std::optional<Schedule> runPythonScheduler(
   }
 
   // Create temp files.
+  static int counter = 0;
   auto tmpDir = std::filesystem::temp_directory_path();
-  auto circuitPath = tmpDir / "coyote_circuit.txt";
-  auto resultPath = tmpDir / "coyote_python_result.json";
-
+  auto subdir = tmpDir / std::to_string(counter);
+  std::filesystem::create_directories(subdir);
+  auto circuitPath = subdir / "coyote_circuit.txt";
+  auto resultPath = subdir / "coyote_python_result.json";
+  counter++;
   // --- Serialize circuit ---
   {
     std::ofstream out(circuitPath);
@@ -248,6 +252,13 @@ std::optional<Schedule> runPythonScheduler(
       }
     }
 
+    // WARP_SIZE line — pin Coyote's vector width. The Python bridge passes
+    // this as `min_warp_size` to `vectorize()`, which enforces it as a hard
+    // target (fails loudly if the natural schedule won't fit). Used when the
+    // caller needs the produced schedule to live on a fabric of a specific
+    // width (e.g. matching another schedule for a vertical merge).
+    if (forcedWarpSize > 0) out << "WARP_SIZE " << forcedWarpSize << "\n";
+
     // OP lines.
     for (auto* op : operations) {
       if (!isCircuitArith(op)) continue;
@@ -281,7 +292,7 @@ std::optional<Schedule> runPythonScheduler(
   // --- Call Python ---
   std::string cmd = pythonBin + " " + scriptPath + " " + circuitPath.string() +
                     " --verbose " + " --output " + resultPath.string() +
-                    " 2>&1";
+                    " --rounds 100 " + " 2>&1";
   llvm::errs() << "  [Python] Running: " << cmd << "\n";
 
   FILE* pipe = popen(cmd.c_str(), "r");
@@ -373,8 +384,8 @@ std::optional<Schedule> runPythonScheduler(
   schedule.instructions = std::move(circuitOps);
 
   // Cleanup.
-  std::filesystem::remove(circuitPath);
-  std::filesystem::remove(resultPath);
+  // std::filesystem::remove(circuitPath);
+  // std::filesystem::remove(resultPath);
 
   return schedule;
 }

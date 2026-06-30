@@ -83,8 +83,6 @@ namespace heir {
 //===----------------------------------------------------------------------===//
 
 /// Walk back through a tensor.insert chain. Returns (slot_index, scalar)
-/// pairs sorted by slot. Empty result means the chain isn't a sequence of
-/// constant-indexed inserts (so it can't be scalarized this way).
 inline llvm::SmallVector<std::pair<int64_t, mlir::Value>> traceInsertChain(
     mlir::Value tensorVal) {
   llvm::SmallVector<std::pair<int64_t, mlir::Value>> entries;
@@ -133,7 +131,6 @@ inline llvm::SmallVector<unsigned> appendYieldedValues(
   // new generic at the rewriter's default insertion point — which can be
   // AFTER consumers of the generic's results, causing dominance errors.
   rewriter.setInsertionPoint(oldGeneric);
-
   auto [newGeneric, newResults] =
       oldGeneric.addNewYieldedValues(mlir::ValueRange(newScalars), rewriter);
   for (auto [oldRes, newRes] :
@@ -263,6 +260,12 @@ inline bool scalarizeCalleeSignature(
   mlir::Location loc = callee.getLoc();
   mlir::Block &entry = callee.front();
 
+  // -----------------------------------------------------------------------
+  // Commit-on-success rewrite. Phase 1 plans and validates without touching
+  // the IR. Phase 2 applies the mutations atomically. If any precondition
+  // fails in Phase 1, we return false with the IR unchanged.
+  // -----------------------------------------------------------------------
+
   llvm::DenseSet<unsigned> scalarizeSet(tensorArgPositions.begin(),
                                         tensorArgPositions.end());
 
@@ -299,26 +302,134 @@ inline bool scalarizeCalleeSignature(
     }
   }
 
-  // 2. Append new args at the end of the entry block.
+  // ---------------- Phase 1: plan + validate (no IR mutations) -----------
+
+  // 1a. Find the inner secret.generic to rewrite. Pick the FIRST generic
+  //     (by walk order) whose operands include any of the scalarizable
+  //     outer args. A callee may legitimately contain multiple generics
+  //     (e.g. a "splitter" at the top consuming outer args, and an
+  //     "accumulator" at the bottom consuming call results) — the original
+  //     `walk-and-overwrite` would pick the last one, which is wrong.
+  mlir::heir::secret::GenericOp innerGeneric;
+  callee.walk([&](mlir::heir::secret::GenericOp g) -> mlir::WalkResult {
+    for (mlir::Value op : g->getOperands()) {
+      if (auto ba = llvm::dyn_cast<mlir::BlockArgument>(op)) {
+        if (ba.getOwner() == &entry && scalarizeSet.count(ba.getArgNumber())) {
+          innerGeneric = g;
+          return mlir::WalkResult::interrupt();
+        }
+      }
+    }
+    return mlir::WalkResult::advance();
+  });
+
+  // 1b. Validate scalarizable outer args have only "safe" uses
+  //     (= used solely by `innerGeneric` as an operand, or no uses at all
+  //      if there is no inner generic). If something else references them,
+  //      we can't safely scalarize without leaving dangling refs.
+  for (unsigned i : tensorArgPositions) {
+    mlir::BlockArgument arg = entry.getArgument(i);
+    for (mlir::OpOperand &use : arg.getUses()) {
+      mlir::Operation *user = use.getOwner();
+      if (innerGeneric && user == innerGeneric.getOperation()) continue;
+      llvm::errs() << "scalarize: callee " << callee.getName()
+                   << " has non-trivial use of outer arg " << i
+                   << " (user op: " << user->getName()
+                   << ") — refusing to scalarize\n";
+      return false;
+    }
+  }
+
+  // 1c. Plan inner-side rewrites: for each operand of the inner generic
+  //     that came from a scalarizable outer arg, validate the corresponding
+  //     inner block arg's uses are only constant-indexed tensor.extracts,
+  //     and record which extract feeds which slot for Phase 2 to rewire.
+  struct InnerOperandPlan {
+    unsigned newStart;  // index into newInnerArgTypes / newGenericOperands.
+    unsigned count;     // 1 if not scalarized, N otherwise.
+    // For scalarized (count > 1): per-slot extract op to RAUW-and-erase.
+    llvm::SmallVector<mlir::Operation *> extractOps;
+  };
+
+  mlir::Block *innerBody =
+      innerGeneric ? &innerGeneric.getRegion().front() : nullptr;
+  unsigned origInnerCount = innerBody ? innerBody->getNumArguments() : 0;
+  llvm::SmallVector<InnerOperandPlan> innerPlans(origInnerCount);
+  llvm::SmallVector<mlir::Type> newInnerArgTypes;
+
+  if (innerGeneric) {
+    for (unsigned i = 0; i < innerGeneric->getNumOperands(); ++i) {
+      mlir::Value oldOperand = innerGeneric->getOperand(i);
+      auto oldArg = llvm::dyn_cast<mlir::BlockArgument>(oldOperand);
+      if (!oldArg || oldArg.getOwner() != &entry ||
+          !scalarizeSet.count(oldArg.getArgNumber())) {
+        // Operand not scalarized — passes through unchanged.
+        innerPlans[i].newStart = (unsigned)newInnerArgTypes.size();
+        innerPlans[i].count = 1;
+        newInnerArgTypes.push_back(innerBody->getArgument(i).getType());
+        continue;
+      }
+      auto [newStart, count] = oldToNew[oldArg.getArgNumber()];
+      innerPlans[i].newStart = (unsigned)newInnerArgTypes.size();
+      innerPlans[i].count = count;
+      auto innerTensorTy = llvm::dyn_cast<mlir::RankedTensorType>(
+          innerBody->getArgument(i).getType());
+      if (!innerTensorTy) {
+        llvm::errs() << "scalarize: inner arg " << i << " of "
+                     << callee.getName() << " is not a ranked tensor\n";
+        return false;
+      }
+      mlir::Type elemTy = innerTensorTy.getElementType();
+
+      // Validate uses of this inner arg + map each extract to its slot.
+      llvm::SmallVector<mlir::Operation *> perSlot(count, nullptr);
+      mlir::BlockArgument innerArg = innerBody->getArgument(i);
+      for (mlir::OpOperand &use : innerArg.getUses()) {
+        auto ext = llvm::dyn_cast<mlir::tensor::ExtractOp>(use.getOwner());
+        if (!ext) {
+          llvm::errs() << "scalarize: callee " << callee.getName()
+                       << " has non-extract use of inner arg " << i
+                       << " (user: " << use.getOwner()->getName()
+                       << ") — refusing to scalarize\n";
+          return false;
+        }
+        auto cst =
+            ext.getIndices().front().getDefiningOp<mlir::arith::ConstantOp>();
+        if (!cst) {
+          llvm::errs() << "scalarize: callee " << callee.getName()
+                       << " has dynamic-index extract on inner arg " << i
+                       << " — refusing to scalarize\n";
+          return false;
+        }
+        unsigned slot = llvm::cast<mlir::IntegerAttr>(cst.getValue()).getInt();
+        if (slot >= count) {
+          llvm::errs() << "scalarize: callee " << callee.getName()
+                       << " extract slot " << slot
+                       << " out of range on inner arg " << i << "\n";
+          return false;
+        }
+        perSlot[slot] = ext.getOperation();
+      }
+      innerPlans[i].extractOps = std::move(perSlot);
+      for (unsigned j = 0; j < count; ++j) newInnerArgTypes.push_back(elemTy);
+    }
+  }
+
+  // ---------------- Phase 2: apply (no validation failures past here) ----
+
+  // 2a. Append new outer args to entry block.
   unsigned origCount = entry.getNumArguments();
   for (mlir::Type t : newInputs) entry.addArgument(t, loc);
 
-  // 3. Find the inner secret.generic.
-  mlir::heir::secret::GenericOp innerGeneric;
-  callee.walk([&](mlir::heir::secret::GenericOp g) { innerGeneric = g; });
+  // 2b. No-inner-generic short path: RAUW unchanged args, erase originals,
+  //     update signature.
   if (!innerGeneric) {
-    // No body to rewrite — just update outer signature, rewire outer args.
     for (unsigned i = 0; i < origCount; ++i) {
       mlir::BlockArgument oldArg = entry.getArgument(i);
       auto [newStart, count] = oldToNew[i];
-      if (count == 1) {
+      if (count == 1)
         oldArg.replaceAllUsesWith(entry.getArgument(origCount + newStart));
-      } else if (!oldArg.use_empty()) {
-        llvm::errs() << "scalarize: tensor arg " << i
-                     << " has uses but no inner secret.generic — cannot "
-                        "scalarize without the body context\n";
-        return false;
-      }
+      // Scalarized args have no uses (Phase 1 checked) — nothing to do.
     }
     for (unsigned i = origCount; i-- > 0;) entry.eraseArgument(i);
     callee.setType(mlir::FunctionType::get(
@@ -326,99 +437,82 @@ inline bool scalarizeCalleeSignature(
     return true;
   }
 
-  // 4. Build new generic operands and the corresponding new inner arg types.
-  mlir::Block &innerBody = innerGeneric.getRegion().front();
+  // 2c. Build the new generic operand list using the newly-added entry args.
   llvm::SmallVector<mlir::Value> newGenericOperands;
-  llvm::SmallVector<mlir::Type> newInnerArgTypes;
-  llvm::SmallVector<std::pair<unsigned, unsigned>> innerOldToNew(
-      innerBody.getNumArguments());
-
+  newGenericOperands.reserve(newInnerArgTypes.size());
   for (unsigned i = 0; i < innerGeneric->getNumOperands(); ++i) {
     mlir::Value oldOperand = innerGeneric->getOperand(i);
     auto oldArg = llvm::dyn_cast<mlir::BlockArgument>(oldOperand);
-    if (!oldArg || oldArg.getOwner() != &entry) {
-      innerOldToNew[i] = {(unsigned)newGenericOperands.size(), 1};
-      newGenericOperands.push_back(oldOperand);
-      newInnerArgTypes.push_back(innerBody.getArgument(i).getType());
+    if (!oldArg || oldArg.getOwner() != &entry ||
+        !scalarizeSet.count(oldArg.getArgNumber())) {
+      // Unchanged operand. If it's a non-scalarized entry arg, redirect to
+      // its new position; otherwise keep as-is.
+      if (oldArg && oldArg.getOwner() == &entry) {
+        auto [newStart, _count] = oldToNew[oldArg.getArgNumber()];
+        newGenericOperands.push_back(entry.getArgument(origCount + newStart));
+      } else {
+        newGenericOperands.push_back(oldOperand);
+      }
       continue;
     }
     auto [newStart, count] = oldToNew[oldArg.getArgNumber()];
-    innerOldToNew[i] = {(unsigned)newGenericOperands.size(), count};
-    if (count == 1) {
-      newGenericOperands.push_back(entry.getArgument(origCount + newStart));
-      newInnerArgTypes.push_back(innerBody.getArgument(i).getType());
-    } else {
-      auto innerTensorTy = llvm::cast<mlir::RankedTensorType>(
-          innerBody.getArgument(i).getType());
-      mlir::Type elemTy = innerTensorTy.getElementType();
-      for (unsigned j = 0; j < count; ++j) {
-        newGenericOperands.push_back(
-            entry.getArgument(origCount + newStart + j));
-        newInnerArgTypes.push_back(elemTy);
-      }
-    }
+    for (unsigned j = 0; j < count; ++j)
+      newGenericOperands.push_back(entry.getArgument(origCount + newStart + j));
   }
 
-  // 5. Add new inner block args.
-  unsigned origInnerCount = innerBody.getNumArguments();
+  // 2d. Add new inner block args.
   llvm::SmallVector<mlir::BlockArgument> newInnerArgs;
   newInnerArgs.reserve(newInnerArgTypes.size());
   for (mlir::Type t : newInnerArgTypes)
-    newInnerArgs.push_back(innerBody.addArgument(t, loc));
+    newInnerArgs.push_back(innerBody->addArgument(t, loc));
 
-  // 6. Rewire uses of old inner block args.
+  // 2e. Rewire inner extracts / replace passthrough inner block args.
   llvm::SmallVector<mlir::Operation *> toErase;
   for (unsigned i = 0; i < origInnerCount; ++i) {
-    mlir::BlockArgument oldArg = innerBody.getArgument(i);
-    auto [newStart, count] = innerOldToNew[i];
-    if (count == 1) {
-      oldArg.replaceAllUsesWith(newInnerArgs[newStart]);
+    mlir::BlockArgument oldArg = innerBody->getArgument(i);
+    auto &plan = innerPlans[i];
+    if (plan.count == 1) {
+      oldArg.replaceAllUsesWith(newInnerArgs[plan.newStart]);
       continue;
     }
-    for (mlir::Operation *user : llvm::to_vector(oldArg.getUsers())) {
-      auto ext = llvm::dyn_cast<mlir::tensor::ExtractOp>(user);
-      if (!ext) continue;
-      auto cst =
-          ext.getIndices().front().getDefiningOp<mlir::arith::ConstantOp>();
-      if (!cst) continue;
-      unsigned slot = llvm::cast<mlir::IntegerAttr>(cst.getValue()).getInt();
-      if (slot >= count) continue;
-      ext.getResult().replaceAllUsesWith(newInnerArgs[newStart + slot]);
+    for (unsigned slot = 0; slot < plan.count; ++slot) {
+      mlir::Operation *ext = plan.extractOps[slot];
+      if (!ext) continue;  // some slots may have no extract (unused element).
+      ext->getResult(0).replaceAllUsesWith(newInnerArgs[plan.newStart + slot]);
       toErase.push_back(ext);
     }
   }
   for (mlir::Operation *op : toErase) op->erase();
 
-  // 7. Update secret.generic operand list FIRST. This drops the generic's
-  //    last references to the old outer block args, so step 9's erase
-  //    will succeed.
+  // 2f. Update secret.generic operand list — drops references to old outer
+  //     args.
   innerGeneric->setOperands(newGenericOperands);
 
-  // 8. Erase old inner block args (with a guard against lingering uses).
+  // 2g. Erase old inner block args. Phase 1 validated only extracts use
+  //     them, and 2e converted those, so all should be use-empty.
   for (unsigned i = origInnerCount; i-- > 0;) {
-    mlir::BlockArgument arg = innerBody.getArgument(i);
+    mlir::BlockArgument arg = innerBody->getArgument(i);
     if (!arg.use_empty()) {
-      llvm::errs() << "scalarize: callee " << callee.getName()
-                   << " has non-extract uses of inner arg " << i
-                   << " — aborting (IR may be partially modified)\n";
+      llvm::errs() << "scalarize: BUG — inner arg " << i << " of "
+                   << callee.getName() << " has residual uses after planning\n";
       return false;
     }
-    innerBody.eraseArgument(i);
+    innerBody->eraseArgument(i);
   }
 
-  // 9. Erase old outer block args.
+  // 2h. Erase old outer block args. Phase 1 validated only the inner generic
+  //     uses them; 2f rewired the generic, so all should be use-empty.
   for (unsigned i = origCount; i-- > 0;) {
     mlir::BlockArgument arg = entry.getArgument(i);
     if (!arg.use_empty()) {
-      llvm::errs() << "scalarize: callee " << callee.getName()
-                   << " has non-trivial uses of outer arg " << i
-                   << " — aborting (IR may be partially modified)\n";
+      llvm::errs() << "scalarize: BUG — outer arg " << i << " of "
+                   << callee.getName() << " has residual uses after planning\n";
       return false;
     }
     entry.eraseArgument(i);
   }
 
-  // 10. Update function signature.
+  // 2i. Update function signature.
   callee.setType(mlir::FunctionType::get(
       ctx, newInputs, callee.getFunctionType().getResults()));
   return true;

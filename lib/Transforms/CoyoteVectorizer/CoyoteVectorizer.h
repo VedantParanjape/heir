@@ -42,7 +42,7 @@ void coyoteVectorizer(
     func::FuncOp& func, Schedule& finalSchedule,
     const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes =
         llvm::DenseMap<BlockArgument, int64_t>(),
-    bool ShouldThisLowerToMLIR = true);
+    const uint64_t forcedWarpSize = 0, bool ShouldThisLowerToMLIR = true);
 
 }  // namespace heir
 }  // namespace mlir

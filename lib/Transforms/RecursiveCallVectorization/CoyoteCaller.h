@@ -187,12 +187,13 @@ void wrapBlockArgsWithVirtualLoads(func::FuncOp func) {
 Schedule runCoyoteVectorizer(
     func::FuncOp func,
     const llvm::DenseMap<BlockArgument, int64_t> &forcedLanes =
-        llvm::DenseMap<BlockArgument, int64_t>()) {
+        llvm::DenseMap<BlockArgument, int64_t>(),
+    const uint64_t warp_size = 0) {
   static DenseMap<StringRef, Schedule> vectorizedFunctions;
   if (!vectorizedFunctions.contains(func.getName())) {
     Schedule schedule;
     wrapBlockArgsWithVirtualLoads(func);
-    coyoteVectorizer(func, schedule, forcedLanes, false);
+    coyoteVectorizer(func, schedule, forcedLanes, warp_size, false);
     vectorizedFunctions.insert({func.getName(), schedule});
     return schedule;
   }

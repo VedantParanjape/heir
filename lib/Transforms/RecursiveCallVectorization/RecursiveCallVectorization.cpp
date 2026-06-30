@@ -513,168 +513,199 @@ struct RecursiveCallVectorization
     for (auto &calls : biscottiCalls) {
       DenseMap<recursiveProgramNode *, SmallVector<recursiveProgramNode *>>
           mergeableNodes;
-      DenseSet<func::CallOp> visited;
-      findScheduleMergingCandidates(calls.second.root, mergeableNodes, visited);
+      DenseSet<recursiveProgramNode *> visited;
 
-      // print mergeable nodes function name
-      llvm::outs() << "Schedule merging candidates:\n";
-      for (auto node : mergeableNodes) {
-        llvm::outs() << "  " << node.first->function.getName() << "\n";
-        for (int i = 1; i < node.second.size(); i++) {
-          llvm::outs() << "    " << node.second[i]->function.getName() << "\n";
-        }
-      }
-
-      for (auto node : mergeableNodes) {
-        func::FuncOp merged;
-        OpBuilder builder(&node.first->function.getBody().front(),
-                          node.first->function.getBody().front().begin());
-
-        SmallVector<func::FuncOp> functionsToMerge;
-        SmallVector<Schedule> schedulesToMerge;
-        Schedule finalSchedule;
-        for (int i = 0; i < node.second.size(); i++) {
-          functionsToMerge.push_back(node.second[i]->function);
-          schedulesToMerge.push_back(node.second[i]->coyoteSchedule);
-        }
-        mergeSchedulesWithNW(functionsToMerge, schedulesToMerge, merged,
-                             finalSchedule);
-
-        merged.dump();
-        prettyPrintSchedule(finalSchedule);
-        for (auto &lanes : finalSchedule.lanes) {
-          llvm::outs() << "Op: " << *lanes.first << "\n";
-          llvm::outs() << "Lane: " << lanes.second << "\n";
+      while (true) {
+        findScheduleMergingCandidates(calls.second.root, mergeableNodes,
+                                      visited);
+        if (mergeableNodes.size() == 0) break;
+        // print mergeable nodes function name
+        llvm::outs() << "Schedule merging candidates:\n";
+        for (auto node : mergeableNodes) {
+          llvm::outs() << "  " << node.first->function.getName() << "\n";
+          for (int i = 1; i < node.second.size(); i++) {
+            llvm::outs() << "    " << node.second[i]->function.getName()
+                         << "\n";
+          }
         }
 
-        ModuleOp module = node.second[0]->function->getParentOfType<ModuleOp>();
-        module.push_back(merged);
+        DenseMap<func::FuncOp, Schedule> visitedMergeableNodes;
+        for (auto node : mergeableNodes) {
+          if (visitedMergeableNodes.count(node.first->function)) {
+            node.first->coyoteSchedule =
+                visitedMergeableNodes[node.first->function];
+            node.first->children.clear();
+            continue;
+          }
 
-        // reduction steps
-        // TODO: check if the merged funcs have more args than the base
-        // functions ideally we should handle this, but it is a waste of time to
-        // handle all of these edge cases right now. Ideally after staging all
-        // the progress arguments should disappear and won't cause any issues.
-        // But we should add an assert which checks for this, would be easier to
-        // debug these self-sabotage issues if they come up.
-        SmallVector<Value> callArgs;
-        for (auto n : node.second)
-          for (auto arg : n->caller.getArgOperands()) callArgs.push_back(arg);
+          func::FuncOp merged;
+          OpBuilder builder(&node.first->function.getBody().front(),
+                            node.first->function.getBody().front().begin());
 
-        builder.setInsertionPoint(node.second[0]->caller);
-        auto callOp = func::CallOp::create(
-            builder, node.second[0]->caller.getLoc(), merged.getName(),
-            merged.getFunctionType().getResults(), callArgs);
+          SmallVector<func::FuncOp> functionsToMerge;
+          SmallVector<Schedule> schedulesToMerge;
+          Schedule finalSchedule;
+          for (int i = 0; i < node.second.size(); i++) {
+            functionsToMerge.push_back(node.second[i]->function);
+            schedulesToMerge.push_back(node.second[i]->coyoteSchedule);
+          }
+          mergeSchedulesWithNW(functionsToMerge, schedulesToMerge, merged,
+                               finalSchedule);
 
-        for (int i = 0; i < node.second.size(); i++) {
-          if (node.second[0]->caller.getNumResults() != 1)
-            llvm::report_fatal_error("expected single-result calls");
-          node.second[i]->caller.getResult(0).replaceAllUsesWith(
-              callOp.getResults()[i]);
-          node.second[i]->caller.erase();
-        }
-        node.first->children.clear();
+          llvm::outs() << "NW merged Kernel Schedule =========\n";
+          prettyPrintSchedule(finalSchedule);
+          llvm::outs() << "NW merged Kernel Schedule =========\n";
 
-        auto findCommonGeneric = [&]() -> secret::GenericOp {
-          secret::GenericOp first = nullptr;
-          for (auto res : callOp.getResults()) {
-            for (auto &use : res.getUses()) {
-              auto owner = dyn_cast<secret::GenericOp>(use.getOwner());
-              if (!owner) return nullptr;
-              if (!first)
-                first = owner;
-              else if (first != owner)
-                return nullptr;
+          ModuleOp module =
+              node.second[0]->function->getParentOfType<ModuleOp>();
+          module.push_back(merged);
+
+          // reduction steps
+          // TODO: check if the merged funcs have more args than the base
+          // functions ideally we should handle this, but it is a waste of time
+          // to handle all of these edge cases right now. Ideally after staging
+          // all the progress arguments should disappear and won't cause any
+          // issues. But we should add an assert which checks for this, would be
+          // easier to debug these self-sabotage issues if they come up.
+          SmallVector<Value> callArgs;
+          for (auto n : node.second)
+            for (auto arg : n->caller.getArgOperands()) callArgs.push_back(arg);
+
+          builder.setInsertionPoint(node.second[0]->caller);
+          auto callOp = func::CallOp::create(
+              builder, node.second[0]->caller.getLoc(), merged.getName(),
+              merged.getFunctionType().getResults(), callArgs);
+
+          for (int i = 0; i < node.second.size(); i++) {
+            if (node.second[0]->caller.getNumResults() != 1)
+              llvm::report_fatal_error("expected single-result calls");
+            node.second[i]->caller.getResult(0).replaceAllUsesWith(
+                callOp.getResults()[i]);
+            node.second[i]->caller.erase();
+          }
+          node.first->children.clear();
+
+          auto findCommonGeneric = [&]() -> secret::GenericOp {
+            secret::GenericOp first = nullptr;
+            for (auto res : callOp.getResults()) {
+              for (auto &use : res.getUses()) {
+                auto owner = dyn_cast<secret::GenericOp>(use.getOwner());
+                if (!owner) return nullptr;
+                if (!first)
+                  first = owner;
+                else if (first != owner)
+                  return nullptr;
+              }
+            }
+            return first;
+          };
+
+          // Now we need to add the merged function result to the generic block
+          // args that use the old function results. For simplicity we check
+          // that all uses are in the same generic op, otherwise it asserts.
+          auto commonGeneric = findCommonGeneric();
+          assert(commonGeneric &&
+                 "All results of merged functions must be used by the same "
+                 "secret.generic");
+
+          Block &body = commonGeneric.getRegion().front();
+          Location loc = commonGeneric.getLoc();
+          builder.setInsertionPointToStart(&body);
+
+          unsigned numOldArgs = body.getNumArguments();
+
+          // 1. New operand list (callOp's results) + add new scalar block args.
+          SmallVector<Value> newOperands;
+          SmallVector<BlockArgument> newArgs;
+          for (unsigned k = 0; k < numOldArgs; ++k) {
+            auto tensorTy =
+                cast<RankedTensorType>(body.getArgument(k).getType());
+            unsigned L = tensorTy.getNumElements();
+            Type elemTy = tensorTy.getElementType();
+            for (unsigned j = 0; j < L; ++j) {
+              newOperands.push_back(callOp.getResult(k * L + j));
+              newArgs.push_back(body.addArgument(elemTy, loc));
             }
           }
-          return first;
-        };
 
-        // Now we need to add the merged function result to the generic block
-        // args that use the old function results. For simplicity we check that
-        // all uses are in the same generic op, otherwise it asserts.
-        auto commonGeneric = findCommonGeneric();
-        assert(commonGeneric &&
-               "All results of merged functions must be used by the same "
-               "secret.generic");
-
-        Block &body = commonGeneric.getRegion().front();
-        Location loc = commonGeneric.getLoc();
-        builder.setInsertionPointToStart(&body);
-
-        unsigned numOldArgs = body.getNumArguments();
-
-        // 1. New operand list (callOp's results) + add new scalar block args.
-        SmallVector<Value> newOperands;
-        SmallVector<BlockArgument> newArgs;
-        for (unsigned k = 0; k < numOldArgs; ++k) {
-          auto tensorTy = cast<RankedTensorType>(body.getArgument(k).getType());
-          unsigned L = tensorTy.getNumElements();
-          Type elemTy = tensorTy.getElementType();
-          for (unsigned j = 0; j < L; ++j) {
-            newOperands.push_back(callOp.getResult(k * L + j));
-            newArgs.push_back(body.addArgument(elemTy, loc));
+          // 2. For each old tensor arg, rebuild a tensor<L x elemTy> from its L
+          //    new scalar args and replace the old arg's uses with it.
+          unsigned cursor = 0;
+          for (unsigned k = 0; k < numOldArgs; ++k) {
+            BlockArgument oldArg = body.getArgument(k);
+            auto tensorTy = cast<RankedTensorType>(oldArg.getType());
+            unsigned L = tensorTy.getNumElements();
+            SmallVector<Value> slice(newArgs.begin() + cursor,
+                                     newArgs.begin() + cursor + L);
+            Value rebuilt =
+                tensor::FromElementsOp::create(builder, loc, tensorTy, slice);
+            oldArg.replaceAllUsesWith(rebuilt);
+            cursor += L;
           }
+
+          // 3. Erase the (now unused) old tensor block args.
+          for (unsigned i = numOldArgs; i-- > 0;) body.eraseArgument(i);
+
+          // 4. Update the generic's operand list.
+          commonGeneric->setOperands(newOperands);
+
+          // Outline the secret.generic into a new function, then scalarize the
+          // body to be fed into coyote.
+          func::CallOp reductionCallOp;
+          func::FuncOp reductionKernel =
+              outlineSecretGeneric(commonGeneric, reductionCallOp);
+          MLIRContext *ctx = &getContext();
+          RewritePatternSet patterns(ctx);
+          patterns.add<ScalarizeAnyElementwise>(ctx);
+          tensor::ExtractOp::getCanonicalizationPatterns(patterns, ctx);
+          tensor::FromElementsOp::getCanonicalizationPatterns(patterns, ctx);
+          (void)applyPatternsGreedily(reductionKernel, std::move(patterns));
+          foldAllOpsInFunc(reductionKernel, ctx);
+
+          auto forcedLanes =
+              buildForcedLanesFromMerge(merged, finalSchedule, reductionKernel);
+          for (auto lane : forcedLanes) {
+            llvm::outs() << "Args: " << lane.first << "\n";
+            llvm::outs() << "ID: " << lane.second << "\n";
+          }
+          auto reductionSchedule = runCoyoteVectorizer(
+              reductionKernel, forcedLanes, finalSchedule.warpSize);
+
+          llvm::outs() << "Reduction Kernel Schedule =========\n";
+          prettyPrintSchedule(reductionSchedule);
+          llvm::outs() << "Reduction Kernel Schedule =========\n";
+
+          Schedule finalKernelSchedule;
+          SmallVector<func::CallOp> mergeCallOps = {callOp, reductionCallOp};
+          SmallVector<Schedule> mergeSchedules = {finalSchedule,
+                                                  reductionSchedule};
+          mergeSchedulesVertically(mergeCallOps, mergeSchedules,
+                                   finalKernelSchedule);
+          llvm::outs() << "Final Kernel Schedule =========\n";
+          prettyPrintSchedule(finalKernelSchedule);
+          llvm::outs() << "Final Kernel Schedule =========\n";
+
+          llvm::outs() << "START =====\n";
+          node.first->function->dump();
+          llvm::outs() << "ENDDD =====\n";
+
+          visitedMergeableNodes.insert(
+              {node.first->function, finalKernelSchedule});
+          node.first->coyoteSchedule = finalKernelSchedule;
         }
 
-        // 2. For each old tensor arg, rebuild a tensor<L x elemTy> from its L
-        //    new scalar args and replace the old arg's uses with it.
-        unsigned cursor = 0;
-        for (unsigned k = 0; k < numOldArgs; ++k) {
-          BlockArgument oldArg = body.getArgument(k);
-          auto tensorTy = cast<RankedTensorType>(oldArg.getType());
-          unsigned L = tensorTy.getNumElements();
-          SmallVector<Value> slice(newArgs.begin() + cursor,
-                                   newArgs.begin() + cursor + L);
-          Value rebuilt =
-              tensor::FromElementsOp::create(builder, loc, tensorTy, slice);
-          oldArg.replaceAllUsesWith(rebuilt);
-          cursor += L;
-        }
-
-        // 3. Erase the (now unused) old tensor block args.
-        for (unsigned i = numOldArgs; i-- > 0;) body.eraseArgument(i);
-
-        // 4. Update the generic's operand list.
-        commonGeneric->setOperands(newOperands);
-
-        // Outline the secret.generic into a new function, then scalarize the
-        // body to be fed into coyote.
-        func::CallOp reductionCallOp;
-        func::FuncOp reductionKernel =
-            outlineSecretGeneric(commonGeneric, reductionCallOp);
-        MLIRContext *ctx = &getContext();
-        RewritePatternSet patterns(ctx);
-        patterns.add<ScalarizeAnyElementwise>(ctx);
-        tensor::ExtractOp::getCanonicalizationPatterns(patterns, ctx);
-        tensor::FromElementsOp::getCanonicalizationPatterns(patterns, ctx);
-        (void)applyPatternsGreedily(reductionKernel, std::move(patterns));
-        foldAllOpsInFunc(reductionKernel, ctx);
-
-        auto forcedLanes =
-            buildForcedLanesFromMerge(merged, finalSchedule, reductionKernel);
-        auto reductionSchedule =
-            runCoyoteVectorizer(reductionKernel, forcedLanes);
-        prettyPrintSchedule(reductionSchedule);
-
-        Schedule finalKernelSchedule;
-        SmallVector<func::CallOp> mergeCallOps = {callOp, reductionCallOp};
-        SmallVector<Schedule> mergeSchedules = {finalSchedule,
-                                                reductionSchedule};
-        mergeSchedulesVertically(mergeCallOps, mergeSchedules,
-                                 finalKernelSchedule);
-        prettyPrintSchedule(finalKernelSchedule);
-
-        llvm::outs() << "START =====\n";
-        node.first->function->dump();
-        llvm::outs() << "ENDDD =====\n";
-
-        lowerToMLIR(node.first->function, finalKernelSchedule);
-        node.first->function.setPublic();
-        node.first->function->dump();
-        redirectCallToDummy(node.first->caller);
+        mergeableNodes.clear();
+        visited.clear();
       }
+
+      lowerToMLIR(calls.second.root->function,
+                  calls.second.root->coyoteSchedule);
+      calls.second.root->function.setPublic();
+      calls.second.root->function->dump();
+      redirectCallToDummy(calls.second.root->caller);
     }
+
+    prettyPrintRecursiveProgramTree(biscottiCalls.begin()->second.root);
 
     getOperation()->walk<WalkOrder::PreOrder>([&](func::FuncOp funcOp) {
       if (funcOp.empty()) return;

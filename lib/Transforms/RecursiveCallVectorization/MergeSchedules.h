@@ -130,13 +130,13 @@ void widenFunctionArgAndPropagate(func::FuncOp func, unsigned argIdx,
 /// `lanes`. Prints the warp size, total op count, and per-cycle listing of
 /// (lane → op) pairs.
 void prettyPrintSchedule(const Schedule &schedule,
-                         llvm::raw_ostream &os = llvm::errs());
+                         llvm::raw_ostream &os = llvm::outs());
 
 void findScheduleMergingCandidates(
     recursiveProgramNode *node,
     DenseMap<recursiveProgramNode *, SmallVector<recursiveProgramNode *>>
         &candidates,
-    DenseSet<func::CallOp> &visited);
+    DenseSet<recursiveProgramNode *> &visited);
 
 typedef struct cipherTextSlot_ {
   Operation *op;
