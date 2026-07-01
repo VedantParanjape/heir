@@ -34,6 +34,7 @@
 #include <queue>
 #include <vector>
 
+#include "llvm/include/llvm/ADT/DenseMapInfo.h"        // from @llvm-project
 #include "llvm/include/llvm/ADT/EquivalenceClasses.h"  // from @llvm-project
 #include "llvm/include/llvm/ADT/SetVector.h"           // from @llvm-project
 #include "mlir/include/mlir/IR/Builders.h"             // from @llvm-project
@@ -43,7 +44,6 @@
 #include "mlir/include/mlir/IR/ValueRange.h"           // from @llvm-project
 #include "mlir/include/mlir/IR/Visitors.h"             // from @llvm-project
 #include "ortools/graph/min_cost_flow.h"
-
 // heir graph utility — provides Graph<V> with addVertex/addEdge/edgesOutOf/
 // getInDegree/getOutDegree/hasEdge/getVertices.
 #include "lib/Utils/Graph/Graph.h"
@@ -445,16 +445,18 @@ template <>
 struct DenseMapInfo<mlir::heir::SubCircuitNode> {
   using T = mlir::heir::SubCircuitNodeImpl;
   using Ptr = mlir::heir::SubCircuitNode;
-  using PtrInfo = DenseMapInfo<T *>;
 
   static Ptr getEmptyKey() {
-    return Ptr(PtrInfo::getEmptyKey(), [](T *) {});
+    static Ptr empty = Ptr(reinterpret_cast<T *>(uintptr_t(-1)), [](T *) {});
+    return empty;
   }
   static Ptr getTombstoneKey() {
-    return Ptr(PtrInfo::getTombstoneKey(), [](T *) {});
+    static Ptr tombstone =
+        Ptr(reinterpret_cast<T *>(uintptr_t(-2)), [](T *) {});
+    return tombstone;
   }
   static unsigned getHashValue(const Ptr &val) {
-    return PtrInfo::getHashValue(val.get());
+    return DenseMapInfo<T *>::getHashValue(val.get());
   }
   static bool isEqual(const Ptr &lhs, const Ptr &rhs) {
     return lhs.get() == rhs.get();
