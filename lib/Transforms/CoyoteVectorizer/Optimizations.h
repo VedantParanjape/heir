@@ -433,19 +433,18 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   bucketBodyArgs.reserve(buckets.size());
   StringAttr origTypeAttrName =
       StringAttr::get(ctx, "tensor_ext.original_type");
-  // Also attach `tensor_ext.layout` carrying the same DenseIntElementsAttr.
-  // This survives a (patched) LayoutPropagation that respects existing layouts,
-  // and — being a DenseIntElementsAttr rather than a LayoutAttr — causes
-  // ConvertFunc::finalizeFuncOpModification to skip its overwrite of
-  // `tensor_ext.original_type`. End result: AddClientInterface sees our
-  // bucket permutation and generates the correct per-bucket encrypt helpers.
-  StringAttr layoutAttrName = StringAttr::get(ctx, "tensor_ext.layout");
+  // Attach only `tensor_ext.original_type`. We deliberately do NOT attach
+  // `tensor_ext.layout` here — LayoutPropagation will fill that with an
+  // identity LayoutAttr by default, which is fine (body propagation is
+  // lane-wise). The boundary permutation lives entirely in original_type
+  // and is consumed only by AddClientInterface, which generates per-bucket
+  // encrypt helpers from it. Requires the upstream ConvertFunc patch that
+  // skips the original_type overwrite when one is already set.
   for (const Bucket &bucket : buckets) {
     auto origTypeAttr = tensor_ext::OriginalTypeAttr::get(
         ctx, bucket.info->origPlaintextType, bucket.layoutAttr);
     auto argAttrs = DictionaryAttr::get(
-        ctx, {NamedAttribute(origTypeAttrName, origTypeAttr),
-              NamedAttribute(layoutAttrName, bucket.layoutAttr)});
+        ctx, {NamedAttribute(origTypeAttrName, origTypeAttr)});
 
     unsigned newFuncIdx = func.getNumArguments();
     func.insertArgument(newFuncIdx, secretVecType, argAttrs, loc);
@@ -626,9 +625,48 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   // Scan ALL insert ops in the block — don't depend on opVec, since not all
   // output producers may have opVec entries (the vectorized accumulation
   // structure differs from the original scalar data flow).
+  //
+  // Multi-ciphertext output support: Coyote may legitimately materialize
+  // different output-carrying scalar values in DIFFERENT vector ops (e.g.
+  // 63 outputs live in the "bulk" op, one orphan lives in a singleton chain
+  // scheduled at a non-canonical cycle). If so, the packed result becomes a
+  // rank-2 secret tensor `!secret.secret<tensor<N x W x T>>` where each row
+  // of the leading dim is one output ciphertext. The single
+  // `tensor_ext.layout` attribute uses the `src_ct` column to indicate which
+  // physical ciphertext each logical output lives in.
+
+  // Step 1: walk leaf inserts to discover distinct output-carrying vector
+  // ops. A "leaf" is the last insert in a chain (nothing else uses its
+  // result as a destination). For each such chain, walk backwards through
+  // the inserts to collect every scalar producer's `opVec` Value.
+  llvm::SetVector<Value> outputVecs;
+  scheduleBlock->walk([&](tensor::InsertOp insertOp) {
+    bool isLast = true;
+    for (auto &use : insertOp.getResult().getUses()) {
+      if (isa<tensor::InsertOp>(use.getOwner())) {
+        isLast = false;
+        break;
+      }
+    }
+    if (!isLast) return;
+
+    // Walk back through the insert chain and record each scalar's vector op.
+    Value cursor = insertOp.getResult();
+    while (auto in =
+               dyn_cast_if_present<tensor::InsertOp>(cursor.getDefiningOp())) {
+      Operation *producer = in.getScalar().getDefiningOp();
+      if (producer && opVec.count(producer)) {
+        outputVecs.insert(opVec[producer]);
+      }
+      cursor = in.getDest();
+    }
+  });
+
+  // Step 2: build the layout data. Each row is
+  // [src_ct=ctIdx, src_slot=lane, dst_ct=0, dst_slot=logical_slot].
+  // ctIdx is the index of the producer's vector op in `outputVecs`.
   SmallVector<int64_t> invLayoutData;
   int64_t numOutputMappings = 0;
-  tensor::InsertOp lastInsert;
 
   scheduleBlock->walk([&](tensor::InsertOp insertOp) {
     Value scalar = insertOp.getScalar();
@@ -641,15 +679,19 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     auto constIdx = indices.back().getDefiningOp<arith::ConstantIndexOp>();
     int64_t slot = constIdx ? constIdx.value() : 0;
 
-    // [src_ct=0, src_slot=lane, dst_ct=0, dst_slot=slot]
-    invLayoutData.push_back(0);
+    // Which output ciphertext does this scalar's value live in?
+    int64_t ctIdx = 0;
+    if (opVec.count(producer)) {
+      Value producerVec = opVec[producer];
+      auto it = std::find(outputVecs.begin(), outputVecs.end(), producerVec);
+      if (it != outputVecs.end()) ctIdx = std::distance(outputVecs.begin(), it);
+    }
+
+    invLayoutData.push_back(ctIdx);
     invLayoutData.push_back(lane);
     invLayoutData.push_back(0);
     invLayoutData.push_back(slot);
     ++numOutputMappings;
-
-    // Track the last insert in the chain (the one yielded).
-    lastInsert = insertOp;
   });
 
   if (numOutputMappings > 0) {
@@ -663,13 +705,55 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     genericOp->setAttr("tensor_ext.layout", invLayoutAttr);
     copyReturnOperandAttrsToFuncResultAttrs(func, "tensor_ext.layout");
 
-    // Find the last insert in the chain (its result is yielded) and replace
-    // with the final vectorized result.
-    Value finalVec;
-    for (auto *op : schedule.instructions)
-      if (!isa<tensor::ExtractOp>(op) && opVec.count(op)) finalVec = opVec[op];
-    if (finalVec) {
-      // Walk to find the actual last insert (the one whose result feeds yield).
+    // Also stamp `tensor_ext.original_type` on the func result so downstream
+    // passes (AddClientInterface, ConvertToCiphertextSemantics) don't fall
+    // back to synthesizing a Presburger `original_type` from stale outer
+    // context. Without this, some upstream pass authors a rank-3 Presburger
+    // (with a degenerate `i1 = 0` axis inherited from a tiled matmul
+    // convention), which then fails AssignLayoutOp's rank check against our
+    // rank-2 packed output.
+    //
+    // originalType = data-semantic output shape: one row per logical output
+    // scalar (numOutputMappings). Layout is our dense permutation attr, whose
+    // rows already carry the correct src_ct/src_slot/dst_slot routing.
+    // AddClientInterface's `AssignLayoutOp::create` will read this layout
+    // via `originalTypeAttr.getLayout()` and, because DenseIntElementsAttr
+    // skips the rank check in `verifyLayoutMatchesType`, no rank mismatch
+    // fires downstream.
+    auto originalOutputType =
+        RankedTensorType::get({numOutputMappings}, elemType);
+    auto originalTypeAttr = tensor_ext::OriginalTypeAttr::get(
+        ctx, originalOutputType, invLayoutAttr);
+    func.setResultAttr(0, "tensor_ext.original_type", originalTypeAttr);
+
+    int64_t N = static_cast<int64_t>(outputVecs.size());
+    if (N == 0) {
+      // Fallback: no output-carrying vec ops detected via the leaf-insert
+      // walk (unusual, but possible if the schedule has inserts whose
+      // producers aren't in opVec). Use the pre-existing "last non-extract
+      // vec op in program order" heuristic and RAUW leaf inserts. This
+      // preserves the pre-refactor behavior for edge cases.
+      Value finalVec;
+      for (auto *op : schedule.instructions)
+        if (!isa<tensor::ExtractOp>(op) && opVec.count(op))
+          finalVec = opVec[op];
+      if (finalVec) {
+        scheduleBlock->walk([&](tensor::InsertOp insertOp) {
+          bool isLast = true;
+          for (auto &use : insertOp.getResult().getUses()) {
+            if (isa<tensor::InsertOp>(use.getOwner())) {
+              isLast = false;
+              break;
+            }
+          }
+          if (isLast) insertOp.getResult().replaceAllUsesWith(finalVec);
+        });
+      }
+    } else if (N == 1) {
+      // Single-ct case: identical to previous behavior — RAUW leaf inserts
+      // with the sole output vec. Result type stays `tensor<1 x W x T>`
+      // (already set at line 911), so no signature change needed.
+      Value finalVec = outputVecs[0];
       scheduleBlock->walk([&](tensor::InsertOp insertOp) {
         bool isLast = true;
         for (auto &use : insertOp.getResult().getUses()) {
@@ -680,6 +764,44 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
         }
         if (isLast) insertOp.getResult().replaceAllUsesWith(finalVec);
       });
+    } else {
+      // Multi-ct case: pack the N output vecs (each `tensor<1 x W x T>`)
+      // into a rank-2 `tensor<N x W x T>` via a chain of
+      // `tensor.insert_slice` ops, then redirect the existing `secret.yield`
+      // terminator to yield the packed value. The old scalar-insert chain
+      // becomes dead code and is cleaned up by the canonicalize + DCE
+      // sweep further below.
+      auto packedType = RankedTensorType::get({N, (int64_t)W}, elemType);
+      auto secretPackedType = secret::SecretType::get(packedType);
+
+      // Concat the N output vecs (each `tensor<1 x W x T>`) along dim 0
+      // into the packed `tensor<N x W x T>`.
+      SmallVector<Value> vecs(outputVecs.begin(), outputVecs.end());
+      Operation *concatOp =
+          tensor::ConcatOp::create(builder, loc, packedType, /*dim=*/0, vecs);
+      Value packed = concatOp->getResult(0);
+
+      // Stamp the multi-ct output layout directly on the concat op so that
+      // HEIR's LayoutPropagation honors it instead of synthesizing a bogus
+      // default row-major Presburger relation. Attribute
+      // propagation on ops with pre-existing layouts is a no-op in that
+      // pass. The layout is the same one we set on the generic result
+      // below.
+      concatOp->setAttr("tensor_ext.layout", invLayoutAttr);
+
+      // Redirect the existing secret.yield to yield the packed tensor.
+      // The old tensor.insert chain rooted at the original yield operand
+      // now has no users and will be swept by the DCE pass below.
+      Operation *term = scheduleBlock->getTerminator();
+      term->setOperands({packed});
+
+      // Update the secret.generic result type and the func return type to
+      // the packed rank-2 form.
+      genericOp->getResult(0).setType(secretPackedType);
+      SmallVector<Type> newFuncArgTypes;
+      for (unsigned i = 0; i < func.getNumArguments(); ++i)
+        newFuncArgTypes.push_back(func.getArgument(i).getType());
+      func.setType(FunctionType::get(ctx, newFuncArgTypes, {secretPackedType}));
     }
   }
 
