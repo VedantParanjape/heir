@@ -289,7 +289,7 @@ inline void optimizeBlends(Schedule &schedule, unsigned rounds) {
 ///   result[consLane] = src[consLane + shift] = src[prodLane]
 ///   => shift = prodLane - consLane
 /// (Negative shift = right rotation, which is equivalent.)
-inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
+void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   if (schedule.instructions.empty()) return;
 
   unsigned W = schedule.warpSize;
@@ -700,31 +700,17 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     auto invLayoutAttr =
         DenseIntElementsAttr::get(invLayoutAttrType, invLayoutData);
 
-    // Attach output layout to the secret.generic op result, then propagate
-    // to the func return type via HEIR's AttributeUtils.
+    // Attach output layout only to the secret.generic op. Do NOT propagate
+    // it as a top-level `tensor_ext.layout` on the func result — that slot
+    // is what LayoutPropagation stamps its synthesized Presburger relation
+    // into, and having our dense permutation there just creates a race
+    // (LayoutPropagation overwrites it, then ConvertFunc reads Presburger
+    // and would rebuild original_type around it, absent the HEIR-side
+    // preservation guard). The `tensor_ext.original_type` we set at the
+    // end of this block carries the same dense permutation in the
+    // canonical place for AddClientInterface — one source of truth is
+    // enough.
     genericOp->setAttr("tensor_ext.layout", invLayoutAttr);
-    copyReturnOperandAttrsToFuncResultAttrs(func, "tensor_ext.layout");
-
-    // Also stamp `tensor_ext.original_type` on the func result so downstream
-    // passes (AddClientInterface, ConvertToCiphertextSemantics) don't fall
-    // back to synthesizing a Presburger `original_type` from stale outer
-    // context. Without this, some upstream pass authors a rank-3 Presburger
-    // (with a degenerate `i1 = 0` axis inherited from a tiled matmul
-    // convention), which then fails AssignLayoutOp's rank check against our
-    // rank-2 packed output.
-    //
-    // originalType = data-semantic output shape: one row per logical output
-    // scalar (numOutputMappings). Layout is our dense permutation attr, whose
-    // rows already carry the correct src_ct/src_slot/dst_slot routing.
-    // AddClientInterface's `AssignLayoutOp::create` will read this layout
-    // via `originalTypeAttr.getLayout()` and, because DenseIntElementsAttr
-    // skips the rank check in `verifyLayoutMatchesType`, no rank mismatch
-    // fires downstream.
-    auto originalOutputType =
-        RankedTensorType::get({numOutputMappings}, elemType);
-    auto originalTypeAttr = tensor_ext::OriginalTypeAttr::get(
-        ctx, originalOutputType, invLayoutAttr);
-    func.setResultAttr(0, "tensor_ext.original_type", originalTypeAttr);
 
     int64_t N = static_cast<int64_t>(outputVecs.size());
     if (N == 0) {
@@ -781,12 +767,13 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
           tensor::ConcatOp::create(builder, loc, packedType, /*dim=*/0, vecs);
       Value packed = concatOp->getResult(0);
 
-      // Stamp the multi-ct output layout directly on the concat op so that
-      // HEIR's LayoutPropagation honors it instead of synthesizing a bogus
-      // default row-major Presburger relation. Attribute
-      // propagation on ops with pre-existing layouts is a no-op in that
-      // pass. The layout is the same one we set on the generic result
-      // below.
+      // Stamp the multi-ct output layout directly on the concat op via
+      // its `attr-dict` slot. This gives LayoutPropagation an explicit
+      // layout to honor at this boundary instead of synthesizing a default
+      // Presburger relation. Unlike wrapping in `tensor_ext.assign_layout`,
+      // this doesn't emit any data-movement ops during ciphertext-semantics
+      // materialization — the concat's semantics are unchanged; only its
+      // metadata carries the layout forward.
       concatOp->setAttr("tensor_ext.layout", invLayoutAttr);
 
       // Redirect the existing secret.yield to yield the packed tensor.
@@ -803,6 +790,26 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
         newFuncArgTypes.push_back(func.getArgument(i).getType());
       func.setType(FunctionType::get(ctx, newFuncArgTypes, {secretPackedType}));
     }
+
+    // Stamp `tensor_ext.original_type` on the func result AFTER any type
+    // mutation above. `func.setType` in the multi-ct branch replaces the
+    // FuncOp's FunctionType, which may reset result-attr indexing in some
+    // MLIR versions. Setting the attr as the last step guarantees it
+    // survives on the final result index 0. Downstream (AddClientInterface,
+    // ConvertToCiphertextSemantics) requires this attr with
+    // `enable-layout-assignment=true` — without it, encrypt/decrypt helpers
+    // can't be generated. Also prevents an upstream pass from synthesizing
+    // a stale Presburger `original_type` from outer context that would fail
+    // AssignLayoutOp's rank check.
+    //
+    // originalType = data-semantic output shape: one row per logical output
+    // scalar (numOutputMappings). Layout is our dense permutation attr,
+    // whose rows already carry the correct src_ct/src_slot/dst_slot routing.
+    auto originalOutputType =
+        RankedTensorType::get({numOutputMappings}, elemType);
+    auto originalTypeAttr = tensor_ext::OriginalTypeAttr::get(
+        ctx, originalOutputType, invLayoutAttr);
+    func.setResultAttr(0, "tensor_ext.original_type", originalTypeAttr);
   }
 
   // --- Dead scalar IR sweep ---
