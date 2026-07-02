@@ -183,6 +183,23 @@ struct LayoutMaterializationTypeConverter
     // felt like having a stroke.
     addConversion([&](Type type, Attribute attr) { return std::nullopt; });
     addConversion([this](Type type, ArrayAttr attr) -> std::optional<Type> {
+      // Multi-result layout attrs are stored as ArrayAttr indexed by result
+      // number. Members are usually Presburger LayoutAttrs, but may be dense
+      // permutations (DenseIntElementsAttr) when produced by the Coyote
+      // multi-ciphertext output path. `composeLayouts` unconditionally
+      // reinterprets members as LayoutAttr — with dense members that yields
+      // null LayoutAttrs, a default IntegerRelation with unbounded range
+      // vars, and an assertion crash in `materializeLayout`.
+      if (!attr.empty() && llvm::all_of(attr, [](Attribute a) {
+            return isa<DenseIntElementsAttr>(a);
+          })) {
+        // The converter is invoked per-Value; the same ArrayAttr is passed
+        // for every result. Under the current `materializePermutationLayout`
+        // contract the output type is derived from `type` alone (shape ->
+        // {leadingDim, ciphertextSize}), so every member produces the same
+        // materialized type for a given `type`. Dispatch through any member.
+        return this->convertType(type, cast<DenseIntElementsAttr>(attr[0]));
+      }
       auto composedAttr = LayoutAttr::composeLayouts(attr, type.getContext());
       auto converted = this->convertType(type, composedAttr);
       if (!converted) return std::nullopt;
@@ -284,6 +301,8 @@ struct ConvertFunc : public ContextAwareFuncConversion {
       }
 
       for (int i = 0; i < op.getNumResults(); ++i) {
+        // Same preservation for func results.
+        if (op.getArgAttr(i, kOriginalTypeAttrName)) continue;
         auto layoutAttr = op.getResultAttr(i, kLayoutAttrName);
         if (!layoutAttr || !isa<LayoutAttr, ArrayAttr>(layoutAttr)) {
           continue;
