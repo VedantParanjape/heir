@@ -289,7 +289,7 @@ inline void optimizeBlends(Schedule &schedule, unsigned rounds) {
 ///   result[consLane] = src[consLane + shift] = src[prodLane]
 ///   => shift = prodLane - consLane
 /// (Negative shift = right rotation, which is equivalent.)
-void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
+inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   if (schedule.instructions.empty()) return;
 
   unsigned W = schedule.warpSize;
