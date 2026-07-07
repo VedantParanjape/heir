@@ -70,6 +70,43 @@ class FoldAddOfFromElements final : public OpRewritePattern<arith::AddIOp> {
   }
 };
 
+class FoldExtractOfInsert final : public OpRewritePattern<tensor::ExtractOp> {
+ public:
+  using OpRewritePattern<tensor::ExtractOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(tensor::ExtractOp extractOp,
+                                PatternRewriter &rewriter) const override {
+    auto insertOp = extractOp.getTensor().getDefiningOp<tensor::InsertOp>();
+    if (!insertOp) return failure();
+
+    auto extractIdx = extractOp.getIndices();
+    auto insertIdx = insertOp.getIndices();
+    if (extractIdx.size() != insertIdx.size()) return failure();
+
+    bool allEqual = true, allDifferent = true;
+    for (auto [e, i] : llvm::zip(extractIdx, insertIdx)) {
+      auto eConst = e.getDefiningOp<arith::ConstantIndexOp>();
+      auto iConst = i.getDefiningOp<arith::ConstantIndexOp>();
+      if (!eConst || !iConst) return failure();
+      if (eConst.value() != iConst.value())
+        allEqual = false;
+      else
+        allDifferent = false;
+    }
+
+    if (allEqual) {
+      rewriter.replaceOp(extractOp, insertOp.getScalar());
+      return success();
+    }
+    if (allDifferent) {
+      rewriter.replaceOpWithNewOp<tensor::ExtractOp>(
+          extractOp, insertOp.getDest(), extractIdx);
+      return success();
+    }
+    return failure();
+  }
+};
+
 // Pattern 2: tensor.extract (tensor.from_elements %x)[0] -> %x
 // Only for tensor<1x...>
 class FoldExtractFromFromElements final
@@ -109,7 +146,8 @@ inline void foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx) {
   for (RegisteredOperationName op : ctx->getRegisteredOperations())
     op.getCanonicalizationPatterns(patterns, ctx);
   patterns.add<secret::MergeAdjacentGenerics>(ctx);
-  patterns.add<FoldAddOfFromElements, FoldExtractFromFromElements>(ctx);
+  patterns.add<FoldAddOfFromElements, FoldExtractFromFromElements,
+               FoldExtractOfInsert>(ctx);
 
   // fold constants and apply canonicalization patterns
   GreedyRewriteConfig config;

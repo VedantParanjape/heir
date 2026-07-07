@@ -41,7 +41,7 @@
 #include "mlir/include/mlir/Transforms/WalkPatternRewriteDriver.h"  // from @llvm-project
 
 #define DEBUG_TYPE "recursive-call-vectorization"
-#define NODE_SIZE_THRESHOLD 100
+#define NODE_SIZE_THRESHOLD -1
 
 namespace mlir {
 namespace heir {
@@ -507,6 +507,14 @@ struct RecursiveCallVectorization
 
     for (auto &calls : biscottiCalls) {
       scalarizeBoundariesFromRoot(calls.second.root->function);
+      MLIRContext *ctx = &getContext();
+      RewritePatternSet patterns(ctx);
+      patterns.add<ScalarizeAnyElementwise>(ctx);
+      tensor::ExtractOp::getCanonicalizationPatterns(patterns, ctx);
+      tensor::FromElementsOp::getCanonicalizationPatterns(patterns, ctx);
+      (void)applyPatternsGreedily(calls.second.root->function,
+                                  std::move(patterns));
+      foldAllOpsInFunc(calls.second.root->function, &getContext());
       processVectorizationCandidates(calls.second.root);
     }
 
@@ -972,12 +980,18 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
 
     llvm::outs() << "Node function size: " << nodeSize << "\n";
     // TODO: Tune this threshold.
-    if (nodeSize > NODE_SIZE_THRESHOLD) {
+    if (NODE_SIZE_THRESHOLD != -1 && nodeSize > NODE_SIZE_THRESHOLD) {
       llvm::outs() << "   Skipping merge due to large node size.\n";
       continue;
     }
 
     mergedFunctions.insert(node->function.getName());
+
+    // Multiple children can point at the same underlying FuncOp after
+    // removeDuplicateFunctions() unifies duplicates. Track which functions
+    // we've already processed so we don't touch (or erase) the same op twice.
+    DenseSet<Operation *> processedChildren;
+
     for (recursiveProgramNode *child : node->children) {
       ModuleOp parentModule = node->function->getParentOfType<ModuleOp>();
       if (!parentModule)
@@ -985,6 +999,11 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
                      << node->function.getName() << "\n";
 
       auto &ChildFunction = child->function;
+
+      // FuncOp calls symbolKnownUseEmpty() on an already-erased op → SEGV.
+      if (!processedChildren.insert(ChildFunction.getOperation()).second)
+        continue;
+
       // Collect call ops first, only within node->function
       SmallVector<func::CallOp> callsToInline;
       node->function.walk([&](func::CallOp callOp) {
@@ -1017,7 +1036,8 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
         ChildFunction.erase();
     }
 
-    if (countNodeFunctionSize(node) < NODE_SIZE_THRESHOLD && node->parent)
+    if (node->parent && (NODE_SIZE_THRESHOLD == -1 ||
+                         countNodeFunctionSize(node) < NODE_SIZE_THRESHOLD))
       workQueue.push(node->parent);
 
     // TODO: Clear children after merging, since they've been inlined into the

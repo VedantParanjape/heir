@@ -292,7 +292,7 @@ std::optional<Schedule> runPythonScheduler(
   // --- Call Python ---
   std::string cmd = pythonBin + " " + scriptPath + " " + circuitPath.string() +
                     " --verbose " + " --output " + resultPath.string() +
-                    " --rounds 100 " + " 2>&1";
+                    " --rounds 200 " + " 2>&1";
   llvm::errs() << "  [Python] Running: " << cmd << "\n";
 
   FILE* pipe = popen(cmd.c_str(), "r");
