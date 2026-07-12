@@ -41,7 +41,6 @@
 #include "mlir/include/mlir/Transforms/WalkPatternRewriteDriver.h"  // from @llvm-project
 
 #define DEBUG_TYPE "recursive-call-vectorization"
-#define NODE_SIZE_THRESHOLD -1
 
 namespace mlir {
 namespace heir {
@@ -583,9 +582,13 @@ struct RecursiveCallVectorization
           auto callOp = func::CallOp::create(
               builder, node.second[0]->caller.getLoc(), merged.getName(),
               merged.getFunctionType().getResults(), callArgs);
-
+          if (callOp.getNumResults() == 0)
+            llvm::report_fatal_error(
+                "[reduction] merged callOp has 0 results — "
+                "mergeSchedulesWithNW didn't emit yield operands. "
+                "Skipping this merge.");
           for (int i = 0; i < node.second.size(); i++) {
-            if (node.second[0]->caller.getNumResults() != 1)
+            if (node.second[i]->caller.getNumResults() != 1)
               llvm::report_fatal_error("expected single-result calls");
             node.second[i]->caller.getResult(0).replaceAllUsesWith(
                 callOp.getResults()[i]);
@@ -706,10 +709,19 @@ struct RecursiveCallVectorization
         visited.clear();
       }
 
+      llvm::outs() << "Final Kernel Schedule =========\n";
+      prettyPrintSchedule(calls.second.root->coyoteSchedule);
+      llvm::outs() << "Final Kernel Schedule =========\n";
+
+      hoistInputSideLoads(calls.second.root->coyoteSchedule);
+
+      llvm::outs() << "Final Kernel Schedule After hoisting =========\n";
+      prettyPrintSchedule(calls.second.root->coyoteSchedule);
+      llvm::outs() << "Final Kernel Schedule After hoisting =========\n";
+
       lowerToMLIR(calls.second.root->function,
                   calls.second.root->coyoteSchedule);
       calls.second.root->function.setPublic();
-      calls.second.root->function->dump();
       redirectCallToDummy(calls.second.root->caller);
     }
 
@@ -979,8 +991,7 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
     }
 
     llvm::outs() << "Node function size: " << nodeSize << "\n";
-    // TODO: Tune this threshold.
-    if (NODE_SIZE_THRESHOLD != -1 && nodeSize > NODE_SIZE_THRESHOLD) {
+    if (nodeSizeThreshold != -1 && nodeSize > nodeSizeThreshold) {
       llvm::outs() << "   Skipping merge due to large node size.\n";
       continue;
     }
@@ -1036,8 +1047,8 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
         ChildFunction.erase();
     }
 
-    if (node->parent && (NODE_SIZE_THRESHOLD == -1 ||
-                         countNodeFunctionSize(node) < NODE_SIZE_THRESHOLD))
+    if (node->parent && (nodeSizeThreshold == -1 ||
+                         countNodeFunctionSize(node) < nodeSizeThreshold))
       workQueue.push(node->parent);
 
     // TODO: Clear children after merging, since they've been inlined into the

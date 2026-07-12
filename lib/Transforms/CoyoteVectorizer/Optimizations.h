@@ -860,6 +860,154 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   }
 }
 
+//===- HoistInputLoads.h - Schedule-level input-load hoisting ---*- C++ -*-===//
+//
+// Rewrites a Schedule so that input-side __coyote_load ops (loads whose
+// source is a func block argument) are collapsed into aggregate virtual loads
+// keyed by (consumer cycle, consumer operand position). The client is expected
+// to precompute a ciphertext for each aggregate load, so the FHE server no
+// longer emits the rotations / blends / pt-ct muls that would otherwise
+// materialize the load's SIMD layout at runtime.
+//
+// Runs before lowerToMLIR; consumes and mutates a Schedule in place.
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Input-side classification
+//===----------------------------------------------------------------------===//
+
+/// True iff `op` is a `func.call @__coyote_load(x)` whose sole operand `x` is
+/// a func block argument (or a tensor.extract that itself reads from a block
+/// argument). This mirrors CoyoteVectorizer.cpp's `getLoadSourceArg`.
+static bool isInputSideLoad(Operation *op) {
+  auto call = dyn_cast<func::CallOp>(op);
+  if (!call || call.getCallee() != "__coyote_load" ||
+      call.getNumOperands() != 1)
+    return false;
+  Value src = call.getOperand(0);
+  if (isa<BlockArgument>(src)) return true;
+  if (auto ext = src.getDefiningOp<tensor::ExtractOp>())
+    return isa<BlockArgument>(ext.getTensor());
+  return false;
+}
+
+//===----------------------------------------------------------------------===//
+// Main entry point
+//===----------------------------------------------------------------------===//
+/// Hoist input-side __coyote_load ops in `schedule` into aggregate virtual
+/// loads. Mutates `schedule` in place; each hoisted load is rewritten so its
+/// (lane, alignment) equals its consumer's SIMD slot. The layout spec
+/// (which scalar source goes into which lane of which ciphertext) is fully
+/// recoverable by regrouping the rewritten __coyote_load ops in the
+/// resulting schedule by (alignment, consumer operand position).
+///
+/// Returns the number of aggregate virtual loads created — i.e. how many
+/// client-side ciphertexts / func args the caller must provision.
+///
+/// Asserts:
+///   (1) no input-side producer belongs to more than one (cycle, operandPos)
+///       group (otherwise the in-place rewrite would need to duplicate it);
+///   (2) the number of distinct frontier alignments is <= the number of
+///       aggregate loads produced (every hoisted alignment gets at least one
+///       layout arg).
+inline unsigned hoistInputSideLoads(Schedule &schedule) {
+  // Fast lookup for "does this op belong to the schedule?".
+  llvm::DenseSet<Operation *> inSchedule;
+  for (Operation *op : schedule.instructions) inSchedule.insert(op);
+
+  // -------- Steps 1 & 2: classify. Only __coyote_load can be input-side;
+  // everything else is runtime. Store just the input-side set — the runtime
+  // set is its complement within `inSchedule`.
+  llvm::DenseSet<Operation *> inputSideOps;
+  for (Operation *op : schedule.instructions)
+    if (isInputSideLoad(op)) inputSideOps.insert(op);
+
+  // -------- Step 3: find the hoist frontier. -------------------------------
+  // A frontier entry is (producer, consumer, operandPos) where the consumer
+  // is runtime-mandated and the producer is hoistable (in the schedule and
+  // not runtime).
+  struct FrontierEntry {
+    Operation *producer;
+    Operation *consumer;
+    unsigned operandPos;
+  };
+  llvm::SmallVector<FrontierEntry> frontier;
+  for (Operation *consumer : schedule.instructions) {
+    if (inputSideOps.contains(consumer)) continue;  // runtime consumers only
+    for (unsigned p = 0, e = consumer->getNumOperands(); p < e; ++p) {
+      Operation *producer = consumer->getOperand(p).getDefiningOp();
+      if (!producer) continue;                         // external block arg
+      if (!inSchedule.contains(producer)) continue;    // not part of schedule
+      if (!inputSideOps.contains(producer)) continue;  // runtime -> runtime
+      frontier.push_back({producer, consumer, p});
+    }
+  }
+
+  // -------- Step 4: group frontier by (consumer cycle, operand pos). -------
+  using GroupKey = std::pair<int64_t, unsigned>;
+  llvm::DenseMap<GroupKey, llvm::SmallVector<FrontierEntry>> stages;
+  for (const FrontierEntry &fe : frontier) {
+    int64_t cycle = schedule.alignment.lookup(fe.consumer);
+    stages[{cycle, fe.operandPos}].push_back(fe);
+  }
+
+  // -------- Step 5: rebuild the load prefix. -------------------------------
+  // Each (consumer_cycle, opPos) group becomes one dedicated aggregate-load
+  // cycle at the head of the schedule. Producers in a group are placed at
+  // (group_index, consumer_lane). Non-hoisted ops keep their original
+  // alignment; the pass only works when the schedule already has enough
+  // head-room, which is what Assert (2) below verifies before any mutation.
+  int64_t numLayoutArgs = stages.size();
+
+  // Collect the hoisted-producer set up front so Assert (2) can distinguish
+  // the ops that will *become* the load prefix from the ops that must sit
+  // after it.
+  llvm::DenseSet<Operation *> hoistedProducers;
+  llvm::DenseSet<int64_t> frontierAlignments;
+  for (auto &[key, entries] : stages) {
+    frontierAlignments.insert(key.first);
+    for (const FrontierEntry &fe : entries)
+      hoistedProducers.insert(fe.producer);
+  }
+
+  // Assert (2): the new load prefix cycles 0..G-1 must fit before every
+  // non-hoisted op. If violated, the input schedule doesn't have enough
+  // load-cycle slack; that's a scheduler-side problem, not something this
+  // pass should paper over.
+  int64_t minNonHoistedCycle = INT64_MAX;
+  for (Operation *op : schedule.instructions) {
+    if (hoistedProducers.contains(op)) continue;
+    int64_t c = schedule.alignment.lookup(op);
+    if (c < minNonHoistedCycle) minNonHoistedCycle = c;
+  }
+  assert(numLayoutArgs <= minNonHoistedCycle &&
+         "aggregate-load prefix would overrun a non-hoisted op — "
+         "schedule needs more head-room before hoisting");
+
+  // Assert (3): every frontier alignment received at least one layout arg.
+  assert((int64_t)frontierAlignments.size() <= numLayoutArgs &&
+         "fewer aggregate loads than distinct frontier alignments");
+
+  // Now perform the rewrite.
+  int64_t g = 0;
+  llvm::DenseSet<Operation *> seenProducers;
+  for (auto &[key, entries] : stages) {
+    for (const FrontierEntry &fe : entries) {
+      // Assert (1): a producer may only be rewritten into one target slot.
+      assert(!seenProducers.contains(fe.producer) &&
+             "producer belongs to multiple stage-groups — in-place rewrite "
+             "would require duplication");
+      seenProducers.insert(fe.producer);
+      schedule.lanes[fe.producer] = schedule.lanes.lookup(fe.consumer);
+      schedule.alignment[fe.producer] = g;
+    }
+    ++g;
+  }
+
+  return static_cast<unsigned>(numLayoutArgs);
+}
+
 }  // namespace heir
 }  // namespace mlir
 

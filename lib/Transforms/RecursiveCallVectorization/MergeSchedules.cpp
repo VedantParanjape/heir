@@ -412,18 +412,28 @@ LogicalResult mergeSchedulesWithNW(llvm::ArrayRef<func::FuncOp> funcs,
   for (unsigned k = 0; k < N; ++k) {
     Operation *yieldK = origBodies[k]->getTerminator();
     for (Value yieldOperand : yieldK->getOperands()) {
-      llvm::SmallVector<Value> scalars;
+      // Two supported constructions for the yield operand:
+      //   1. tensor.from_elements %s0, %s1, ..., %sN  (elements are scalars).
+      //   2. Chain of tensor.insert (%prev, scalar) building up a tensor.
+      // Emit scalars in original program order in both cases.
       Value cur = yieldOperand;
-      while (auto ins = cur.getDefiningOp<tensor::InsertOp>()) {
-        scalars.push_back(ins.getScalar());
-        cur = ins.getDest();
-      }
-      // Walk above collected scalars in reverse chain order; emit them in
-      // original program order.
-      for (auto it = scalars.rbegin(); it != scalars.rend(); ++it) {
-        Value scalar = innerMappings[k].lookupOrDefault(*it);
-        assembledResults.push_back(scalar);
-        assembledTypes.push_back(scalar.getType());
+      if (auto fromElts = cur.getDefiningOp<tensor::FromElementsOp>()) {
+        for (Value scalar : fromElts.getElements()) {
+          Value mapped = innerMappings[k].lookupOrDefault(scalar);
+          assembledResults.push_back(mapped);
+          assembledTypes.push_back(mapped.getType());
+        }
+      } else {
+        llvm::SmallVector<Value> scalars;
+        while (auto ins = cur.getDefiningOp<tensor::InsertOp>()) {
+          scalars.push_back(ins.getScalar());
+          cur = ins.getDest();
+        }
+        for (auto it = scalars.rbegin(); it != scalars.rend(); ++it) {
+          Value scalar = innerMappings[k].lookupOrDefault(*it);
+          assembledResults.push_back(scalar);
+          assembledTypes.push_back(scalar.getType());
+        }
       }
     }
   }

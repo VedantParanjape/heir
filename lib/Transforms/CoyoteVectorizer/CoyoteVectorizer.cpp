@@ -435,11 +435,13 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //==========================================================================
   // Step 1.a: Replicate multi-use loads
   //==========================================================================
-  llvm::errs() << "\n[1.a/9] Replicating multi-use loads...\n";
-  replicateMultiUseExtracts(operations, inputGroups);
-  llvm::errs() << "  Operations after replication: " << operations.size()
-               << "\n";
-  func.dump();
+  if (forcedLanes.size() == 0) {
+    llvm::errs() << "\n[1.a/9] Replicating multi-use loads...\n";
+    replicateMultiUseExtracts(operations, inputGroups);
+    llvm::errs() << "  Operations after replication: " << operations.size()
+                 << "\n";
+    func.dump();
+  }
 
   Schedule schedule;
 #ifdef USE_PYTHON_COYOTE
