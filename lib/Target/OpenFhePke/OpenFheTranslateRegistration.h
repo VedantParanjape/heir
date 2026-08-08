@@ -18,6 +18,8 @@ void registerToOpenFhePkeDebugHeaderTranslation();
 
 void registerToOpenFhePkeDebugTranslation();
 
+void registerToOpenFhePkeHarnessTranslation();
+
 }  // namespace openfhe
 }  // namespace heir
 }  // namespace mlir

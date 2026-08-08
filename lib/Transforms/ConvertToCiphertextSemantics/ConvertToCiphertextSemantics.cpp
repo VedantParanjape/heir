@@ -1682,6 +1682,51 @@ class ConvertTensorInsertSlice
     FailureOr<Attribute> destLayoutResult =
         getTypeConverter()->getContextualAttr(adaptor.getDest());
 
+    // BAILOUT (shape-based; same rationale as ConvertTensorInsertLayout):
+    // when the source shape matches a slice of the destination that would
+    // fully cover one entire ct-row (i.e., source outer dim matches dest
+    // outer dim slice size and inner shape matches), the source is already
+    // a full ciphertext at its target layout. Masking would destroy the
+    // real slot values. Emit a plain insert_slice at the ciphertext-
+    // semantic level (no masks).
+    {
+      auto destTensorType = cast<RankedTensorType>(adaptor.getDest().getType());
+      auto srcTensorType =
+          dyn_cast<RankedTensorType>(adaptor.getSource().getType());
+      SmallVector<int64_t> staticOffsets(op.getStaticOffsets());
+      SmallVector<int64_t> staticSizes(op.getStaticSizes());
+      SmallVector<int64_t> staticStrides(op.getStaticStrides());
+      bool allStridesOne =
+          llvm::all_of(staticStrides, [](int64_t s) { return s == 1; });
+      bool sizesMatchSrc = srcTensorType && ArrayRef<int64_t>(staticSizes) ==
+                                                srcTensorType.getShape();
+      // Inner-shape matches dest AND src covers one row along outer dim.
+      bool innerMatches = srcTensorType && destTensorType.getRank() >= 1 &&
+                          srcTensorType.getRank() == destTensorType.getRank() &&
+                          srcTensorType.getShape().drop_front() ==
+                              destTensorType.getShape().drop_front();
+      if (srcTensorType && allStridesOne && sizesMatchSrc && innerMatches) {
+        llvm::errs()
+            << "[coyote-bailout] whole-ct tensor.insert_slice bypass fired: "
+               "src="
+            << srcTensorType << " dest=" << destTensorType << "\n";
+        ImplicitLocOpBuilder b(op.getLoc(), rewriter);
+        SmallVector<OpFoldResult> offsets, sizes, strides;
+        for (auto o : staticOffsets) offsets.push_back(b.getIndexAttr(o));
+        for (auto s : staticSizes) sizes.push_back(b.getIndexAttr(s));
+        for (auto s : staticStrides) strides.push_back(b.getIndexAttr(s));
+        auto merged = tensor::InsertSliceOp::create(
+            b, adaptor.getSource(), adaptor.getDest(), offsets, sizes, strides);
+        setMaterializedAttr(merged);
+        if (succeeded(destLayoutResult)) {
+          setAttributeAssociatedWith(merged.getResult(), kLayoutAttrName,
+                                     destLayoutResult.value());
+        }
+        rewriter.replaceOp(op, merged.getResult());
+        return success();
+      }
+    }
+
     LayoutAttr scalarLayout = cast<LayoutAttr>(scalarLayoutResult.value());
     LayoutAttr destLayout = cast<LayoutAttr>(destLayoutResult.value());
 
@@ -2023,6 +2068,45 @@ class ConvertTensorInsertLayout
     FailureOr<Attribute> destLayoutResult =
         getTypeConverter()->getContextualAttr(adaptor.getDest());
 
+    // BAILOUT for whole-ciphertext insert (as opposed to scalar-into-slot).
+    // Fires purely on shape — when the "scalar" tensor's shape equals the
+    // destination tensor's inner shape and we're writing at index 0 of a
+    // size-1 outer dim, the mask-based lowering would zero all slots of
+    // the source ciphertext. Instead, promote the rank and passthrough.
+    {
+      auto destTensorType = cast<RankedTensorType>(adaptor.getDest().getType());
+      auto srcTensorType =
+          dyn_cast<RankedTensorType>(adaptor.getScalar().getType());
+      SmallVector<Value> indices(op.getIndices());
+      auto staticIndicesResult =
+          getConstantIntValues(getAsOpFoldResult(indices));
+      if (srcTensorType && staticIndicesResult.has_value() &&
+          destTensorType.getRank() == srcTensorType.getRank() + 1 &&
+          destTensorType.getDimSize(0) == 1 &&
+          staticIndicesResult.value().size() == 1 &&
+          staticIndicesResult.value()[0] == 0 &&
+          destTensorType.getShape().drop_front() == srcTensorType.getShape()) {
+        llvm::errs()
+            << "[coyote-bailout] whole-ct tensor.insert bypass fired: src="
+            << srcTensorType << " dest=" << destTensorType << "\n";
+        ImplicitLocOpBuilder b(op.getLoc(), rewriter);
+        SmallVector<ReassociationIndices> reassoc;
+        reassoc.push_back({0, 1});
+        for (int64_t d = 2; d < destTensorType.getRank(); ++d) {
+          reassoc.push_back({d});
+        }
+        auto expanded = tensor::ExpandShapeOp::create(
+            b, destTensorType, adaptor.getScalar(), reassoc);
+        setMaterializedAttr(expanded);
+        if (succeeded(destLayoutResult)) {
+          setAttributeAssociatedWith(expanded.getResult(), kLayoutAttrName,
+                                     destLayoutResult.value());
+        }
+        rewriter.replaceOp(op, expanded.getResult());
+        return success();
+      }
+    }
+
     LayoutAttr scalarLayout = dyn_cast<LayoutAttr>(scalarLayoutResult.value());
     LayoutAttr destLayout = dyn_cast<LayoutAttr>(destLayoutResult.value());
 
@@ -2297,6 +2381,72 @@ class ConvertTensorCollapseShape
   }
 };
 
+// Lower a tensor.concat that carries a dense-permutation `tensor_ext.layout`
+// (as emitted by Coyote for multi-ciphertext outputs) into a stack of
+// ciphertexts. Runs BEFORE `populateDecomposeTensorConcatPatterns`, which
+// otherwise strips the layout attr and forces the concat through the
+// mask-based `ConvertTensorInsertSlice` path — that path doesn't understand
+// dense-permutation destination layouts and mis-emits a size-1 accumulator
+// with a single-slot mask reused for every source. Direct stacking is
+// unambiguous when sources already carry ciphertext-semantic values.
+class ConvertTensorConcat
+    : public ContextAwareOpConversionPattern<tensor::ConcatOp> {
+ public:
+  using ContextAwareOpConversionPattern<
+      tensor::ConcatOp>::ContextAwareOpConversionPattern;
+
+  LogicalResult matchAndRewrite(
+      tensor::ConcatOp op, OpAdaptor adaptor,
+      ContextAwareConversionPatternRewriter& rewriter) const final {
+    auto denseLayout = op->getAttrOfType<DenseIntElementsAttr>(kLayoutAttrName);
+    if (!denseLayout) {
+      // Presburger-layout or no-layout concats: fall through to the existing
+      // decompose-concat path.
+      return rewriter.notifyMatchFailure(
+          op, "not a dense-permutation-layout concat");
+    }
+
+    Type ciphertextSemanticResultType =
+        getTypeConverter()->convertType(op.getResultType(), denseLayout);
+    if (!ciphertextSemanticResultType) {
+      return op.emitError()
+             << "failed to convert concat result type with dense layout";
+    }
+    auto resultTensorType =
+        cast<RankedTensorType>(ciphertextSemanticResultType);
+
+    ImplicitLocOpBuilder b(op.getLoc(), rewriter);
+    unsigned concatDim = op.getDim();
+
+    Operation* emptyOp = tensor::EmptyOp::create(
+        b, resultTensorType.getShape(), resultTensorType.getElementType());
+    setMaterializedAttr(emptyOp);
+    Value result = emptyOp->getResult(0);
+
+    int64_t runningOffset = 0;
+    for (Value srcVal : adaptor.getInputs()) {
+      auto srcType = cast<RankedTensorType>(srcVal.getType());
+      SmallVector<OpFoldResult> offsets, sizes, strides;
+      for (int64_t d = 0; d < srcType.getRank(); ++d) {
+        offsets.push_back(b.getIndexAttr(
+            static_cast<int64_t>(d == concatDim ? runningOffset : 0)));
+        sizes.push_back(b.getIndexAttr(srcType.getDimSize(d)));
+        strides.push_back(b.getIndexAttr(1));
+      }
+      Operation* ins = tensor::InsertSliceOp::create(b, srcVal, result, offsets,
+                                                     sizes, strides);
+      setMaterializedAttr(ins);
+      result = ins->getResult(0);
+      runningOffset += srcType.getDimSize(concatDim);
+    }
+
+    setAttributeAssociatedWith(result, kLayoutAttrName,
+                               cast<Attribute>(denseLayout));
+    rewriter.replaceOp(op, result);
+    return success();
+  }
+};
+
 class ConvertTensorExpandShape
     : public ContextAwareOpConversionPattern<tensor::ExpandShapeOp> {
  public:
@@ -2519,13 +2669,14 @@ struct ConvertToCiphertextSemantics
       return isa<ModuleOp>(op) || hasMaterializedAttr(op);
     });
 
-    patterns.add<ConvertAnyAddingMaterializedAttr, ConvertConvertLayout,
-                 ConvertFunc, ConvertLinalgMatmul, ConvertLinalgReduce,
-                 ConvertLinalgDot, ConvertSecretGeneric,
-                 ConvertTensorCollapseShape, ConvertTensorExpandShape,
-                 ConvertTensorExtractLayout, ConvertTensorExtractSlice,
-                 ConvertTensorInsertLayout, ConvertTensorInsertSlice>(
-        typeConverter, context);
+    patterns
+        .add<ConvertAnyAddingMaterializedAttr, ConvertConvertLayout,
+             ConvertFunc, ConvertLinalgMatmul, ConvertLinalgReduce,
+             ConvertLinalgDot, ConvertSecretGeneric, ConvertTensorCollapseShape,
+             ConvertTensorConcat, ConvertTensorExpandShape,
+             ConvertTensorExtractLayout, ConvertTensorExtractSlice,
+             ConvertTensorInsertLayout, ConvertTensorInsertSlice>(typeConverter,
+                                                                  context);
     patterns.add<ConvertLinalgMatvecLayout, ConvertLinalgConv1D,
                  ConvertLinalgConv2D, ConvertLinalgConv2DNchwFchw,
                  ConvertLinalgConv1DNcwFcw>(typeConverter, context,

@@ -184,6 +184,7 @@ void wrapBlockArgsWithVirtualLoads(func::FuncOp func) {
     }
   }
 }
+
 Schedule runCoyoteVectorizer(
     func::FuncOp func,
     const llvm::DenseMap<BlockArgument, int64_t> &forcedLanes =

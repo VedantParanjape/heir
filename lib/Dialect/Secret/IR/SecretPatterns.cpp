@@ -637,6 +637,20 @@ LogicalResult HoistPlaintextOps::matchAndRewrite(
     if (isa<YieldOp>(op)) {
       return false;
     }
+    // Don't hoist constants out of the body. Hoisting a constant wraps
+    // it in a new zero-operand secret.generic (via extractOpBeforeGeneric),
+    // which is then collapsed by CollapseSecretlessGeneric into
+    // arith.constant + secret.conceal. That secret.conceal sits between
+    // the parent generic and any preceding generic, blocking the
+    // MergeAdjacentGenerics canonicalization from firing after inlining
+    // (e.g. in HEIR's RecursiveCallVectorization pass). Constants are
+    // trivially duplicable and cheap to keep inside the body — this also
+    // prevents an infinite ping-pong with ConcealPlaintextInsert's
+    // constant-inline branch, which would otherwise put the constant
+    // back inside only for HoistPlaintextOps to hoist it out again.
+    if (op.hasTrait<OpTrait::ConstantLike>()) {
+      return false;
+    }
     // Conservatively preserve a complex op with a nested region
     // This could be a replaced with a recursive call to check that all of the
     // regions' operations can be hoisted.
@@ -746,6 +760,28 @@ LogicalResult ConcealPlaintextInsert::matchAndRewrite(
       // HoistPlaintextOps handles this.
       if (!dest.getParentRegion()->isProperAncestor(&op.getRegion())) {
         continue;
+      }
+      // If the plaintext dest is a constant, prefer cloning it inside
+      // the generic body over hoisting+concealing it as a new operand.
+      // The hoist+conceal introduces a secret.conceal op that sits
+      // between this generic and anything preceding it (in particular,
+      // another secret.generic after inlining), which blocks the
+      // MergeAdjacentGenerics canonicalization from firing. Cloning a
+      // constant inline is essentially free (constants are trivially
+      // duplicable) and preserves the same downstream semantics — the
+      // tensor.insert still writes secret values into a body-local
+      // plaintext tensor, and secret-analysis passes see the constant
+      // inside the generic as if the hoist had never happened.
+      auto* destDefOp = dest.getDefiningOp();
+      if (destDefOp && destDefOp->hasTrait<OpTrait::ConstantLike>()) {
+        rewriter.setInsertionPointToStart(op.getBody());
+        Operation* inlined = rewriter.clone(*destDefOp);
+        rewriter.replaceUsesWithIf(dest, inlined->getResult(0),
+                                   [&](OpOperand& use) {
+                                     return op.getRegion().isAncestor(
+                                         use.getOwner()->getParentRegion());
+                                   });
+        return success();
       }
       rewriter.setInsertionPointAfterValue(dest);
       auto concealedTensor =

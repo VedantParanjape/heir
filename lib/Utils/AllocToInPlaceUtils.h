@@ -312,7 +312,25 @@ class OperandMutatedStorageInfo {
     Value storage = getStorageFromValue(operand);
     bool mutatedValueIsDead = liveness->isDeadAfter(operand, op);
     bool storageIsDead = liveness->isDeadAfter(storage, op);
-    return mutatedValueIsDead && storageIsDead;
+    if (!mutatedValueIsDead || !storageIsDead) return false;
+
+    // Extra check: MLIR `Liveness::isDeadAfter` reports the operand as dead
+    // after `op` when its next textual use IS `op` itself. But if any prior
+    // consumer captured the operand (or its storage) into a data structure
+    // whose lifetime outlasts `op` — e.g. a `tensor.insert{,_slice}`,
+    // `scf.yield`, or `func.return` — the pre-mutation value is still
+    // needed at runtime. In C++ backends where the SSA value maps to a
+    // shared_ptr / reference-counted handle (OpenFHE `Ciphertext`,
+    // analogous Lattigo types), in-place mutation corrupts that capture.
+    //
+    // Refuse the promotion if either the operand or its underlying storage
+    // is stored into an outlasting consumer. Reuses the existing
+    // `isStored` helper at the top of this header, which already knows the
+    // capture-op set.
+    if (isStored(operand)) return false;
+    if (storage != operand && isStored(storage)) return false;
+
+    return true;
   }
 
  private:

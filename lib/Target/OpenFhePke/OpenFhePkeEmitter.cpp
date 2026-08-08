@@ -1573,10 +1573,12 @@ LogicalResult OpenFhePkeEmitter::printOperation(tensor::InsertSliceOp op) {
   // std::vector<ty> result(dest);
   std::string destName = variableNames->getNameForValue(op.getDest());
   std::string resultName = variableNames->getNameForValue(op.getResult());
-  if (failed(emitType(resultType, op->getLoc()))) {
-    return failure();
+  if (destName != resultName) {
+    if (failed(emitType(resultType, op->getLoc()))) {
+      return failure();
+    }
+    os << " " << resultName << "(" << destName << ");\n";
   }
-  os << " " << resultName << "(" << destName << ");\n";
 
   auto ofValueToString = [&](OpFoldResult ofr) -> std::string {
     if (auto intAttr = ofr.dyn_cast<Attribute>()) {
@@ -1704,11 +1706,28 @@ LogicalResult OpenFhePkeEmitter::printOperation(
 }
 
 LogicalResult OpenFhePkeEmitter::printOperation(tensor::InsertOp op) {
-  // For a tensor.insert MLIR statement, we assign the destination vector and
-  // then map the result value to the destination value.
-  // %result = tensor.insert %scalar into %dest[%idx]
-  // dest[idx] = scalar;
-  os << variableNames->getNameForValue(op.getDest());
+  // For a tensor.insert MLIR statement, emit a fresh std::vector copy of
+  // the destination (matching the shape emitted by InsertSliceOp above),
+  // then write the scalar into the correct slot. Do NOT alias the SSA
+  // result's C++ name to the destination — that aliasing collapses two
+  // distinct SSA values that happen to insert into the same buffer into
+  // one C++ variable, breaking any consumer of the pre-insert value
+  // (e.g. multi-result returns where the first tensor.insert's result is
+  // one output ciphertext and a subsequent tensor.insert into the same
+  // buffer produces the second output).
+  //
+  // When the dest has only one user, the fresh-copy pattern can be
+  // trivially folded back to in-place mutation later — but at emit time
+  // we prefer correctness first.
+  std::string destName = variableNames->getNameForValue(op.getDest());
+  std::string resultName = variableNames->getNameForValue(op.getResult());
+  if (destName != resultName) {
+    if (failed(emitType(op.getResult().getType(), op->getLoc()))) {
+      return failure();
+    }
+    os << " " << resultName << "(" << destName << ");\n";
+  }
+  os << resultName;
   os << "[";
   if (op.getIndices().empty()) {
     os << "0";
@@ -1721,8 +1740,6 @@ LogicalResult OpenFhePkeEmitter::printOperation(tensor::InsertOp op) {
   }
   os << "]";
   os << " = " << variableNames->getNameForValue(op.getScalar()) << ";\n";
-
-  variableNames->mapValueNameToValue(op.getResult(), op.getDest());
   return success();
 }
 
@@ -1741,10 +1758,17 @@ LogicalResult OpenFhePkeEmitter::printOperation(tensor::SplatOp op) {
 
 LogicalResult OpenFhePkeEmitter::printOperation(tensor::FromElementsOp op) {
   // std::vector<CiphertextType> result = {input[0], ..., input[n]};
+  //
+  // Accept rank-1 tensors and rank-2 tensors whose outer dimension is 1
+  // (the ct-semantic form of a scalar-shaped input, e.g. tensor<1x256xT>),
+  // since the C++ representation is a flat std::vector<T> either way and
+  // the operand order in MLIR is already row-major.
   auto result = op.getResult();
-  // if (result.getType().getRank() != 1) {
-  //   return failure();
-  // }
+  auto resultType = cast<RankedTensorType>(result.getType());
+  int64_t rank = resultType.getRank();
+  if (rank != 1 && !(rank == 2 && resultType.getDimSize(0) == 1)) {
+    return failure();
+  }
   os << "const ";
   if (failed(emitTypedAssignPrefix(result, op->getLoc()))) {
     return failure();

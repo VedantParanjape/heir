@@ -11,6 +11,7 @@
 #include "lib/Target/OpenFhePke/OpenFhePkeDebugEmitter.h"
 #include "lib/Target/OpenFhePke/OpenFhePkeDebugHeaderEmitter.h"
 #include "lib/Target/OpenFhePke/OpenFhePkeEmitter.h"
+#include "lib/Target/OpenFhePke/OpenFhePkeHarnessEmitter.h"
 #include "lib/Target/OpenFhePke/OpenFhePkeHeaderEmitter.h"
 #include "lib/Target/OpenFhePke/OpenFhePkePybindEmitter.h"
 #include "lib/Target/OpenFhePke/OpenFheUtils.h"
@@ -64,6 +65,11 @@ struct TranslateOptions {
   llvm::cl::opt<std::string> openfheDebugHelperIncludePath{
       "openfhe-debug-helper-include-path",
       llvm::cl::desc("The path to the header defining debug helper functions")};
+  llvm::cl::opt<std::string> harnessHeaderInclude{
+      "harness-header-include",
+      llvm::cl::desc("The generated OpenFHE-PKE header to #include from the "
+                     "emitted mm_bench harness main.cpp"),
+      llvm::cl::init("kernel.h")};
 };
 static llvm::ManagedStatic<TranslateOptions> options;
 
@@ -142,6 +148,18 @@ void registerToOpenFhePkeDebugTranslation() {
         return translateToOpenFhePkeDebugEmitter(
             op, output, options->openfheImportType,
             options->openfheDebugHelperIncludePath);
+      },
+      registerRelevantDialects);
+}
+
+void registerToOpenFhePkeHarnessTranslation() {
+  TranslateFromMLIRRegistration reg(
+      "emit-openfhe-pke-harness",
+      "Emit a mm_bench-style benchmarking driver (main.cpp) that calls the "
+      "kernel produced by --emit-openfhe-pke.",
+      [](Operation* op, llvm::raw_ostream& output) {
+        return translateToOpenFhePkeHarness(op, output,
+                                            options->harnessHeaderInclude);
       },
       registerRelevantDialects);
 }

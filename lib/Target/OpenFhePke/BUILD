@@ -21,6 +21,7 @@ cc_library(
         ":OpenFhePkeDebugEmitter",
         ":OpenFhePkeDebugHeaderEmitter",
         ":OpenFhePkeEmitter",
+        ":OpenFhePkeHarnessEmitter",
         ":OpenFhePkeHeaderEmitter",
         ":OpenFhePkePybindEmitter",
         ":OpenFheUtils",
@@ -104,6 +105,18 @@ cc_library(
         "@heir//lib/Analysis/Cpp:ConstQualifierAnalysis",
         "@heir//lib/Analysis/SelectVariableNames",
         "@heir//lib/Dialect:ModuleAttributes",
+        "@llvm-project//llvm:Support",
+        "@llvm-project//mlir:FuncDialect",
+        "@llvm-project//mlir:IR",
+        "@llvm-project//mlir:Support",
+    ],
+)
+
+cc_library(
+    name = "OpenFhePkeHarnessEmitter",
+    srcs = ["OpenFhePkeHarnessEmitter.cpp"],
+    hdrs = ["OpenFhePkeHarnessEmitter.h"],
+    deps = [
         "@llvm-project//llvm:Support",
         "@llvm-project//mlir:FuncDialect",
         "@llvm-project//mlir:IR",

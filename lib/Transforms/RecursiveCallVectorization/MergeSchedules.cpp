@@ -1042,5 +1042,33 @@ LogicalResult mergeSchedulesVertically(llvm::ArrayRef<func::CallOp> calls,
   return success();
 }
 
+// Build a naive sequential schedule for a compute-empty reduction body:
+// each op on lane 0, sequential cycles, warpSize matched to compute.
+// This gives mergeSchedulesVertically real ops to stamp with schedule
+// attrs, which is what lowerToMLIR needs to reach the tensor.insert
+// output chain sitting in the reduction body.
+Schedule buildNaiveReductionSchedule(func::FuncOp reductionKernel,
+                                     unsigned warpSize) {
+  Schedule s;
+  s.warpSize = warpSize;
+  int64_t cycle = 0;
+  reductionKernel.walk([&](Operation *op) {
+    // Skip structural / non-schedulable ops. Include arith, tensor.insert,
+    // and __coyote_load — anything the C++ side treats as a "schedulable
+    // instruction" for lowering purposes.
+    bool isSchedulable =
+        isa<tensor::InsertOp, tensor::ExtractOp, tensor::FromElementsOp,
+            arith::ConstantOp>(op) ||
+        op->getDialect()->getNamespace() == "arith" ||
+        (isa<func::CallOp>(op) &&
+         cast<func::CallOp>(op).getCallee() == "__coyote_load");
+    if (!isSchedulable) return;
+    s.instructions.push_back(op);
+    s.lanes[op] = 0;
+    s.alignment[op] = cycle++;
+  });
+  return s;
+}
+
 }  // namespace heir
 }  // namespace mlir

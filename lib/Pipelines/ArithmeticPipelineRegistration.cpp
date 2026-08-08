@@ -256,7 +256,7 @@ void mlirToRLWEPipeline(OpPassManager& pm,
     pm.addPass(createWrapGeneric());
     AddClientInterfaceOptions addClientInterfaceOptions;
     addClientInterfaceOptions.ciphertextSize = options.ciphertextDegree;
-    addClientInterfaceOptions.enableLayoutAssignment = false;
+    addClientInterfaceOptions.enableLayoutAssignment = true;
     pm.addPass(createAddClientInterface(addClientInterfaceOptions));
   }
 

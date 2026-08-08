@@ -665,33 +665,82 @@ struct RecursiveCallVectorization
           func::CallOp reductionCallOp;
           func::FuncOp reductionKernel =
               outlineSecretGeneric(commonGeneric, reductionCallOp);
+
+          llvm::outs() << "===== AFTER outlineSecretGeneric =====\n";
+          llvm::outs() << "-- parent function:\n";
+          node.first->function->dump();
+          llvm::outs() << "-- outlined reduction kernel:\n";
+          reductionKernel->dump();
+
           MLIRContext *ctx = &getContext();
           RewritePatternSet patterns(ctx);
           patterns.add<ScalarizeAnyElementwise>(ctx);
           tensor::ExtractOp::getCanonicalizationPatterns(patterns, ctx);
           tensor::FromElementsOp::getCanonicalizationPatterns(patterns, ctx);
           (void)applyPatternsGreedily(reductionKernel, std::move(patterns));
+
+          llvm::outs()
+              << "===== AFTER applyPatternsGreedily on reductionKernel =====\n";
+          llvm::outs() << "-- parent function:\n";
+          node.first->function->dump();
+          llvm::outs() << "-- reduction kernel:\n";
+          reductionKernel->dump();
+
           foldAllOpsInFunc(reductionKernel, ctx);
 
-          auto forcedLanes =
-              buildForcedLanesFromMerge(merged, finalSchedule, reductionKernel);
-          for (auto lane : forcedLanes) {
-            llvm::outs() << "Args: " << lane.first << "\n";
-            llvm::outs() << "ID: " << lane.second << "\n";
+          llvm::outs()
+              << "===== AFTER foldAllOpsInFunc on reductionKernel =====\n";
+          llvm::outs() << "-- parent function:\n";
+          node.first->function->dump();
+          llvm::outs() << "-- reduction kernel:\n";
+          reductionKernel->dump();
+
+          // Some workloads have a "reduction" step that's actually pure
+          // data movement — e.g. conv, where the parent's job after
+          // recursion is to stitch 4 sibling sub-outputs into disjoint
+          // regions of an output tensor. No arith, just tensor.insert /
+          // tensor.extract routing. For those, the Python coyote scheduler
+          // trips on an empty instruction list (StopIteration in
+          // vectorize_circuit.py) and downstream mergeSchedulesVertically
+          // asserts on warp-size mismatch. Detect the degenerate case up
+          // front and skip both — the NW-merged compute schedule IS the
+          // final schedule when there's nothing to reduce.
+          bool reductionHasCompute = false;
+          reductionKernel.walk([&](Operation *op) {
+            if (op->getDialect()->getNamespace() == "arith" &&
+                !isa<arith::ConstantOp>(op)) {
+              reductionHasCompute = true;
+              return WalkResult::interrupt();
+            }
+            return WalkResult::advance();
+          });
+
+          Schedule finalKernelSchedule;
+          Schedule reductionSchedule;
+          if (reductionHasCompute) {
+            auto forcedLanes = buildForcedLanesFromMerge(merged, finalSchedule,
+                                                         reductionKernel);
+            for (auto lane : forcedLanes) {
+              llvm::outs() << "Args: " << lane.first << "\n";
+              llvm::outs() << "ID: " << lane.second << "\n";
+            }
+            reductionSchedule = runCoyoteVectorizer(
+                reductionKernel, forcedLanes, finalSchedule.warpSize);
+          } else {
+            reductionSchedule = buildNaiveReductionSchedule(
+                reductionKernel, finalSchedule.warpSize);
           }
-          auto reductionSchedule = runCoyoteVectorizer(
-              reductionKernel, forcedLanes, finalSchedule.warpSize);
 
           llvm::outs() << "Reduction Kernel Schedule =========\n";
           prettyPrintSchedule(reductionSchedule);
           llvm::outs() << "Reduction Kernel Schedule =========\n";
 
-          Schedule finalKernelSchedule;
           SmallVector<func::CallOp> mergeCallOps = {callOp, reductionCallOp};
           SmallVector<Schedule> mergeSchedules = {finalSchedule,
                                                   reductionSchedule};
           mergeSchedulesVertically(mergeCallOps, mergeSchedules,
                                    finalKernelSchedule);
+
           llvm::outs() << "Final Kernel Schedule =========\n";
           prettyPrintSchedule(finalKernelSchedule);
           llvm::outs() << "Final Kernel Schedule =========\n";
@@ -718,6 +767,8 @@ struct RecursiveCallVectorization
       llvm::outs() << "Final Kernel Schedule After hoisting =========\n";
       prettyPrintSchedule(calls.second.root->coyoteSchedule);
       llvm::outs() << "Final Kernel Schedule After hoisting =========\n";
+
+      calls.second.root->function.dump();
 
       lowerToMLIR(calls.second.root->function,
                   calls.second.root->coyoteSchedule);
@@ -975,6 +1026,12 @@ void RecursiveCallVectorization::mergeRecursiveCallNodes(
       llvm::outs() << "Skipping already merged function: "
                    << node->function.getName() << "\n";
       node->children.clear();
+      // Propagate upward: our sibling FuncOp-mates that DID merge already
+      // pushed their parent, but that's a single push per successful merge.
+      // Force our parent to also be re-visited so it gets its own
+      // skip-and-clear treatment when the time comes (which propagates up
+      // through the tree until the top of the recursion or size-limit hit).
+      if (node->parent) workQueue.push(node->parent);
       continue;
     }
 

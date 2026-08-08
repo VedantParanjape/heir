@@ -153,6 +153,9 @@ Value createNewInsertOpsFromSeedOps(SmallVector<cipherTextSlot> &ctxt,
 LogicalResult mergeSchedulesVertically(llvm::ArrayRef<func::CallOp> funcs,
                                        llvm::ArrayRef<Schedule> schedules,
                                        Schedule &mergedSchedule);
+
+Schedule buildNaiveReductionSchedule(func::FuncOp reductionKernel,
+                                     unsigned warpSize);
 }  // namespace heir
 }  // namespace mlir
 
