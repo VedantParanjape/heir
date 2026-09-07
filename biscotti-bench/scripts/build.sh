@@ -18,7 +18,10 @@
 #
 # Flags:
 #   --baseline           Shortcut for --threshold=-1 (fully unroll recursive
-#                        calls).
+#                        calls). Schedules with our modified (biscotti) Coyote.
+#   --baseline-vanilla   Like --baseline, but schedules with the unmodified
+#                        upstream Coyote (COYOTE_VANILLA_DIR) instead of the
+#                        modified one. Emits into <kernel>_baseline_vanilla/.
 #   --threshold=N        node-size-threshold for recursive-call-vectorization.
 #                        -1 means unlimited. Default: 100.
 #
@@ -32,6 +35,11 @@
 #                   from this script's location: <script dir>/..)
 #   WORKSPACE     - path to the repo root that holds benchmarks/ (default:
 #                   $HEIR_ROOT)
+#   COYOTE_BISCOTTI_DIR - dir holding run_coyote_from_circuit.py for the
+#                   modified (biscotti) Coyote. Used by every variant except
+#                   --baseline-vanilla.
+#   COYOTE_VANILLA_DIR  - same, for the unmodified upstream Coyote. Used only
+#                   by --baseline-vanilla.
 #   CT_DEGREE     - ciphertext-degree for --mlir-to-bfv. Default `-1` means
 #                   auto-detect from the recursed MLIR (uses the max
 #                   inner-dim of any `!secret.secret<tensor<NxKx...>>` type
@@ -43,17 +51,20 @@ set -euo pipefail
 # ---- flag parsing ----
 THRESHOLD="100"
 BASELINE=0
+VANILLA=0
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --baseline)
       THRESHOLD="-1"; BASELINE=1; shift ;;
+    --baseline-vanilla)
+      THRESHOLD="-1"; BASELINE=1; VANILLA=1; shift ;;
     --threshold=*)
       THRESHOLD="${1#*=}"; shift ;;
     --threshold)
       THRESHOLD="$2"; shift 2 ;;
     -h|--help)
-      sed -n '2,40p' "$0"; exit 0 ;;
+      sed -n '2,47p' "$0"; exit 0 ;;
     -*)
       echo "error: unknown flag $1" >&2; exit 1 ;;
     *)
@@ -62,7 +73,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${#POSITIONAL[@]} -ne 2 ]]; then
-  echo "usage: $0 [--baseline | --threshold=N] <suite> <kernel>" >&2
+  echo "usage: $0 [--baseline | --baseline-vanilla | --threshold=N] <suite> <kernel>" >&2
   exit 1
 fi
 
@@ -77,6 +88,22 @@ HEIR_ROOT="${HEIR_ROOT:-$(cd -- "${SCRIPT_DIR}/../.." && pwd)}"
 BENCH_REPO="${BENCH_REPO:-$(cd -- "${SCRIPT_DIR}/.." && pwd)}"
 CT_DEGREE="${CT_DEGREE:--1}"
 
+# ---- Coyote scheduler location ----
+# The recursive-call-vectorization pass locates Coyote's bridge script
+# (run_coyote_from_circuit.py) via the COYOTE_PYTHON_PATH env var. We keep two
+# checkouts so --baseline-vanilla can be scheduled by an unmodified upstream
+# Coyote while every other variant uses our modified (biscotti) Coyote.
+# Set these to the directories that contain run_coyote_from_circuit.py.
+COYOTE_BISCOTTI_DIR="${COYOTE_BISCOTTI_DIR:-/path/to/coyote}"          # modified
+COYOTE_VANILLA_DIR="${COYOTE_VANILLA_DIR:-/path/to/coyote-vanilla}"    # upstream
+
+if [[ $VANILLA -eq 1 ]]; then
+  COYOTE_PYTHON_PATH="$COYOTE_VANILLA_DIR"
+else
+  COYOTE_PYTHON_PATH="$COYOTE_BISCOTTI_DIR"
+fi
+export COYOTE_PYTHON_PATH
+
 SUITE_DIR="${BENCH_REPO}/benchmarks/${SUITE}"
 INPUT="${SUITE_DIR}/src/${KERNEL}.mlir"
 
@@ -85,6 +112,7 @@ INPUT="${SUITE_DIR}/src/${KERNEL}.mlir"
 # clobbering each other.
 VARIANT_SUFFIX=""
 if [[ $BASELINE -eq 1 ]]; then VARIANT_SUFFIX="_baseline"; fi
+if [[ $VANILLA -eq 1 ]]; then VARIANT_SUFFIX="_baseline_vanilla"; fi
 BUILD_DIR="${SUITE_DIR}/build/${KERNEL}${VARIANT_SUFFIX}"
 OUT_DIR="${SUITE_DIR}/output/${KERNEL}${VARIANT_SUFFIX}"
 
@@ -110,6 +138,7 @@ echo "  input:       $INPUT_ABS"
 echo "  build dir:   $BUILD_ABS"
 echo "  output dir:  $OUT_ABS"
 echo "  heir root:   $HEIR_ROOT"
+echo "  coyote:      $COYOTE_PYTHON_PATH$([[ $VANILLA -eq 1 ]] && echo '  (vanilla)' || echo '  (biscotti)')"
 if [[ "$CT_DEGREE" == "-1" ]]; then
   echo "  ct_degree:   auto-detect (from post-recursed MLIR)"
 else
@@ -126,7 +155,19 @@ cd "$HEIR_ROOT"
 # so the error is still visible without opening the file.
 LOG_FILE="${BUILD_ABS}/build.log"
 : > "$LOG_FILE"  # truncate
+# Dedicated compile-timing report for the vectorization step (Step 0), where
+# the Coyote scheduler runs. One file per (kernel, variant), so the three
+# configs' compile times can be diffed directly.
+COMPILE_TIMING="${BUILD_ABS}/compile-timing.txt"
+{
+  echo "# compile-timing: ${SUITE}/${KERNEL}${VARIANT_SUFFIX}"
+  echo "# coyote:          ${COYOTE_PYTHON_PATH} ($([[ $VANILLA -eq 1 ]] && echo vanilla || echo biscotti))"
+  echo "# node-threshold:  ${THRESHOLD}"
+  echo "# date:            $(date -Is 2>/dev/null || date)"
+  echo
+} > "$COMPILE_TIMING"
 echo "  log:         $LOG_FILE"
+echo "  timing:      $COMPILE_TIMING"
 echo
 
 run_step() {
@@ -141,12 +182,30 @@ run_step() {
   fi
 }
 
+# Step 0 runs recursive-call-vectorization, which invokes the Coyote scheduler
+# -- this is the step whose time we care about. --mlir-timing makes heir-opt
+# print a per-pass wall-time table; the RecursiveCallVectorization row includes
+# the synchronous Coyote subprocess, so it is the compile-time number to
+# compare across the three configs. We also record wall-clock around the whole
+# invocation as a coarse sanity check (this one includes bazel launch overhead).
+_t0=$(date +%s.%N)
 run_step "Step 0: heir-opt --recursive-call-vectorization + strip scaffold" \
   bazel run //tools:heir-opt -- \
     "$INPUT_ABS" \
     "--recursive-call-vectorization=node-size-threshold=${THRESHOLD}" \
     --canonicalize --cse --symbol-dce \
+    --mlir-timing \
     -o "$RECURSED_MLIR"
+_t1=$(date +%s.%N)
+{
+  echo "wall_seconds (Step 0, incl. bazel launch): $(awk "BEGIN{printf \"%.3f\", ${_t1}-${_t0}}")"
+  echo
+  echo "---- MLIR pass timing (--mlir-timing) ----"
+  # Only Step 0 passes --mlir-timing, and we extract before later steps append
+  # to the log, so this pulls exactly Step 0's timing table.
+  awk 'tolower($0) ~ /timing report|execution time report/{p=1} p' "$LOG_FILE"
+} >> "$COMPILE_TIMING"
+echo "  wrote compile-timing → $COMPILE_TIMING"
 run_step "Step 0b: strip biscotti scaffold" \
   python3 "$STRIP_SCAFFOLD" "$RECURSED_MLIR" -o "$RECURSED_MLIR"
 

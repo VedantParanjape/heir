@@ -67,5 +67,6 @@ cc_library(
     for variant in [
         "",
         "_baseline",
+        "_baseline_vanilla",
     ]
 ]
