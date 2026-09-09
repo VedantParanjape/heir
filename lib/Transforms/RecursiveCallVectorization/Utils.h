@@ -32,6 +32,34 @@
 #include "mlir/include/mlir/Transforms/RegionUtils.h"    // from @llvm-project
 #include "mlir/include/mlir/Transforms/WalkPatternRewriteDriver.h"  // from @llvm-project
 
+// ---------------------------------------------------------------------------
+// Biscotti debug gate. The verbose scheduling/vectorization traces below are
+// compiled in but silent by default; set BISCOTTI_DEBUG=1 in the environment
+// to turn them on at runtime (no rebuild needed). Genuine error diagnostics
+// are NOT routed through this and always print.
+// ---------------------------------------------------------------------------
+#ifndef BISCOTTI_DEBUG_GATE
+#define BISCOTTI_DEBUG_GATE
+#include <cstdlib>
+
+#include "llvm/include/llvm/Support/raw_ostream.h"  // from @llvm-project
+namespace biscotti_dbg_detail {
+inline bool on() {
+  static const bool v = (std::getenv("BISCOTTI_DEBUG") != nullptr);
+  return v;
+}
+}  // namespace biscotti_dbg_detail
+inline llvm::raw_ostream &bdbg() {
+  return ::biscotti_dbg_detail::on() ? llvm::errs() : llvm::nulls();
+}
+#define BDBG(...)                      \
+  do {                                 \
+    if (::biscotti_dbg_detail::on()) { \
+      __VA_ARGS__;                     \
+    }                                  \
+  } while (0)
+#endif  // BISCOTTI_DEBUG_GATE
+
 namespace mlir {
 namespace heir {
 
@@ -140,7 +168,7 @@ class FoldExtractFromFromElements final
 inline void foldAllOpsInFunc(func::FuncOp &funcOp, MLIRContext *ctx) {
   RewritePatternSet patterns(ctx);
   // for (auto *dialect : ctx->getLoadedDialects())
-  //   llvm::outs() << dialect->getNamespace() << "\n";
+  //   bdbg() << dialect->getNamespace() << "\n";
   for (auto *dialect : ctx->getLoadedDialects())
     dialect->getCanonicalizationPatterns(patterns);
   for (RegisteredOperationName op : ctx->getRegisteredOperations())

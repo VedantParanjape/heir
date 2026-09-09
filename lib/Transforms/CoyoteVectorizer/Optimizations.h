@@ -304,7 +304,19 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
   // This avoids the downstream padding-vs-tiling issue in HEIR's
   // ConvertToCiphertextSemantics: with data already ring-sized and
   // tiled, no widening pass fills the tail with zeros.
-  unsigned W = schedule.warpSize;
+  // Pad the logical warp width to a power of two so it divides the ring R
+  // evenly (W | R). Coyote's NW-merge sets warpSize = maxOrigWarp * N, which
+  // for non-power-of-two arities (e.g. N=5 in det) yields non-pow2 widths
+  // (10/50/250). With W ∤ R the tiled data leaves a ragged tail, and any
+  // rotation whose offset crosses it — offsets compound past W via
+  // CombineSequentialRotates — wraps misaligned and corrupts the result.
+  // Padding W to nextPow2 makes every tile a power-of-two width, so
+  // rotate-by-W is identity on the tiled data and all (including composed)
+  // rotations wrap onto aligned copies. Scheduled lanes stay < the original
+  // warpSize <= W, so the extra [origWarp, W) lanes are unused zero padding,
+  // never a rotation source or destination. NOTE: the rotation modulus in
+  // getRotated below must use this same padded W (not schedule.warpSize).
+  unsigned W = static_cast<unsigned>(llvm::PowerOf2Ceil(schedule.warpSize));
   unsigned R = static_cast<unsigned>(llvm::PowerOf2Ceil(3 * W));
   unsigned tileFactor = R / W;
   MLIRContext *ctx = func.getContext();
@@ -525,7 +537,11 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     //     doesn't have to case-split on sign.
     //   - Emit stays semantically identical: cyclic shift by K mod N is
     //     the same operation regardless of how we write the constant.
-    int64_t warpSize = static_cast<int64_t>(schedule.warpSize);
+    // Normalize against the PADDED warp width W (a power of two), not
+    // schedule.warpSize: the tiling stride and the rotation modulus must be the
+    // same value, otherwise a wrapping offset lands short of the real
+    // replicated copy (by W - schedule.warpSize lanes).
+    int64_t warpSize = static_cast<int64_t>(W);
     int64_t normalized =
         warpSize > 0 ? ((shift % warpSize) + warpSize) % warpSize : shift;
     if (normalized == 0) return vec;
@@ -1093,6 +1109,31 @@ inline void lowerToMLIR(func::FuncOp func, const Schedule &schedule) {
     });
     for (func::FuncOp caller : deadCallers) caller.erase();
   }
+}
+
+// Erase dead entry-block args of `func` (args with no uses). An original input
+// that fed loads all replaced by packed bucket args (e.g. the determinant's raw
+// `tensor<9>` matrix, whose coefficients repack into scalar buckets) is left
+// behind as a use-empty arg; it carries no `tensor_ext.original_type`, which
+// AddClientInterface rejects. Only safe when nothing calls `func` (we don't
+// rewrite call sites here) -- true for the vectorized public entry after its
+// scaffold caller has been redirected/severed. Call this AFTER the dead-op fold
+// that removes the arg's last (dead-generic) user, so it is actually use-empty.
+inline void eraseDeadFuncArgs(func::FuncOp func) {
+  if (func.getBlocks().empty()) return;
+  auto module = func->getParentOfType<ModuleOp>();
+  if (!module) return;
+  StringRef funcSym = func.getSymName();
+  bool hasCaller = false;
+  module.walk([&](func::CallOp callOp) {
+    if (callOp.getCallee() == funcSym) hasCaller = true;
+  });
+  if (hasCaller) return;
+  Block &entry = func.front();
+  llvm::BitVector deadArgs(entry.getNumArguments());
+  for (unsigned i = 0; i < entry.getNumArguments(); ++i)
+    if (entry.getArgument(i).use_empty()) deadArgs.set(i);
+  if (deadArgs.any()) func.eraseArguments(deadArgs);
 }
 
 //===- HoistInputLoads.h - Schedule-level input-load hoisting ---*- C++ -*-===//

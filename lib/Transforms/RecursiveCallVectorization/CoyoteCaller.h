@@ -6,6 +6,34 @@
 #include "lib/Transforms/RecursiveCallVectorization/RecursiveProgramInfo.h"
 #include "mlir/include/mlir/Analysis/CallGraph.h"  // from @llvm-project
 
+// ---------------------------------------------------------------------------
+// Biscotti debug gate. The verbose scheduling/vectorization traces below are
+// compiled in but silent by default; set BISCOTTI_DEBUG=1 in the environment
+// to turn them on at runtime (no rebuild needed). Genuine error diagnostics
+// are NOT routed through this and always print.
+// ---------------------------------------------------------------------------
+#ifndef BISCOTTI_DEBUG_GATE
+#define BISCOTTI_DEBUG_GATE
+#include <cstdlib>
+
+#include "llvm/include/llvm/Support/raw_ostream.h"  // from @llvm-project
+namespace biscotti_dbg_detail {
+inline bool on() {
+  static const bool v = (std::getenv("BISCOTTI_DEBUG") != nullptr);
+  return v;
+}
+}  // namespace biscotti_dbg_detail
+inline llvm::raw_ostream &bdbg() {
+  return ::biscotti_dbg_detail::on() ? llvm::errs() : llvm::nulls();
+}
+#define BDBG(...)                      \
+  do {                                 \
+    if (::biscotti_dbg_detail::on()) { \
+      __VA_ARGS__;                     \
+    }                                  \
+  } while (0)
+#endif  // BISCOTTI_DEBUG_GATE
+
 namespace mlir {
 namespace heir {
 
@@ -60,7 +88,7 @@ void expandTensorShapeAcrossDefChain(Value inputTensor,
         val.getType() == targetType)
       continue;
 
-    llvm::outs() << "Insert chain value: " << val << "\n";
+    bdbg() << "Insert chain value: " << val << "\n";
     if (auto defOp = val.getDefiningOp()) {
       if (auto genericOp = dyn_cast<secret::GenericOp>(defOp)) {
         auto resultIdx = cast<OpResult>(val).getResultNumber();
@@ -216,8 +244,8 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
   SmallVector<recursiveProgramNode *> vectorizationCandidates;
   findVectorizationCandidates(root, vectorizationCandidates);
 
-  llvm::outs() << "Found " << vectorizationCandidates.size()
-               << " vectorization candidates.\n";
+  bdbg() << "Found " << vectorizationCandidates.size()
+         << " vectorization candidates.\n";
   for (recursiveProgramNode *candidate : vectorizationCandidates) {
     // SmallVector<Type> oldArgTypes;
     // SmallVector<Type> oldResultTypes;
@@ -229,13 +257,13 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
     Schedule schedule = runCoyoteVectorizer(candidate->function);
     candidate->coyoteSchedule = schedule;
     // Operation *callerOp = candidate->caller.getOperation();
-    // llvm::outs() << "  caller ptr: " << callerOp << "\n";
-    // llvm::outs() << "  caller block: " << (callerOp ? callerOp->getBlock() :
-    // nullptr) << "\n"; llvm::outs() << "  caller parent op: " << (callerOp &&
+    // bdbg() << "  caller ptr: " << callerOp << "\n";
+    // bdbg() << "  caller block: " << (callerOp ? callerOp->getBlock() :
+    // nullptr) << "\n"; bdbg() << "  caller parent op: " << (callerOp &&
     // callerOp->getBlock() ? callerOp->getParentOp() : nullptr) << "\n";
 
     // if (!callerOp || !callerOp->getBlock()) {
-    //   llvm::outs() << "  *** caller is detached/erased, skipping ***\n";
+    //   bdbg() << "  *** caller is detached/erased, skipping ***\n";
     //   continue;
     // }
 
@@ -244,18 +272,18 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
     //   auto funcOp = candidate->caller->getParentOfType<func::FuncOp>();
     //   OpBuilder builder(&funcOp.getBody().front(),
     //                     funcOp.getBody().front().begin());
-    //   llvm::outs() << "Processing vectorization candidate: "
+    //   bdbg() << "Processing vectorization candidate: "
     //                << candidate->function.getName() << "\n";
 
     //   for (int i = 0; i < oldArgTypes.size(); i++) {
-    //     llvm::outs() << "Checking argument " << i << " of type " <<
+    //     bdbg() << "Checking argument " << i << " of type " <<
     //     oldArgTypes[i]
     //                  << "\n";
-    //     llvm::outs() << "Candidate function argument type: "
+    //     bdbg() << "Candidate function argument type: "
     //                  << candidate->function.getArgument(i).getType() << "\n";
     //     if (isa<secret::SecretType>(oldArgTypes[i]) &&
     //         oldArgTypes[i] != candidate->function.getArgument(i).getType()) {
-    //       llvm::outs() << "Expanding tensor shape of argument " << i << "\n";
+    //       bdbg() << "Expanding tensor shape of argument " << i << "\n";
     //       auto tensorType = mlir::cast<RankedTensorType>(
     //           mlir::cast<secret::SecretType>(
     //               candidate->function.getArgument(i).getType())
@@ -269,7 +297,7 @@ void processVectorizationCandidates(recursiveProgramNode *root) {
     //     if (isa<secret::SecretType>(oldResultTypes[i]) &&
     //         oldResultTypes[i] !=
     //             candidate->function.getFunctionType().getResult(i)) {
-    //       llvm::outs() << "Expanding tensor shape of result " << i << "\n";
+    //       bdbg() << "Expanding tensor shape of result " << i << "\n";
     //       auto tensorType = mlir::cast<RankedTensorType>(
     //           mlir::cast<secret::SecretType>(
     //               candidate->function.getFunctionType().getResult(i))

@@ -122,7 +122,7 @@ inline std::optional<ProducerInfo> findProducingGeneric(mlir::Value tensorVal) {
 /// correspond to the appended values.
 inline llvm::SmallVector<unsigned> appendYieldedValues(
     mlir::heir::secret::GenericOp &generic,
-    llvm::ArrayRef<mlir::Value> newScalars, mlir::PatternRewriter &rewriter) {
+    llvm::ArrayRef<mlir::Value> newScalars, mlir::RewriterBase &rewriter) {
   if (newScalars.empty()) return {};
   unsigned oldCount = generic->getNumResults();
   mlir::heir::secret::GenericOp oldGeneric = generic;
@@ -161,7 +161,7 @@ struct ScalarizedCallInfo {
 /// Producer-side secret.generic ops are batched per producer to avoid
 /// stale references when multiple operands share a producer.
 inline ScalarizedCallInfo rewriteCallSite(mlir::func::CallOp &call,
-                                          mlir::PatternRewriter &rewriter) {
+                                          mlir::RewriterBase &rewriter) {
   ScalarizedCallInfo info;
   info.newCounts.assign(call.getNumOperands(), 1);
 
@@ -475,9 +475,21 @@ inline bool scalarizeCalleeSignature(
       oldArg.replaceAllUsesWith(newInnerArgs[plan.newStart]);
       continue;
     }
-    for (unsigned slot = 0; slot < plan.count; ++slot) {
-      mlir::Operation *ext = plan.extractOps[slot];
-      if (!ext) continue;  // some slots may have no extract (unused element).
+    // Rewire EVERY constant-indexed extract of this arg, not one per slot.
+    // Phase 1 validated that all uses are such extracts; multiple extracts may
+    // share a slot (e.g. convolution reuses the same input element across
+    // output positions), and each must be redirected to the new scalar arg for
+    // its slot — otherwise the duplicates survive as residual uses and leave
+    // the generic malformed (block args != operands).
+    llvm::SmallVector<mlir::Operation *> extractsOfArg;
+    for (mlir::OpOperand &use : oldArg.getUses())
+      extractsOfArg.push_back(use.getOwner());
+    for (mlir::Operation *ext : extractsOfArg) {
+      auto extractOp = llvm::cast<mlir::tensor::ExtractOp>(ext);
+      auto cst = extractOp.getIndices()
+                     .front()
+                     .getDefiningOp<mlir::arith::ConstantOp>();
+      unsigned slot = llvm::cast<mlir::IntegerAttr>(cst.getValue()).getInt();
       ext->getResult(0).replaceAllUsesWith(newInnerArgs[plan.newStart + slot]);
       toErase.push_back(ext);
     }
@@ -494,19 +506,37 @@ inline bool scalarizeCalleeSignature(
     mlir::BlockArgument arg = innerBody->getArgument(i);
     if (!arg.use_empty()) {
       llvm::errs() << "scalarize: BUG — inner arg " << i << " of "
-                   << callee.getName() << " has residual uses after planning\n";
+                   << callee.getName()
+                   << " has residual uses after planning:\n";
+      for (mlir::OpOperand &u : arg.getUses())
+        llvm::errs() << "    residual user: " << *u.getOwner() << "\n";
       return false;
     }
     innerBody->eraseArgument(i);
   }
 
-  // 2h. Erase old outer block args. Phase 1 validated only the inner generic
-  //     uses them; 2f rewired the generic, so all should be use-empty.
+  // 2g-bis. Redirect remaining uses of NON-scalarized old outer args to their
+  //     new pass-through position. Such args (e.g. a tensor passed straight to
+  //     recursive calls, not consumed by the inner generic) have uses outside
+  //     the inner generic that 2f did not touch. Scalarized args were only used
+  //     by the inner generic (Phase 1b), which 2f already rewired.
+  for (unsigned i = 0; i < origCount; ++i) {
+    auto [newStart, count] = oldToNew[i];
+    if (count != 1) continue;
+    entry.getArgument(i).replaceAllUsesWith(
+        entry.getArgument(origCount + newStart));
+  }
+
+  // 2h. Erase old outer block args. After 2f (inner generic) and 2g-bis
+  //     (non-scalarized pass-throughs), all old outer args should be use-empty.
   for (unsigned i = origCount; i-- > 0;) {
     mlir::BlockArgument arg = entry.getArgument(i);
     if (!arg.use_empty()) {
       llvm::errs() << "scalarize: BUG — outer arg " << i << " of "
-                   << callee.getName() << " has residual uses after planning\n";
+                   << callee.getName()
+                   << " has residual uses after planning:\n";
+      for (mlir::OpOperand &u : arg.getUses())
+        llvm::errs() << "    residual user: " << *u.getOwner() << "\n";
       return false;
     }
     entry.eraseArgument(i);
@@ -542,7 +572,7 @@ inline bool scalarizeCalleeSignature(
 /// Run --canonicalize / --cse afterward to clean up the now-dead
 /// tensor.insert chains.
 inline void scalarizeBoundariesFromRoot(mlir::func::FuncOp root,
-                                        mlir::PatternRewriter &rewriter) {
+                                        mlir::RewriterBase &rewriter) {
   if (!root || root.empty()) return;
 
   llvm::DenseSet<mlir::func::FuncOp> visited;
@@ -649,13 +679,16 @@ class ScalarizeBoundariesPattern
 /// Run --canonicalize / --cse afterward to clean up dead tensor.insert chains.
 inline void scalarizeBoundariesFromRoot(mlir::func::FuncOp root) {
   if (!root || root.empty()) return;
-  mlir::MLIRContext *ctx = root.getContext();
-  mlir::ModuleOp module = root->getParentOfType<mlir::ModuleOp>();
-  if (!module) return;
-
-  mlir::RewritePatternSet patterns(ctx);
-  patterns.add<ScalarizeBoundariesPattern>(ctx, root);
-  (void)mlir::applyPatternsGreedily(module, std::move(patterns));
+  // Drive scalarization with a plain IRRewriter instead of a greedy pattern
+  // driver. addNewYieldedValues only needs a RewriterBase, and a greedy driver
+  // was actively unsafe here: scalarizeCalleeSignature performs raw IR edits
+  // (erasing tensor.extracts and block args, mutating operands) that the
+  // driver's op worklist does not track. Once the call tree has depth >= 2,
+  // a later addNewYieldedValues clones a generic referencing IR the raw edits
+  // already freed -> use-after-free (SIGSEGV in OperandStorage). IRRewriter has
+  // no worklist, so the raw and rewriter edits coexist safely.
+  mlir::IRRewriter rewriter(root.getContext());
+  scalarizeBoundariesFromRoot(root, rewriter);
 }
 
 }  // namespace heir

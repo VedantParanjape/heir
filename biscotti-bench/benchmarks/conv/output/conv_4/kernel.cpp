@@ -56,8 +56,8 @@ std::vector<Plaintext> conv_clone_0_0__preprocessing(CryptoContextT cc) {
 std::vector<CiphertextT> conv_clone_0_0__preprocessed(
     CryptoContextT cc, std::vector<CiphertextT> v0, std::vector<CiphertextT> v1,
     const std::vector<Plaintext>& v2) {
-  std::vector<size_t> v3 = {16, 48, 32};
-  std::vector<size_t> v4 = {12, 4};
+  std::vector<size_t> v3 = {4, 12};
+  std::vector<size_t> v4 = {32, 16, 48};
   [[maybe_unused]] size_t v5 = 2;
   [[maybe_unused]] size_t v6 = 0;
   [[maybe_unused]] size_t v7 = 1;
@@ -66,43 +66,43 @@ std::vector<CiphertextT> conv_clone_0_0__preprocessed(
   auto ct2 = cc->EvalMultNoRelin(ct, ct1);
   cc->RelinearizeInPlace(ct2);
   const auto& digit_decomp = cc->EvalFastRotationPrecompute(ct2);
+  std::vector<CiphertextT> v8(2);
   Plaintext pt = v2[0];
   auto ct4 = cc->EvalMult(ct2, pt);
-  std::vector<CiphertextT> v8(2);
-#pragma omp parallel for
-  for (auto v10 = 0; v10 < 2; ++v10) {
-    size_t v12 = v4[v10];
-    const auto& ct5 = cc->EvalFastRotation(ct2, v12, 2 * cc->GetRingDimension(),
-                                           digit_decomp);
-    const std::vector<CiphertextT> v13 = {ct5};
-    v8[v10] = v13[0];
-  }
-  auto ct6 = v8[0];
-  const auto& ct7 = v8[1];
   Plaintext pt1 = v2[1];
-  const auto& ct8 = cc->EvalMult(ct7, pt1);
+  std::vector<CiphertextT> v9(3);
+  std::vector<CiphertextT> v10(1);
+#pragma omp parallel for
+  for (auto v12 = 0; v12 < 2; ++v12) {
+    size_t v14 = v3[v12];
+    const auto& ct5 = cc->EvalFastRotation(ct2, v14, 2 * cc->GetRingDimension(),
+                                           digit_decomp);
+    const std::vector<CiphertextT> v15 = {ct5};
+    v8[v12] = v15[0];
+  }
+  const auto& ct6 = v8[0];
+  auto ct7 = v8[1];
+  const auto& ct8 = cc->EvalMult(ct6, pt1);
   cc->EvalAddInPlace(ct4, ct8);
-  cc->EvalAddInPlace(ct6, ct4);
-  const auto& digit_decomp1 = cc->EvalFastRotationPrecompute(ct6);
-  std::vector<CiphertextT> v14(3);
-  std::vector<CiphertextT> v15(1);
+  cc->EvalAddInPlace(ct7, ct4);
+  const auto& digit_decomp1 = cc->EvalFastRotationPrecompute(ct7);
 #pragma omp parallel for
   for (auto v17 = 0; v17 < 3; ++v17) {
-    size_t v19 = v3[v17];
+    size_t v19 = v4[v17];
     const auto& ct11 = cc->EvalFastRotation(
-        ct6, v19, 2 * cc->GetRingDimension(), digit_decomp1);
+        ct7, v19, 2 * cc->GetRingDimension(), digit_decomp1);
     const std::vector<CiphertextT> v20 = {ct11};
-    v14[v17] = v20[0];
+    v9[v17] = v20[0];
   }
-  auto ct12 = v14[0];
-  const auto& ct13 = v14[1];
-  const auto& ct14 = v14[2];
-  cc->EvalAddInPlace(ct6, ct14);
-  cc->EvalAddInPlace(ct12, ct13);
-  cc->EvalAddInPlace(ct12, ct6);
-  cc->EvalAddInPlace(ct12, ct7);
-  std::vector<CiphertextT> v21(v15);
-  v21[0] = ct12;
+  const auto& ct12 = v9[0];
+  auto ct13 = v9[1];
+  const auto& ct14 = v9[2];
+  cc->EvalAddInPlace(ct13, ct14);
+  cc->EvalAddInPlace(ct7, ct12);
+  cc->EvalAddInPlace(ct13, ct7);
+  cc->EvalAddInPlace(ct13, ct6);
+  std::vector<CiphertextT> v21(v10);
+  v21[0] = ct13;
   return v21;
 }
 std::vector<CiphertextT> conv_clone_0_0(CryptoContextT cc,

@@ -362,7 +362,7 @@ YieldOp GenericOp::getYieldOp() {
 }
 
 GenericOp GenericOp::cloneWithNewResultTypes(TypeRange newTypes,
-                                             PatternRewriter& rewriter,
+                                             RewriterBase& rewriter,
                                              bool preserveAttrs) {
   auto newOp = GenericOp::create(
       rewriter, getLoc(), getOperands(), newTypes,
@@ -382,7 +382,7 @@ GenericOp GenericOp::cloneWithNewResultTypes(TypeRange newTypes,
 }
 
 std::pair<GenericOp, ValueRange> GenericOp::addNewYieldedValues(
-    ValueRange newValuesToYield, PatternRewriter& rewriter) {
+    ValueRange newValuesToYield, RewriterBase& rewriter) {
   YieldOp yieldOp = getYieldOp();
   yieldOp.getValuesMutable().append(newValuesToYield);
   auto newTypes = llvm::to_vector<4>(

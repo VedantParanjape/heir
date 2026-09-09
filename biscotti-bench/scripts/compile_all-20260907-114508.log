@@ -1,0 +1,181 @@
+INFO: Invocation ID: 4c87d338-a813-482f-9088-00b45e761bf0
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/4c87d338-a813-482f-9088-00b45e761bf0
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed 2 targets (2 packages loaded, 81 targets configured).
+[5,195 / 14,881] [Scann] Compiling external/sed+/sed/version.c [for tool]
+[9,023 / 14,881] Compiling ortools/algorithms/dynamic_permutation.cc; 0s remote-cache ... (127 actions, 2 running)
+[10,067 / 14,881] Compiling lib/Target/OpenFhePke/OpenFhePkeHarnessEmitter.cpp; 1s remote-cache, linux-sandbox ... (99 actions, 10 running)
+[10,986 / 14,881] Compiling lib/Target/OpenFhePke/OpenFhePkeHarnessEmitter.cpp; 2s remote-cache, linux-sandbox ... (128 actions, 20 running)
+[11,592 / 14,881] Compiling lib/Target/OpenFhePke/OpenFhePkeHarnessEmitter.cpp; 3s remote-cache, linux-sandbox ... (128 actions, 20 running)
+[12,199 / 14,881] Compiling lib/Target/OpenFhePke/OpenFheUtils.cpp; 3s remote-cache, linux-sandbox ... (124 actions, 17 running)
+[12,864 / 14,881] Compiling lib/Target/OpenFhePke/OpenFheUtils.cpp; 4s remote-cache, linux-sandbox ... (128 actions, 14 running)
+[13,645 / 14,881] Compiling lib/Target/TfheRustHL/TfheRustHLEmitter.cpp; 5s remote-cache, linux-sandbox ... (125 actions, 11 running)
+[14,388 / 14,881] Compiling lib/Target/TfheRustHL/TfheRustHLEmitter.cpp; 6s remote-cache, linux-sandbox ... (123 actions, 10 running)
+[14,875 / 14,881] Compiling lib/Target/TfheRust/TfheRustEmitter.cpp; 8s remote-cache, linux-sandbox ... (5 actions running)
+[14,878 / 14,881] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 8s remote-cache, linux-sandbox ... (2 actions running)
+INFO: Found 2 targets...
+INFO: Elapsed time: 15.462s, Critical Path: 11.23s
+INFO: 5338 processes: 1683 action cache hit, 5224 remote cache hit, 94 internal, 20 linux-sandbox.
+INFO: Build completed successfully, 5338 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/4c87d338-a813-482f-9088-00b45e761bf0
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 185: 2003412 Segmentation fault      (core dumped) "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/355b1d8c-0c61-4144-85a6-8fa1049d37e3
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed target //tools:heir-opt (2 packages loaded, 60 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 2.132s, Critical Path: 0.05s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/355b1d8c-0c61-4144-85a6-8fa1049d37e3
+scalarize: BUG — inner arg 0 of conv_clone_0_1 has residual uses after planning
+scalarize: callee conv_clone_0_1 signature rewrite failed; call site already rewritten — IR is in an inconsistent state
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.  Program arguments: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir --recursive-call-vectorization=node-size-threshold=100 --canonicalize --cse --symbol-dce --mlir-timing -o /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/conv_6-recursed.mlir
+ #0 0x0000000003a614fb llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a614fb)
+ #1 0x0000000003a5ed92 llvm::sys::RunSignalHandlers() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a5ed92)
+ #2 0x0000000003a6203c SignalHandler(int, siginfo_t*, void*) Signals.cpp:0:0
+ #3 0x000015118fbe2520 (/lib/x86_64-linux-gnu/libc.so.6+0x42520)
+ #4 0x000000000399ee1b mlir::detail::OperandStorage::OperandStorage(mlir::Operation*, mlir::OpOperand*, mlir::ValueRange) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x399ee1b)
+ #5 0x0000000003994eac mlir::Operation::create(mlir::Location, mlir::OperationName, mlir::TypeRange, mlir::ValueRange, mlir::DictionaryAttr, mlir::PropertyRef, mlir::BlockRange, unsigned int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3994eac)
+ #6 0x0000000003996e40 mlir::Operation::clone(mlir::IRMapping&, mlir::Operation::CloneOptions const&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3996e40)
+ #7 0x000000000391fc81 mlir::OpBuilder::clone(mlir::Operation&, mlir::IRMapping&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x391fc81)
+ #8 0x0000000002a12e16 void llvm::function_ref<void (mlir::OpBuilder&, mlir::Location, mlir::ValueRange)>::callback_fn<mlir::heir::secret::GenericOp::cloneWithNewResultTypes(mlir::TypeRange, mlir::PatternRewriter&, bool)::$_0>(long, mlir::OpBuilder&, mlir::Location, mlir::ValueRange) SecretOps.cpp:0:0
+ #9 0x0000000002a0ee60 mlir::heir::secret::GenericOp::build(mlir::OpBuilder&, mlir::OperationState&, mlir::ValueRange, mlir::TypeRange, llvm::function_ref<void (mlir::OpBuilder&, mlir::Location, mlir::ValueRange)>) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2a0ee60)
+#10 0x0000000002a044b2 mlir::heir::secret::GenericOp::create(mlir::OpBuilder&, mlir::Location, mlir::ValueRange, mlir::TypeRange, llvm::function_ref<void (mlir::OpBuilder&, mlir::Location, mlir::ValueRange)>) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2a044b2)
+#11 0x0000000002a0f3c9 mlir::heir::secret::GenericOp::addNewYieldedValues(mlir::ValueRange, mlir::PatternRewriter&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2a0f3c9)
+#12 0x00000000027b1d64 mlir::heir::appendYieldedValues(mlir::heir::secret::GenericOp&, llvm::ArrayRef<mlir::Value>, mlir::PatternRewriter&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27b1d64)
+#13 0x00000000027af49f mlir::heir::rewriteCallSite(mlir::func::CallOp&, mlir::PatternRewriter&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27af49f)
+#14 0x00000000027ae7b5 mlir::heir::scalarizeBoundariesFromRoot(mlir::func::FuncOp, mlir::PatternRewriter&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27ae7b5)
+#15 0x00000000027ae3f1 mlir::heir::ScalarizeBoundariesPattern::matchAndRewrite(mlir::func::FuncOp, mlir::PatternRewriter&) const (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27ae3f1)
+#16 0x000000000340a15a void llvm::function_ref<void ()>::callback_fn<mlir::PatternApplicator::matchAndRewrite(mlir::Operation*, mlir::PatternRewriter&, llvm::function_ref<bool (mlir::Pattern const&)>, llvm::function_ref<void (mlir::Pattern const&)>, llvm::function_ref<llvm::LogicalResult (mlir::Pattern const&)>)::$_0>(long) PatternApplicator.cpp:0:0
+#17 0x0000000003407e61 mlir::PatternApplicator::matchAndRewrite(mlir::Operation*, mlir::PatternRewriter&, llvm::function_ref<bool (mlir::Pattern const&)>, llvm::function_ref<void (mlir::Pattern const&)>, llvm::function_ref<llvm::LogicalResult (mlir::Pattern const&)>) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3407e61)
+#18 0x00000000033e1b94 (anonymous namespace)::GreedyPatternRewriteDriver::processWorklist() GreedyPatternRewriteDriver.cpp:0:0
+#19 0x00000000033e13f6 void llvm::function_ref<void ()>::callback_fn<(anonymous namespace)::RegionPatternRewriteDriver::simplify(bool*) &&::$_2>(long) GreedyPatternRewriteDriver.cpp:0:0
+#20 0x00000000033df931 mlir::applyPatternsGreedily(mlir::Region&, mlir::FrozenRewritePatternSet const&, mlir::GreedyRewriteConfig, bool*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x33df931)
+#21 0x00000000027a7a2d mlir::heir::scalarizeBoundariesFromRoot(mlir::func::FuncOp) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a7a2d)
+#22 0x00000000027a25ae mlir::heir::RecursiveCallVectorization::runOnOperation() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a25ae)
+#23 0x000000000387dd54 mlir::detail::OpToOpPassAdaptor::run(mlir::Pass*, mlir::Operation*, mlir::AnalysisManager, bool, unsigned int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x387dd54)
+#24 0x0000000003880566 mlir::PassManager::runPasses(mlir::Operation*, mlir::AnalysisManager) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3880566)
+#25 0x000000000388040c mlir::PassManager::run(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x388040c)
+#26 0x0000000002bfebe2 performActions(llvm::raw_ostream&, std::__1::shared_ptr<llvm::SourceMgr> const&, mlir::MLIRContext*, mlir::MlirOptMainConfig const&) MlirOptMain.cpp:0:0
+#27 0x0000000002bfe06b llvm::LogicalResult llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>::callback_fn<mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&)::$_0>(long, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&) MlirOptMain.cpp:0:0
+#28 0x00000000039c1d3a mlir::splitAndProcessBuffer(std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>, llvm::raw_ostream&, llvm::StringRef, llvm::StringRef) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39c1d3a)
+#29 0x0000000002bf6329 mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6329)
+#30 0x0000000002bf6781 mlir::MlirOptMain(int, char**, llvm::StringRef, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6781)
+#31 0x0000000002bf6ad0 mlir::MlirOptMain(int, char**, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6ad0)
+#32 0x0000000000cac0bf main (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xcac0bf)
+#33 0x000015118fbc9d90 __libc_start_call_main ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+#34 0x000015118fbc9e40 call_init ./csu/../csu/libc-start.c:128:20
+#35 0x000015118fbc9e40 __libc_start_main ./csu/../csu/libc-start.c:379:5
+#36 0x0000000000ca902a _start (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xca902a)
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+Terminated
+error: step failed; tail of log:
+  [Python]   [pop 4] cost=116.4 (rot=115.0 ht=1.4), queue=4
+  [Python]     SA=11742ms, pop_total=11756ms
+  [Python]   [pop 5] cost=116.4 (rot=115.0 ht=1.4), queue=5
+  [Python]     SA=11773ms, pop_total=11787ms
+  [Python]   [pop 6] cost=116.4 (rot=115.0 ht=1.4), queue=6
+  [Python]     SA=11762ms, pop_total=11776ms
+  [Python]   [pop 7] cost=116.4 (rot=115.0 ht=1.4), queue=7
+  [Python]     SA=11729ms, pop_total=11744ms
+  [Python]   [pop 8] cost=116.4 (rot=115.0 ht=1.4), queue=8
+  [Python]     SA=11833ms, pop_total=11847ms
+  [Python]   [pop 9] cost=116.4 (rot=115.0 ht=1.4), queue=9
+  [Python]     SA=11751ms, pop_total=11765ms
+  [Python]   [pop 10] cost=116.4 (rot=115.0 ht=1.4), queue=10
+  [Python]     SA=11681ms, pop_total=11713ms
+  [Python]   [pop 11] cost=116.4 (rot=115.0 ht=1.4), queue=11
+  [Python]     SA=11877ms, pop_total=11891ms
+  [Python]   [pop 12] cost=116.4 (rot=115.0 ht=1.4), queue=12
+  [Python]     SA=11658ms, pop_total=11672ms
+  [Python]   [pop 13] cost=116.4 (rot=115.0 ht=1.4), queue=13
+  [Python]     SA=11653ms, pop_total=11667ms
+  [Python]   [pop 14] cost=116.4 (rot=115.0 ht=1.4), queue=14
+  [Python]     SA=11853ms, pop_total=11867ms
+  [Python]   [pop 15] cost=116.4 (rot=115.0 ht=1.4), queue=15
+  [Python]     SA=11812ms, pop_total=11826ms
+  [Python]   [pop 16] cost=116.4 (rot=115.0 ht=1.4), queue=16
+  [Python]     SA=11756ms, pop_total=11790ms
+  [Python]   [pop 17] cost=116.4 (rot=115.0 ht=1.4), queue=17
+  [Python]     SA=11786ms, pop_total=11800ms
+  [Python]   [pop 18] cost=116.4 (rot=115.0 ht=1.4), queue=18
+  [Python]     SA=11794ms, pop_total=11808ms
+  [Python]   [pop 19] cost=116.4 (rot=115.0 ht=1.4), queue=19
+  [Python]     SA=11734ms, pop_total=11748ms
+  [Python]   [pop 20] cost=116.4 (rot=115.0 ht=1.4), queue=20
+  [Python]     SA=11926ms, pop_total=11941ms
+  [Python]   [pop 21] cost=116.4 (rot=115.0 ht=1.4), queue=21
+  [Python]     SA=11752ms, pop_total=11766ms
+  [Python]   [pop 22] cost=116.4 (rot=115.0 ht=1.4), queue=22
+  [Python]     SA=11694ms, pop_total=11708ms
+  [Python]   [pop 23] cost=116.4 (rot=115.0 ht=1.4), queue=23
+  [Python]     SA=11808ms, pop_total=11822ms
+  [Python]   [pop 24] cost=116.4 (rot=115.0 ht=1.4), queue=24
+  [Python]     SA=11737ms, pop_total=11753ms
+  [Python]   [pop 25] cost=116.4 (rot=115.0 ht=1.4), queue=25
+  [Python]     SA=11809ms, pop_total=11823ms
+  [Python]   [pop 26] cost=116.4 (rot=115.0 ht=1.4), queue=26
+  [Python]     SA=11710ms, pop_total=11724ms
+  [Python]   [pop 27] cost=116.4 (rot=115.0 ht=1.4), queue=27
+  [Python]     SA=11756ms, pop_total=11796ms
+  [Python]   [pop 28] cost=116.4 (rot=115.0 ht=1.4), queue=28
+  [Python]     SA=11735ms, pop_total=11749ms
+  [Python]   [pop 29] cost=116.4 (rot=115.0 ht=1.4), queue=29
+  [Python]     SA=11755ms, pop_total=11769ms
+  [Python]   [pop 30] cost=116.4 (rot=115.0 ht=1.4), queue=30
+  [Python]     SA=11814ms, pop_total=11828ms
+  [Python]   [pop 31] cost=116.4 (rot=115.0 ht=1.4), queue=31
+  [Python]     SA=11841ms, pop_total=11855ms
+  [Python]   [pop 32] cost=116.4 (rot=115.0 ht=1.4), queue=32
+  [Python]     SA=11780ms, pop_total=11794ms
+  [Python]   [pop 33] cost=116.4 (rot=115.0 ht=1.4), queue=33
+  [Python]     SA=11714ms, pop_total=11755ms

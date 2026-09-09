@@ -1,0 +1,13 @@
+TAINTED — do not trust this build.
+
+argmax_9 (hoisted) was compiled ~03:15:53-03:26 on 2026-09-08 while a det_3
+recursion-pass test ran concurrently. Coyote uses a PER-PROCESS static temp
+counter (PythonScheduler.h:201 -> /tmp/0/coyote_circuit.txt), so two heir-opt
+processes running the scheduler at once share /tmp/0 and can clobber each
+other's circuit file -> a SILENTLY WRONG schedule, not an error. This build's
+compile-timing (631.043s) and emitted kernel may therefore be incorrect.
+
+argmax_7 and argmax_8 are NOT affected (finished before the det_3 run).
+argmax_9_baseline / _baseline_vanilla are NOT affected (built later, alone).
+
+ACTION: rebuild argmax_9 hoisted on its own before trusting its numbers/kernel.

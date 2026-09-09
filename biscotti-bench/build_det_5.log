@@ -1,0 +1,55 @@
+INFO: Invocation ID: 0c38545b-5146-4575-9621-270bc35c992f
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/0c38545b-5146-4575-9621-270bc35c992f
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[9,856 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/ShardingInterfaceImpl.cpp; 1s remote-cache, linux-sandbox ... (7 actions running)
+[9,857 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/ShardingInterfaceImpl.cpp; 8s remote-cache, linux-sandbox ... (6 actions running)
+[9,858 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/ShardingInterfaceImpl.cpp; 10s remote-cache, linux-sandbox ... (5 actions running)
+[9,861 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/TilingInterfaceImpl.cpp; 12s remote-cache, linux-sandbox ... (2 actions running)
+[9,862 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/TilingInterfaceImpl.cpp; 19s remote-cache, linux-sandbox
+[9,862 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/TilingInterfaceImpl.cpp; 30s remote-cache, linux-sandbox
+[9,862 / 9,864] Compiling mlir/lib/Dialect/Linalg/Transforms/TilingInterfaceImpl.cpp; 60s remote-cache, linux-sandbox
+[9,863 / 9,864] [Prepa] Linking tools/heir-opt
+[9,863 / 9,864] [Sched] Linking tools/heir-opt; Downloading external/yosys+/_objs/backend_verilog/verilog_backend.pic.o, 2.5 MiB / 3.9 MiB
+[9,863 / 9,864] Linking tools/heir-opt; 1s remote-cache, linux-sandbox
+INFO: Found 2 targets...
+INFO: Elapsed time: 71.343s, Critical Path: 70.40s
+INFO: 9 processes: 123 action cache hit, 1 internal, 8 linux-sandbox.
+INFO: Build completed successfully, 9 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/0c38545b-5146-4575-9621-270bc35c992f
+=== HEIR pipeline ===
+  suite:       det
+  kernel:      det_5
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/src/det_5.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/output/det_5
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=8
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from det_5-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5/det_5-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5/det_5-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/output/det_5/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/output/det_5/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/output/det_5/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/build/det_5/compile-timing.txt

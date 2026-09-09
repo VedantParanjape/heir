@@ -1,0 +1,138 @@
+INFO: Invocation ID: 2e60b42d-61f4-4d3a-91a1-227646194ef8
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/2e60b42d-61f4-4d3a-91a1-227646194ef8
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed 2 targets (2 packages loaded, 60 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 0.827s, Critical Path: 0.02s
+INFO: 16 processes: 1073 action cache hit, 16 internal.
+INFO: Build completed successfully, 16 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/2e60b42d-61f4-4d3a-91a1-227646194ef8
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_34
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_34.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_34
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_34
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_34/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_34/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_16
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_16.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_16
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_16
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_16.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_16_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_16
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_16.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_16_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_16_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+Terminated
+error: step failed; tail of log:
+  [Python]   %127 = arg0:127 ~ arg0:127
+  [Python]   %128 = arg0:128 ~ arg0:128
+  [Python]   %129 = arg0:129 ~ arg0:129
+  [Python]   %130 = arg0:130 ~ arg0:130
+  [Python]   %131 = arg0:131 ~ arg0:131
+  [Python]   %132 = arg0:132 ~ arg0:132
+  [Python]   %133 = arg0:133 ~ arg0:133
+  [Python]   %134 = arg0:134 ~ arg0:134
+  [Python]   %135 = arg0:135 ~ arg0:135
+  [Python]   %136 = arg0:136 ~ arg0:136
+  [Python]   %137 = arg0:137 ~ arg0:137
+  [Python]   %138 = arg0:138 ~ arg0:138
+  [Python]   %139 = arg0:139 ~ arg0:139
+  [Python]   %140 = arg0:140 ~ arg0:140
+  [Python]   %141 = arg0:141 ~ arg0:141
+  [Python]   %142 = arg0:142 ~ arg0:142
+  [Python]   %143 = arg0:143 ~ arg0:143
+  [Python]   %144 = arg0:144 ~ arg0:144
+  [Python]   %145 = arg0:145 ~ arg0:145
+  [Python]   %146 = arg0:146 ~ arg0:146
+  [Python]   %147 = arg0:147 ~ arg0:147
+  [Python]   %148 = arg0:148 ~ arg0:148
+  [Python]   %149 = arg0:149 ~ arg0:149
+  [Python]   %150 = arg0:150 ~ arg0:150
+  [Python]   %151 = arg0:151 ~ arg0:151
+  [Python]   %152 = arg0:152 ~ arg0:152
+  [Python]   %153 = arg0:153 ~ arg0:153
+  [Python]   %154 = arg0:154 ~ arg0:154
+  [Python]   %155 = arg0:155 ~ arg0:155
+  [Python]   %156 = arg0:156 ~ arg0:156
+  [Python]   %157 = arg0:157 ~ arg0:157
+  [Python]   %158 = arg0:158 ~ arg0:158
+  [Python]   %159 = arg0:159 ~ arg0:159
+  [Python]   %160 = arg0:160 ~ arg0:160
+  [Python]   %161 = arg0:161 ~ arg0:161
+  [Python]   %162 = arg0:162 ~ arg0:162
+  [Python]   %163 = arg0:163 ~ arg0:163
+  [Python]   %164 = arg0:164 ~ arg0:164
+  [Python]   %165 = arg0:165 ~ arg0:165
+  [Python]   %166 = arg0:166 ~ arg0:166
+  [Python]   %167 = arg0:167 ~ arg0:167
+  [Python]   %168 = arg0:168 ~ arg0:168
+  [Python]   %169 = arg0:169 ~ arg0:169
+  [Python]   %170 = arg0:170 ~ arg0:170
+  [Python]   %171 = arg0:171 ~ arg0:171
+  [Python]   %172 = arg0:172 ~ arg0:172
+  [Python]   %173 = arg0:173 ~ arg0:173
+  [Python]   %174 = arg0:174 ~ arg0:174
+  [Python]   %175 = arg0:175 ~ arg0:175
+  [Python]   %176 = arg0:176 ~ arg0:176
+  [Python]   %177 = arg0:177 ~ arg0:177
+  [Python]   %178 = arg0:178 ~ arg0:178
+  [Python]   %179 = arg0:179 ~ arg0:179
+  [Python]   %180 = arg0:180 ~ arg0:180
+  [Python]   %181 = arg0:181 ~ arg0:181
+  [Python]   %182 = arg0:182 ~ arg0:182
+  [Python]   %183 = arg0:183 ~ arg0:183
+  [Python]   %184 = arg0:184 ~ arg0:184
+  [Python]   %185 = arg0:185 ~ arg0:185
+  [Python]   %186 = arg0:186 ~ arg0:186

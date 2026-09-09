@@ -1,0 +1,99 @@
+INFO: Invocation ID: abec7af7-b889-45c3-84c7-9d1a69e2fd4a
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/abec7af7-b889-45c3-84c7-9d1a69e2fd4a
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed 2 targets (2 packages loaded, 81 targets configured).
+[14,854 / 14,875] Compiling lib/Target/TfheRust/TfheRustEmitter.cpp; 1s remote-cache, linux-sandbox ... (20 actions running)
+[14,856 / 14,875] Compiling lib/Target/TfheRust/TfheRustEmitter.cpp; 3s remote-cache, linux-sandbox ... (18 actions running)
+[14,863 / 14,875] Compiling lib/Target/TfheRust/TfheRustEmitter.cpp; 5s remote-cache, linux-sandbox ... (11 actions running)
+[14,869 / 14,875] Compiling lib/Target/TfheRust/TfheRustEmitter.cpp; 7s remote-cache, linux-sandbox ... (5 actions running)
+[14,872 / 14,875] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 8s remote-cache, linux-sandbox ... (2 actions running)
+[14,873 / 14,875] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 10s remote-cache, linux-sandbox
+INFO: Found 2 targets...
+INFO: Elapsed time: 11.741s, Critical Path: 10.65s
+INFO: 36 processes: 1076 action cache hit, 16 internal, 20 linux-sandbox.
+INFO: Build completed successfully, 36 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/abec7af7-b889-45c3-84c7-9d1a69e2fd4a
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+Terminated
+error: step failed; tail of log:
+  [Python]   [pop 60] cost=7.5 (rot=4.0 ht=3.5), queue=47
+  [Python]     SA=879ms, pop_total=880ms
+  [Python]   [pop 61] cost=7.5 (rot=4.0 ht=3.5), queue=47
+  [Python]     SA=868ms, pop_total=868ms
+  [Python]   [pop 62] cost=7.5 (rot=5.0 ht=2.5), queue=47
+  [Python]     SA=891ms, pop_total=892ms
+  [Python]   [pop 63] cost=7.5 (rot=5.0 ht=2.5), queue=48
+  [Python]     SA=936ms, pop_total=937ms
+  [Python]   [pop 64] cost=6.6 (rot=4.0 ht=2.6), queue=49
+  [Python]     SA=931ms, pop_total=932ms
+  [Python]   [pop 65] cost=6.6 (rot=4.0 ht=2.6), queue=50
+  [Python]     SA=925ms, pop_total=926ms
+  [Python]   [pop 66] cost=6.6 (rot=4.0 ht=2.6), queue=51
+  [Python]     SA=879ms, pop_total=880ms
+  [Python]   [pop 67] cost=6.6 (rot=4.0 ht=2.6), queue=52
+  [Python]     SA=913ms, pop_total=914ms
+  [Python]   [pop 68] cost=7.5 (rot=5.0 ht=2.5), queue=52
+  [Python]     SA=929ms, pop_total=930ms
+  [Python]   [pop 69] cost=7.5 (rot=5.0 ht=2.5), queue=53
+  [Python]     SA=928ms, pop_total=929ms
+  [Python]   [pop 70] cost=7.5 (rot=5.0 ht=2.5), queue=54
+  [Python]     SA=892ms, pop_total=893ms
+  [Python]   [pop 71] cost=7.5 (rot=5.0 ht=2.5), queue=55
+  [Python]     SA=959ms, pop_total=959ms
+  [Python]   [pop 72] cost=7.5 (rot=5.0 ht=2.5), queue=56
+  [Python]     SA=901ms, pop_total=903ms
+  [Python]   [pop 73] cost=7.5 (rot=5.0 ht=2.5), queue=56
+  [Python]     SA=884ms, pop_total=885ms
+  [Python]   [pop 74] cost=7.5 (rot=5.0 ht=2.5), queue=56
+  [Python]     SA=877ms, pop_total=878ms
+  [Python]   [pop 75] cost=7.5 (rot=5.0 ht=2.5), queue=57
+  [Python]     SA=885ms, pop_total=886ms
+  [Python]   [pop 76] cost=7.5 (rot=5.0 ht=2.5), queue=58
+  [Python]     SA=863ms, pop_total=864ms
+  [Python]   [pop 77] cost=7.5 (rot=5.0 ht=2.5), queue=59
+  [Python]     SA=886ms, pop_total=887ms
+  [Python]   [pop 78] cost=7.5 (rot=5.0 ht=2.5), queue=60
+  [Python]     SA=862ms, pop_total=863ms
+  [Python]   [pop 79] cost=7.5 (rot=5.0 ht=2.5), queue=61
+  [Python]     SA=854ms, pop_total=856ms
+  [Python]   [pop 80] cost=7.5 (rot=5.0 ht=2.5), queue=62
+  [Python]     SA=875ms, pop_total=876ms
+  [Python]   [pop 81] cost=7.5 (rot=5.0 ht=2.5), queue=62
+  [Python]     SA=884ms, pop_total=885ms
+  [Python]   [pop 82] cost=7.7 (rot=4.0 ht=3.7), queue=62
+  [Python]     SA=899ms, pop_total=900ms
+  [Python]   [pop 83] cost=7.7 (rot=4.0 ht=3.7), queue=63
+  [Python]     SA=898ms, pop_total=899ms
+  [Python]   [pop 84] cost=7.7 (rot=4.0 ht=3.7), queue=64
+  [Python]     SA=862ms, pop_total=863ms
+  [Python]   [pop 85] cost=7.7 (rot=4.0 ht=3.7), queue=65
+  [Python]     SA=895ms, pop_total=896ms
+  [Python]   [pop 86] cost=7.7 (rot=5.0 ht=2.7), queue=65
+  [Python]     SA=896ms, pop_total=897ms
+  [Python]   [pop 87] cost=7.7 (rot=5.0 ht=2.7), queue=66
+  [Python]     SA=879ms, pop_total=880ms
+  [Python]   [pop 88] cost=7.7 (rot=5.0 ht=2.7), queue=67
+  [Python]     SA=909ms, pop_total=910ms
+  [Python]   [pop 89] cost=7.7 (rot=5.0 ht=2.7), queue=68
+  [Python]     SA=938ms, pop_total=939ms

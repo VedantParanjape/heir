@@ -1,0 +1,263 @@
+INFO: Invocation ID: 7d9028e4-c024-4a4e-a921-4b35ea4625cc
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/7d9028e4-c024-4a4e-a921-4b35ea4625cc
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 21 targets configured).
+[10,522 / 10,543] Compiling lib/Analysis/Cpp/ConstQualifierAnalysis.cpp; 1s remote-cache, linux-sandbox ... (20 actions running)
+[10,525 / 10,543] Compiling lib/Target/Metadata/MetadataEmitter.cpp; 3s remote-cache, linux-sandbox ... (17 actions running)
+[10,533 / 10,543] Compiling lib/Target/Jaxite/JaxiteEmitter.cpp; 5s remote-cache, linux-sandbox ... (9 actions running)
+[10,537 / 10,543] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 7s remote-cache, linux-sandbox ... (5 actions running)
+[10,540 / 10,543] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 8s remote-cache, linux-sandbox ... (2 actions running)
+[10,541 / 10,543] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 10s remote-cache, linux-sandbox
+INFO: Found 2 targets...
+INFO: Elapsed time: 12.589s, Critical Path: 11.44s
+INFO: 37 processes: 846 action cache hit, 16 internal, 21 linux-sandbox.
+INFO: Build completed successfully, 37 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/7d9028e4-c024-4a4e-a921-4b35ea4625cc
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=512 from conv_6-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/conv_6-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/conv_6-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6/compile-timing.txt
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_6_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_6_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_10
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_10.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_10
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=2048 from conv_10-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10/conv_10-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10/conv_10-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_10/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_10/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_10/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10/compile-timing.txt
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_10
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_10.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_10_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_10
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_10.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_10_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_10_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_18
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_18.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_18
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=8192 from conv_18-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18/conv_18-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18/conv_18-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_18/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_18/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_18/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18/compile-timing.txt
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_18
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_18.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_18_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_18
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_18.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_18_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_18_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+Terminated
+error: step failed; tail of log:
+  [Python]   %8728 = %4518 * %2584
+  [Python]   %8729 = %4529 * %2585
+  [Python]   %8730 = %4540 * %2586
+  [Python]   %8731 = %8722 + %8723
+  [Python]   %8732 = %8724 + %8725
+  [Python]   %8733 = %8726 + %8727
+  [Python]   %8734 = %8728 + %8729
+  [Python]   %8735 = %8731 + %8732
+  [Python]   %8736 = %8733 + %8734
+  [Python]   %8737 = %8735 + %8736
+  [Python]   %8738 = %8737 + %8730
+  [Python]   %8739 = %355 * %2587
+  [Python]   %8740 = %4410 * %2588
+  [Python]   %8741 = %4420 * %2589
+  [Python]   %8742 = %4464 * %2590
+  [Python]   %8743 = %4475 * %2591
+  [Python]   %8744 = %4485 * %2592
+  [Python]   %8745 = %4528 * %2593
+  [Python]   %8746 = %4539 * %2594
+  [Python]   %8747 = %4548 * %2595
+  [Python]   %8748 = %8739 + %8740
+  [Python]   %8749 = %8741 + %8742
+  [Python]   %8750 = %8743 + %8744
+  [Python]   %8751 = %8745 + %8746
+  [Python]   %8752 = %8748 + %8749
+  [Python]   %8753 = %8750 + %8751
+  [Python]   %8754 = %8752 + %8753
+  [Python]   %8755 = %8754 + %8747
+  [Python]   %8756 = %346 * %2596
+  [Python]   %8757 = %4355 * %2597
+  [Python]   %8758 = %4363 * %2598
+  [Python]   %8759 = %4409 * %2599
+  [Python]   %8760 = %4419 * %2600
+  [Python]   %8761 = %4427 * %2601
+  [Python]   %8762 = %4474 * %2602
+  [Python]   %8763 = %4484 * %2603
+  [Python]   %8764 = %4491 * %2604
+  [Python]   %8765 = %8756 + %8757
+  [Python]   %8766 = %8758 + %8759
+  [Python]   %8767 = %8760 + %8761
+  [Python]   %8768 = %8762 + %8763
+  [Python]   %8769 = %8765 + %8766
+  [Python]   %8770 = %8767 + %8768
+  [Python]   %8771 = %8769 + %8770
+  [Python]   %8772 = %8771 + %8764
+  [Python]   %8773 = %347 * %2605
+  [Python]   %8774 = %348 * %2606
+  [Python]   %8775 = %349 * %2607
+  [Python]   %8776 = %4418 * %2608
+  [Python]   %8777 = %4426 * %2609
+  [Python]   %8778 = %4430 * %2610
+  [Python]   %8779 = %4483 * %2611
+  [Python]   %8780 = %4490 * %2612
+  [Python]   %8781 = %4493 * %2613
+  [Python]   %8782 = %8773 + %8774
+  [Python]   %8783 = %8775 + %8776
+  [Python]   %8784 = %8777 + %8778
+  [Python]   %8785 = %8779 + %8780
+  [Python]   %8786 = %8782 + %8783
+  [Python]   %8787 = %8784 + %8785

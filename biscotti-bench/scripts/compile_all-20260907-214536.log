@@ -1,0 +1,93 @@
+INFO: Invocation ID: 9d750486-b95c-49b0-99a3-48fe61661b36
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/9d750486-b95c-49b0-99a3-48fe61661b36
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed 2 targets (2 packages loaded, 60 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 1.269s, Critical Path: 0.06s
+INFO: 16 processes: 8740 action cache hit, 16 internal.
+INFO: Build completed successfully, 16 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/9d750486-b95c-49b0-99a3-48fe61661b36
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_34
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_34.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_34
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/output/conv_34
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_34/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/build/conv_34/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+Terminated
+error: step failed; tail of log:
+    %inserted_199 = tensor.insert %input224 into %inserted_198[%c200] : tensor<256xi32>
+    %inserted_200 = tensor.insert %input225 into %inserted_199[%c201] : tensor<256xi32>
+    %inserted_201 = tensor.insert %input226 into %inserted_200[%c202] : tensor<256xi32>
+    %inserted_202 = tensor.insert %input227 into %inserted_201[%c203] : tensor<256xi32>
+    %inserted_203 = tensor.insert %input228 into %inserted_202[%c204] : tensor<256xi32>
+    %inserted_204 = tensor.insert %input229 into %inserted_203[%c205] : tensor<256xi32>
+    %inserted_205 = tensor.insert %input230 into %inserted_204[%c206] : tensor<256xi32>
+    %inserted_206 = tensor.insert %input231 into %inserted_205[%c207] : tensor<256xi32>
+    %inserted_207 = tensor.insert %input168 into %inserted_206[%c208] : tensor<256xi32>
+    %inserted_208 = tensor.insert %input169 into %inserted_207[%c209] : tensor<256xi32>
+    %inserted_209 = tensor.insert %input170 into %inserted_208[%c210] : tensor<256xi32>
+    %inserted_210 = tensor.insert %input171 into %inserted_209[%c211] : tensor<256xi32>
+    %inserted_211 = tensor.insert %input172 into %inserted_210[%c212] : tensor<256xi32>
+    %inserted_212 = tensor.insert %input173 into %inserted_211[%c213] : tensor<256xi32>
+    %inserted_213 = tensor.insert %input174 into %inserted_212[%c214] : tensor<256xi32>
+    %inserted_214 = tensor.insert %input175 into %inserted_213[%c215] : tensor<256xi32>
+    %inserted_215 = tensor.insert %input232 into %inserted_214[%c216] : tensor<256xi32>
+    %inserted_216 = tensor.insert %input233 into %inserted_215[%c217] : tensor<256xi32>
+    %inserted_217 = tensor.insert %input234 into %inserted_216[%c218] : tensor<256xi32>
+    %inserted_218 = tensor.insert %input235 into %inserted_217[%c219] : tensor<256xi32>
+    %inserted_219 = tensor.insert %input236 into %inserted_218[%c220] : tensor<256xi32>
+    %inserted_220 = tensor.insert %input237 into %inserted_219[%c221] : tensor<256xi32>
+    %inserted_221 = tensor.insert %input238 into %inserted_220[%c222] : tensor<256xi32>
+    %inserted_222 = tensor.insert %input239 into %inserted_221[%c223] : tensor<256xi32>
+    %inserted_223 = tensor.insert %input176 into %inserted_222[%c224] : tensor<256xi32>
+    %inserted_224 = tensor.insert %input177 into %inserted_223[%c225] : tensor<256xi32>
+    %inserted_225 = tensor.insert %input178 into %inserted_224[%c226] : tensor<256xi32>
+    %inserted_226 = tensor.insert %input179 into %inserted_225[%c227] : tensor<256xi32>
+    %inserted_227 = tensor.insert %input180 into %inserted_226[%c228] : tensor<256xi32>
+    %inserted_228 = tensor.insert %input181 into %inserted_227[%c229] : tensor<256xi32>
+    %inserted_229 = tensor.insert %input182 into %inserted_228[%c230] : tensor<256xi32>
+    %inserted_230 = tensor.insert %input183 into %inserted_229[%c231] : tensor<256xi32>
+    %inserted_231 = tensor.insert %input240 into %inserted_230[%c232] : tensor<256xi32>
+    %inserted_232 = tensor.insert %input241 into %inserted_231[%c233] : tensor<256xi32>
+    %inserted_233 = tensor.insert %input242 into %inserted_232[%c234] : tensor<256xi32>
+    %inserted_234 = tensor.insert %input243 into %inserted_233[%c235] : tensor<256xi32>
+    %inserted_235 = tensor.insert %input244 into %inserted_234[%c236] : tensor<256xi32>
+    %inserted_236 = tensor.insert %input245 into %inserted_235[%c237] : tensor<256xi32>
+    %inserted_237 = tensor.insert %input246 into %inserted_236[%c238] : tensor<256xi32>
+    %inserted_238 = tensor.insert %input247 into %inserted_237[%c239] : tensor<256xi32>
+    %inserted_239 = tensor.insert %input184 into %inserted_238[%c240] : tensor<256xi32>
+    %inserted_240 = tensor.insert %input185 into %inserted_239[%c241] : tensor<256xi32>
+    %inserted_241 = tensor.insert %input186 into %inserted_240[%c242] : tensor<256xi32>
+    %inserted_242 = tensor.insert %input187 into %inserted_241[%c243] : tensor<256xi32>
+    %inserted_243 = tensor.insert %input188 into %inserted_242[%c244] : tensor<256xi32>
+    %inserted_244 = tensor.insert %input189 into %inserted_243[%c245] : tensor<256xi32>
+    %inserted_245 = tensor.insert %input190 into %inserted_244[%c246] : tensor<256xi32>
+    %inserted_246 = tensor.insert %input191 into %inserted_245[%c247] : tensor<256xi32>
+    %inserted_247 = tensor.insert %input248 into %inserted_246[%c248] : tensor<256xi32>
+    %inserted_248 = tensor.insert %input249 into %inserted_247[%c249] : tensor<256xi32>
+    %inserted_249 = tensor.insert %input250 into %inserted_248[%c250] : tensor<256xi32>
+    %inserted_250 = tensor.insert %input251 into %inserted_249[%c251] : tensor<256xi32>
+    %inserted_251 = tensor.insert %input252 into %inserted_250[%c252] : tensor<256xi32>
+    %inserted_252 = tensor.insert %input253 into %inserted_251[%c253] : tensor<256xi32>
+    %inserted_253 = tensor.insert %input254 into %inserted_252[%c254] : tensor<256xi32>
+    %inserted_254 = tensor.insert %input255 into %inserted_253[%c255] : tensor<256xi32>
+    secret.yield %inserted_254 : tensor<256xi32>
+  } -> !secret.secret<tensor<256xi32>>
+  return %0 : !secret.secret<tensor<256xi32>>
+}

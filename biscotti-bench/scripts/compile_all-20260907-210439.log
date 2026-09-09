@@ -1,0 +1,786 @@
+INFO: Invocation ID: e983a585-566f-42d6-94d3-7e9694f86e58
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/e983a585-566f-42d6-94d3-7e9694f86e58
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed 2 targets (2 packages loaded, 81 targets configured).
+[4,783 / 14,881] Compiling openmp/runtime/src/kmp_cancel.cpp; 0s remote-cache ... (128 actions, 0 running)
+[9,671 / 14,881] Compiling upb_generator/plugin.cc [for tool]; 0s remote-cache ... (128 actions, 1 running)
+[10,152 / 14,881] Compiling lib/Analysis/Cpp/ConstQualifierAnalysis.cpp; 1s remote-cache, linux-sandbox ... (125 actions, 1 running)
+[14,861 / 14,881] Compiling lib/Target/OpenFhePke/OpenFhePkePybindEmitter.cpp; 1s remote-cache, linux-sandbox ... (19 actions running)
+[14,864 / 14,881] Compiling lib/Target/TfheRust/Utils.cpp; 3s remote-cache, linux-sandbox ... (16 actions running)
+[14,871 / 14,881] Compiling lib/Target/Jaxite/JaxiteEmitter.cpp; 5s remote-cache, linux-sandbox ... (9 actions running)
+[14,876 / 14,881] Compiling lib/Target/TfheRust/TfheRustEmitter.cpp; 7s remote-cache, linux-sandbox ... (4 actions running)
+[14,878 / 14,881] Compiling lib/Target/Lattigo/LattigoEmitter.cpp; 8s remote-cache, linux-sandbox ... (2 actions running)
+[14,879 / 14,881] Compiling lib/Target/OpenFhePke/OpenFhePkeEmitter.cpp; 10s remote-cache, linux-sandbox
+INFO: Found 2 targets...
+INFO: Elapsed time: 14.684s, Critical Path: 10.48s
+INFO: 1743 processes: 5278 action cache hit, 1629 remote cache hit, 94 internal, 20 linux-sandbox.
+INFO: Build completed successfully, 1743 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/e983a585-566f-42d6-94d3-7e9694f86e58
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_5
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_5.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_5
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from argmax_5-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+INFO: Invocation ID: 34edc755-25e3-4d82-bd47-e7e1b4b6bf86
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/34edc755-25e3-4d82-bd47-e7e1b4b6bf86
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 1.056s, Critical Path: 0.03s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/34edc755-25e3-4d82-bd47-e7e1b4b6bf86
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/argmax_5-recursed.mlir:1:1: warning: No secret found in the module. Did you forget to annotate {secret.secret} to the function arguments?
+module {
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/argmax_5-recursed.mlir:1:1: note: see current operation:
+module {
+  func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    %cst = arith.constant dense<0> : tensor<5xi32>
+    %0 = secret.conceal %cst : tensor<5xi32> -> !secret.secret<tensor<5xi32>>
+    return %0 : !secret.secret<tensor<5xi32>>
+  }
+}
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/argmax_5-recursed.mlir:2:5: error: function return value at index 0 missing original type attribute
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/argmax_5-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<5xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<5xi32>}> : () -> tensor<5xi32>
+  %1 = "secret.conceal"(%0) : (tensor<5xi32>) -> !secret.secret<tensor<5xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<5xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/argmax_5-recursed.mlir:2:5: error: Failed to add client interface for func
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5/argmax_5-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<5xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<5xi32>}> : () -> tensor<5xi32>
+  %1 = "secret.conceal"(%0) : (tensor<5xi32>) -> !secret.secret<tensor<5xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<5xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0054 seconds
+
+  ----Wall Time----  ----Name----
+    0.0006 ( 11.9%)  Parser
+    0.0000 (  0.3%)  DebugValidateNames
+    0.0002 (  4.3%)  WrapGeneric
+    0.0003 (  4.7%)  AddClientInterface
+    0.0043 ( 78.7%)  Rest
+    0.0054 (100.0%)  Total
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_5
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_5.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_5_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from argmax_5-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+INFO: Invocation ID: 988ee57a-889c-494f-96a5-691f17f3f6d7
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/988ee57a-889c-494f-96a5-691f17f3f6d7
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 0.931s, Critical Path: 0.04s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/988ee57a-889c-494f-96a5-691f17f3f6d7
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/argmax_5-recursed.mlir:1:1: warning: No secret found in the module. Did you forget to annotate {secret.secret} to the function arguments?
+module {
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/argmax_5-recursed.mlir:1:1: note: see current operation:
+module {
+  func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    %cst = arith.constant dense<0> : tensor<5xi32>
+    %0 = secret.conceal %cst : tensor<5xi32> -> !secret.secret<tensor<5xi32>>
+    return %0 : !secret.secret<tensor<5xi32>>
+  }
+}
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/argmax_5-recursed.mlir:2:5: error: function return value at index 0 missing original type attribute
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/argmax_5-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<5xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<5xi32>}> : () -> tensor<5xi32>
+  %1 = "secret.conceal"(%0) : (tensor<5xi32>) -> !secret.secret<tensor<5xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<5xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/argmax_5-recursed.mlir:2:5: error: Failed to add client interface for func
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline/argmax_5-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<5xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<5xi32>}> : () -> tensor<5xi32>
+  %1 = "secret.conceal"(%0) : (tensor<5xi32>) -> !secret.secret<tensor<5xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<5xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0054 seconds
+
+  ----Wall Time----  ----Name----
+    0.0006 ( 11.8%)  Parser
+    0.0000 (  0.3%)  DebugValidateNames
+    0.0002 (  4.2%)  WrapGeneric
+    0.0003 (  4.7%)  AddClientInterface
+    0.0043 ( 79.0%)  Rest
+    0.0054 (100.0%)  Total
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_5
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_5.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_5_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from argmax_5-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+INFO: Invocation ID: ab733cbb-85e3-4832-a3a2-136b0a42d3a6
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/ab733cbb-85e3-4832-a3a2-136b0a42d3a6
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 0.925s, Critical Path: 0.04s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/ab733cbb-85e3-4832-a3a2-136b0a42d3a6
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/argmax_5-recursed.mlir:1:1: warning: No secret found in the module. Did you forget to annotate {secret.secret} to the function arguments?
+module {
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/argmax_5-recursed.mlir:1:1: note: see current operation:
+module {
+  func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    %cst = arith.constant dense<0> : tensor<5xi32>
+    %0 = secret.conceal %cst : tensor<5xi32> -> !secret.secret<tensor<5xi32>>
+    return %0 : !secret.secret<tensor<5xi32>>
+  }
+}
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/argmax_5-recursed.mlir:2:5: error: function return value at index 0 missing original type attribute
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/argmax_5-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<5xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<5xi32>}> : () -> tensor<5xi32>
+  %1 = "secret.conceal"(%0) : (tensor<5xi32>) -> !secret.secret<tensor<5xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<5xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/argmax_5-recursed.mlir:2:5: error: Failed to add client interface for func
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<5xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_5_baseline_vanilla/argmax_5-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<5xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<5xi32>}> : () -> tensor<5xi32>
+  %1 = "secret.conceal"(%0) : (tensor<5xi32>) -> !secret.secret<tensor<5xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<5xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0054 seconds
+
+  ----Wall Time----  ----Name----
+    0.0006 ( 11.8%)  Parser
+    0.0000 (  0.3%)  DebugValidateNames
+    0.0002 (  4.4%)  WrapGeneric
+    0.0003 (  4.7%)  AddClientInterface
+    0.0042 ( 78.7%)  Rest
+    0.0054 (100.0%)  Total
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_6
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from argmax_6-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+INFO: Invocation ID: e32bc8a5-d210-4461-a114-8217b271d05f
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/e32bc8a5-d210-4461-a114-8217b271d05f
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 0.982s, Critical Path: 0.03s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/e32bc8a5-d210-4461-a114-8217b271d05f
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/argmax_6-recursed.mlir:1:1: warning: No secret found in the module. Did you forget to annotate {secret.secret} to the function arguments?
+module {
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/argmax_6-recursed.mlir:1:1: note: see current operation:
+module {
+  func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    %cst = arith.constant dense<0> : tensor<6xi32>
+    %0 = secret.conceal %cst : tensor<6xi32> -> !secret.secret<tensor<6xi32>>
+    return %0 : !secret.secret<tensor<6xi32>>
+  }
+}
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/argmax_6-recursed.mlir:2:5: error: function return value at index 0 missing original type attribute
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/argmax_6-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<6xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<6xi32>}> : () -> tensor<6xi32>
+  %1 = "secret.conceal"(%0) : (tensor<6xi32>) -> !secret.secret<tensor<6xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<6xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/argmax_6-recursed.mlir:2:5: error: Failed to add client interface for func
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6/argmax_6-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<6xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<6xi32>}> : () -> tensor<6xi32>
+  %1 = "secret.conceal"(%0) : (tensor<6xi32>) -> !secret.secret<tensor<6xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<6xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0054 seconds
+
+  ----Wall Time----  ----Name----
+    0.0006 ( 11.7%)  Parser
+    0.0000 (  0.3%)  DebugValidateNames
+    0.0002 (  4.3%)  WrapGeneric
+    0.0003 (  4.8%)  AddClientInterface
+    0.0043 ( 78.9%)  Rest
+    0.0054 (100.0%)  Total
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_6_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from argmax_6-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+INFO: Invocation ID: df9ea5dc-edd2-4b91-aab9-37f4e8b62aec
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/df9ea5dc-edd2-4b91-aab9-37f4e8b62aec
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 1.009s, Critical Path: 0.03s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/df9ea5dc-edd2-4b91-aab9-37f4e8b62aec
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/argmax_6-recursed.mlir:1:1: warning: No secret found in the module. Did you forget to annotate {secret.secret} to the function arguments?
+module {
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/argmax_6-recursed.mlir:1:1: note: see current operation:
+module {
+  func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    %cst = arith.constant dense<0> : tensor<6xi32>
+    %0 = secret.conceal %cst : tensor<6xi32> -> !secret.secret<tensor<6xi32>>
+    return %0 : !secret.secret<tensor<6xi32>>
+  }
+}
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/argmax_6-recursed.mlir:2:5: error: function return value at index 0 missing original type attribute
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/argmax_6-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<6xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<6xi32>}> : () -> tensor<6xi32>
+  %1 = "secret.conceal"(%0) : (tensor<6xi32>) -> !secret.secret<tensor<6xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<6xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/argmax_6-recursed.mlir:2:5: error: Failed to add client interface for func
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline/argmax_6-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<6xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<6xi32>}> : () -> tensor<6xi32>
+  %1 = "secret.conceal"(%0) : (tensor<6xi32>) -> !secret.secret<tensor<6xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<6xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0054 seconds
+
+  ----Wall Time----  ----Name----
+    0.0006 ( 11.7%)  Parser
+    0.0000 (  0.3%)  DebugValidateNames
+    0.0002 (  4.2%)  WrapGeneric
+    0.0003 (  4.7%)  AddClientInterface
+    0.0043 ( 79.1%)  Rest
+    0.0054 (100.0%)  Total
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_6
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_6.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_6_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from argmax_6-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+INFO: Invocation ID: c465c3b3-f774-4d66-8dbf-50c8dd34cf8d
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/c465c3b3-f774-4d66-8dbf-50c8dd34cf8d
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 0.938s, Critical Path: 0.04s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/c465c3b3-f774-4d66-8dbf-50c8dd34cf8d
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/argmax_6-recursed.mlir:1:1: warning: No secret found in the module. Did you forget to annotate {secret.secret} to the function arguments?
+module {
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/argmax_6-recursed.mlir:1:1: note: see current operation:
+module {
+  func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    %cst = arith.constant dense<0> : tensor<6xi32>
+    %0 = secret.conceal %cst : tensor<6xi32> -> !secret.secret<tensor<6xi32>>
+    return %0 : !secret.secret<tensor<6xi32>>
+  }
+}
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/argmax_6-recursed.mlir:2:5: error: function return value at index 0 missing original type attribute
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/argmax_6-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<6xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<6xi32>}> : () -> tensor<6xi32>
+  %1 = "secret.conceal"(%0) : (tensor<6xi32>) -> !secret.secret<tensor<6xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<6xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/argmax_6-recursed.mlir:2:5: error: Failed to add client interface for func
+    func.func @argmax_clone_0_0() -> !secret.secret<tensor<6xi32>> {
+    ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_6_baseline_vanilla/argmax_6-recursed.mlir:2:5: note: see current operation:
+"func.func"() <{function_type = () -> !secret.secret<tensor<6xi32>>, sym_name = "argmax_clone_0_0"}> ({
+  %0 = "arith.constant"() <{value = dense<0> : tensor<6xi32>}> : () -> tensor<6xi32>
+  %1 = "secret.conceal"(%0) : (tensor<6xi32>) -> !secret.secret<tensor<6xi32>>
+  "func.return"(%1) : (!secret.secret<tensor<6xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0054 seconds
+
+  ----Wall Time----  ----Name----
+    0.0006 ( 11.7%)  Parser
+    0.0000 (  0.3%)  DebugValidateNames
+    0.0002 (  4.3%)  WrapGeneric
+    0.0002 (  4.6%)  AddClientInterface
+    0.0043 ( 79.1%)  Rest
+    0.0054 (100.0%)  Total
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_7
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 185: 2252158 Segmentation fault      (core dumped) "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+INFO: Invocation ID: d9589d19-f10a-4e94-b8ab-110355744bd1
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/d9589d19-f10a-4e94-b8ab-110355744bd1
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed target //tools:heir-opt (2 packages loaded, 60 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 1.285s, Critical Path: 0.04s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/d9589d19-f10a-4e94-b8ab-110355744bd1
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.  Program arguments: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir --recursive-call-vectorization=node-size-threshold=100 --canonicalize --cse --symbol-dce --mlir-timing -o /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/argmax_7-recursed.mlir
+ #0 0x0000000003a6137b llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a6137b)
+ #1 0x0000000003a5ec12 llvm::sys::RunSignalHandlers() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a5ec12)
+ #2 0x0000000003a61ebc SignalHandler(int, siginfo_t*, void*) Signals.cpp:0:0
+ #3 0x00001528ab726520 (/lib/x86_64-linux-gnu/libc.so.6+0x42520)
+ #4 0x000000000391c4fd mlir::Type::getContext() const (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x391c4fd)
+ #5 0x0000000002e935fc mlir::RegisteredOperationName::Model<mlir::func::FuncOp>::getInherentAttr(mlir::Operation*, llvm::StringRef) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2e935fc)
+ #6 0x00000000039ad383 mlir::SymbolTable::getSymbolName(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39ad383)
+ #7 0x00000000027a074e mlir::heir::RecursiveCallVectorization::tryUnrollingRecursiveBlock(mlir::Block*, mlir::Dialect*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a074e)
+ #8 0x0000000000d6f8eb void mlir::detail::walk<mlir::ForwardIterator>(mlir::Operation*, llvm::function_ref<void (mlir::Operation*)>, mlir::WalkOrder) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xd6f8eb)
+ #9 0x0000000000d6f98a void mlir::detail::walk<mlir::ForwardIterator>(mlir::Operation*, llvm::function_ref<void (mlir::Operation*)>, mlir::WalkOrder) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xd6f98a)
+#10 0x00000000027a2010 mlir::heir::RecursiveCallVectorization::runOnOperation() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a2010)
+#11 0x000000000387dbd4 mlir::detail::OpToOpPassAdaptor::run(mlir::Pass*, mlir::Operation*, mlir::AnalysisManager, bool, unsigned int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x387dbd4)
+#12 0x00000000038803e6 mlir::PassManager::runPasses(mlir::Operation*, mlir::AnalysisManager) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x38803e6)
+#13 0x000000000388028c mlir::PassManager::run(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x388028c)
+#14 0x0000000002bfea62 performActions(llvm::raw_ostream&, std::__1::shared_ptr<llvm::SourceMgr> const&, mlir::MLIRContext*, mlir::MlirOptMainConfig const&) MlirOptMain.cpp:0:0
+#15 0x0000000002bfdeeb llvm::LogicalResult llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>::callback_fn<mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&)::$_0>(long, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&) MlirOptMain.cpp:0:0
+#16 0x00000000039c1bba mlir::splitAndProcessBuffer(std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>, llvm::raw_ostream&, llvm::StringRef, llvm::StringRef) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39c1bba)
+#17 0x0000000002bf61a9 mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf61a9)
+#18 0x0000000002bf6601 mlir::MlirOptMain(int, char**, llvm::StringRef, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6601)
+#19 0x0000000002bf6950 mlir::MlirOptMain(int, char**, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6950)
+#20 0x0000000000cac0bf main (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xcac0bf)
+#21 0x00001528ab70dd90 __libc_start_call_main ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+#22 0x00001528ab70de40 call_init ./csu/../csu/libc-start.c:128:20
+#23 0x00001528ab70de40 __libc_start_main ./csu/../csu/libc-start.c:379:5
+#24 0x0000000000ca902a _start (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xca902a)
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_7
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 185: 2254336 Segmentation fault      (core dumped) "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+INFO: Invocation ID: 4d821308-8bf6-4b0c-8617-8acd8cb1cc81
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/4d821308-8bf6-4b0c-8617-8acd8cb1cc81
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //tools:heir-opt (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 1.044s, Critical Path: 0.03s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/4d821308-8bf6-4b0c-8617-8acd8cb1cc81
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.  Program arguments: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir --recursive-call-vectorization=node-size-threshold=-1 --canonicalize --cse --symbol-dce --mlir-timing -o /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline/argmax_7-recursed.mlir
+ #0 0x0000000003a6137b llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a6137b)
+ #1 0x0000000003a5ec12 llvm::sys::RunSignalHandlers() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a5ec12)
+ #2 0x0000000003a61ebc SignalHandler(int, siginfo_t*, void*) Signals.cpp:0:0
+ #3 0x000014ba0e07a520 (/lib/x86_64-linux-gnu/libc.so.6+0x42520)
+ #4 0x000000000391c4fd mlir::Type::getContext() const (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x391c4fd)
+ #5 0x0000000002e935fc mlir::RegisteredOperationName::Model<mlir::func::FuncOp>::getInherentAttr(mlir::Operation*, llvm::StringRef) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2e935fc)
+ #6 0x00000000039ad383 mlir::SymbolTable::getSymbolName(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39ad383)
+ #7 0x00000000027a074e mlir::heir::RecursiveCallVectorization::tryUnrollingRecursiveBlock(mlir::Block*, mlir::Dialect*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a074e)
+ #8 0x0000000000d6f8eb void mlir::detail::walk<mlir::ForwardIterator>(mlir::Operation*, llvm::function_ref<void (mlir::Operation*)>, mlir::WalkOrder) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xd6f8eb)
+ #9 0x0000000000d6f98a void mlir::detail::walk<mlir::ForwardIterator>(mlir::Operation*, llvm::function_ref<void (mlir::Operation*)>, mlir::WalkOrder) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xd6f98a)
+#10 0x00000000027a2010 mlir::heir::RecursiveCallVectorization::runOnOperation() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a2010)
+#11 0x000000000387dbd4 mlir::detail::OpToOpPassAdaptor::run(mlir::Pass*, mlir::Operation*, mlir::AnalysisManager, bool, unsigned int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x387dbd4)
+#12 0x00000000038803e6 mlir::PassManager::runPasses(mlir::Operation*, mlir::AnalysisManager) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x38803e6)
+#13 0x000000000388028c mlir::PassManager::run(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x388028c)
+#14 0x0000000002bfea62 performActions(llvm::raw_ostream&, std::__1::shared_ptr<llvm::SourceMgr> const&, mlir::MLIRContext*, mlir::MlirOptMainConfig const&) MlirOptMain.cpp:0:0
+#15 0x0000000002bfdeeb llvm::LogicalResult llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>::callback_fn<mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&)::$_0>(long, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&) MlirOptMain.cpp:0:0
+#16 0x00000000039c1bba mlir::splitAndProcessBuffer(std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>, llvm::raw_ostream&, llvm::StringRef, llvm::StringRef) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39c1bba)
+#17 0x0000000002bf61a9 mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf61a9)
+#18 0x0000000002bf6601 mlir::MlirOptMain(int, char**, llvm::StringRef, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6601)
+#19 0x0000000002bf6950 mlir::MlirOptMain(int, char**, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6950)
+#20 0x0000000000cac0bf main (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xcac0bf)
+#21 0x000014ba0e061d90 __libc_start_call_main ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+#22 0x000014ba0e061e40 call_init ./csu/../csu/libc-start.c:128:20
+#23 0x000014ba0e061e40 __libc_start_main ./csu/../csu/libc-start.c:379:5
+#24 0x0000000000ca902a _start (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xca902a)
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_7
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 185: 2255772 Segmentation fault      (core dumped) "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+INFO: Invocation ID: fcdf2c83-a98e-4a1c-a96c-3cf548388e2c
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/fcdf2c83-a98e-4a1c-a96c-3cf548388e2c
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+Analyzing: target //tools:heir-opt (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed target //tools:heir-opt (2 packages loaded, 60 targets configured).
+INFO: Found 1 target...
+Target //tools:heir-opt up-to-date:
+  bazel-bin/tools/heir-opt
+INFO: Elapsed time: 1.015s, Critical Path: 0.03s
+INFO: 94 processes: 6881 action cache hit, 94 internal.
+INFO: Build completed successfully, 94 total actions
+INFO:
+INFO: Running command line: bazel-bin/tools/heir-opt <args omitted>
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/fcdf2c83-a98e-4a1c-a96c-3cf548388e2c
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.  Program arguments: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir --recursive-call-vectorization=node-size-threshold=-1 --canonicalize --cse --symbol-dce --mlir-timing -o /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7_baseline_vanilla/argmax_7-recursed.mlir
+ #0 0x0000000003a6137b llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a6137b)
+ #1 0x0000000003a5ec12 llvm::sys::RunSignalHandlers() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x3a5ec12)
+ #2 0x0000000003a61ebc SignalHandler(int, siginfo_t*, void*) Signals.cpp:0:0
+ #3 0x00001470803aa520 (/lib/x86_64-linux-gnu/libc.so.6+0x42520)
+ #4 0x0000000002008d14 mlir::CallGraphNode::getCallableRegion() const (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2008d14)
+ #5 0x00000000039247dc mlir::DictionaryAttr::get(llvm::StringRef) const (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39247dc)
+ #6 0x00000000039ad3a0 mlir::SymbolTable::getSymbolName(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39ad3a0)
+ #7 0x00000000027a074e mlir::heir::RecursiveCallVectorization::tryUnrollingRecursiveBlock(mlir::Block*, mlir::Dialect*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a074e)
+ #8 0x0000000000d6f8eb void mlir::detail::walk<mlir::ForwardIterator>(mlir::Operation*, llvm::function_ref<void (mlir::Operation*)>, mlir::WalkOrder) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xd6f8eb)
+ #9 0x0000000000d6f98a void mlir::detail::walk<mlir::ForwardIterator>(mlir::Operation*, llvm::function_ref<void (mlir::Operation*)>, mlir::WalkOrder) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xd6f98a)
+#10 0x00000000027a2010 mlir::heir::RecursiveCallVectorization::runOnOperation() (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x27a2010)
+#11 0x000000000387dbd4 mlir::detail::OpToOpPassAdaptor::run(mlir::Pass*, mlir::Operation*, mlir::AnalysisManager, bool, unsigned int) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x387dbd4)
+#12 0x00000000038803e6 mlir::PassManager::runPasses(mlir::Operation*, mlir::AnalysisManager) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x38803e6)
+#13 0x000000000388028c mlir::PassManager::run(mlir::Operation*) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x388028c)
+#14 0x0000000002bfea62 performActions(llvm::raw_ostream&, std::__1::shared_ptr<llvm::SourceMgr> const&, mlir::MLIRContext*, mlir::MlirOptMainConfig const&) MlirOptMain.cpp:0:0
+#15 0x0000000002bfdeeb llvm::LogicalResult llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>::callback_fn<mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&)::$_0>(long, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&) MlirOptMain.cpp:0:0
+#16 0x00000000039c1bba mlir::splitAndProcessBuffer(std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>, llvm::raw_ostream&, llvm::StringRef, llvm::StringRef) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x39c1bba)
+#17 0x0000000002bf61a9 mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer> >, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf61a9)
+#18 0x0000000002bf6601 mlir::MlirOptMain(int, char**, llvm::StringRef, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6601)
+#19 0x0000000002bf6950 mlir::MlirOptMain(int, char**, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0x2bf6950)
+#20 0x0000000000cac0bf main (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xcac0bf)
+#21 0x0000147080391d90 __libc_start_call_main ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+#22 0x0000147080391e40 call_init ./csu/../csu/libc-start.c:128:20
+#23 0x0000147080391e40 __libc_start_main ./csu/../csu/libc-start.c:379:5
+#24 0x0000000000ca902a _start (/local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/execroot/_main/bazel-out/k8-opt/bin/tools/heir-opt+0xca902a)
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_8
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_8.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_8-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/argmax_8-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/argmax_8-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/compile-timing.txt
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_8
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_8.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_8-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline/argmax_8-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline/argmax_8-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline/compile-timing.txt
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_8
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_8.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_8-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla/argmax_8-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla/argmax_8-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline_vanilla/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline_vanilla/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8_baseline_vanilla/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8_baseline_vanilla/compile-timing.txt

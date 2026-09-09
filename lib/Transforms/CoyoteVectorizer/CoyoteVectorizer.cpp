@@ -24,6 +24,34 @@
 #include "PythonScheduler.h"
 #include "SimulatedAnnealing.h"
 
+// ---------------------------------------------------------------------------
+// Biscotti debug gate. The verbose scheduling/vectorization traces below are
+// compiled in but silent by default; set BISCOTTI_DEBUG=1 in the environment
+// to turn them on at runtime (no rebuild needed). Genuine error diagnostics
+// are NOT routed through this and always print.
+// ---------------------------------------------------------------------------
+#ifndef BISCOTTI_DEBUG_GATE
+#define BISCOTTI_DEBUG_GATE
+#include <cstdlib>
+
+#include "llvm/include/llvm/Support/raw_ostream.h"  // from @llvm-project
+namespace biscotti_dbg_detail {
+inline bool on() {
+  static const bool v = (std::getenv("BISCOTTI_DEBUG") != nullptr);
+  return v;
+}
+}  // namespace biscotti_dbg_detail
+inline llvm::raw_ostream& bdbg() {
+  return ::biscotti_dbg_detail::on() ? llvm::errs() : llvm::nulls();
+}
+#define BDBG(...)                      \
+  do {                                 \
+    if (::biscotti_dbg_detail::on()) { \
+      __VA_ARGS__;                     \
+    }                                  \
+  } while (0)
+#endif  // BISCOTTI_DEBUG_GATE
+
 namespace mlir {
 namespace heir {
 
@@ -140,16 +168,16 @@ class ColumnAssigner {
     assignFinalColumns();
   }
 
-  /// Print column assignments to llvm::errs() for debugging.
+  /// Print column assignments to bdbg() for debugging.
   void printColumns() const {
     // Collect nodes grouped by column, sorted by epoch within each column.
     std::map<int64_t, std::vector<SubCircuitNodeImpl*>> byColumn;
     for (auto& nodePtr : graph.getVertices())
       byColumn[nodePtr->column].push_back(nodePtr.get());
-    llvm::errs() << "=== Column Assignments (" << byColumn.size()
-                 << " columns) ===\n";
+    bdbg() << "=== Column Assignments (" << byColumn.size()
+           << " columns) ===\n";
     for (auto& [col, nodes] : byColumn) {
-      llvm::errs() << "  col " << col << ":\n";
+      bdbg() << "  col " << col << ":\n";
       // Sort by epoch for a consistent print order.
       auto sorted = nodes;
       std::sort(sorted.begin(), sorted.end(),
@@ -157,19 +185,19 @@ class ColumnAssigner {
                   return a->epoch < b->epoch;
                 });
       for (auto* node : sorted) {
-        llvm::errs() << "    epoch=" << node->epoch
-                     << "  ops=" << node->operations.size() << " [";
+        bdbg() << "    epoch=" << node->epoch
+               << "  ops=" << node->operations.size() << " [";
         bool first = true;
         for (auto* op : node->operations) {
-          if (!first) llvm::errs() << ", ";
+          if (!first) bdbg() << ", ";
           // if (!op) {
-          //   llvm::errs() << "<null-op>";
+          //   bdbg() << "<null-op>";
           //   continue;
           // }
-          op->print(llvm::errs());
+          if (::biscotti_dbg_detail::on()) op->print(llvm::errs());
           first = false;
         }
-        llvm::errs() << "]\n";
+        bdbg() << "]\n";
       }
     }
   }
@@ -364,7 +392,7 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
                       const llvm::DenseMap<BlockArgument, int64_t>& forcedLanes,
                       const uint64_t forcedWarpSize,
                       bool ShouldThisLowerToMLIR) {
-  llvm::outs() << "\n=== Coyote Vectorizer Pass ===\n\n";
+  bdbg() << "\n=== Coyote Vectorizer Pass ===\n\n";
 
   //==========================================================================
   // Step 1: Identify I/O groups and collect operations
@@ -376,16 +404,16 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // tensor.extract / tensor.insert ops are always present in the graph.
   // gradeGraph pins IO ops to their epochs via nodeOf(); if those ops are
   // absent, nodeOf returns nullptr and the schedule is silently broken.
-  llvm::errs() << "\n[1/9] Identifying and expanding I/O groups...\n";
+  bdbg() << "\n[1/9] Identifying and expanding I/O groups...\n";
 
   auto [inputGroups, outputGroups] = identifyIOGroups(func);
 
-  llvm::errs() << "  Input groups: " << inputGroups.size() << "\n";
+  bdbg() << "  Input groups: " << inputGroups.size() << "\n";
   for (size_t i = 0; i < inputGroups.size(); ++i) {
-    llvm::errs() << "    Group " << i << ": " << inputGroups[i].size()
-                 << " operations (transitively expanded)\n";
+    bdbg() << "    Group " << i << ": " << inputGroups[i].size()
+           << " operations (transitively expanded)\n";
   }
-  llvm::errs() << "  Output groups: " << outputGroups.size() << "\n";
+  bdbg() << "  Output groups: " << outputGroups.size() << "\n";
 
   // Collect all operations, then union in IO ops so gradeGraph always sees
   // them.
@@ -402,17 +430,16 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
 
   // Debug: Print identified groups
   for (auto& group : inputGroups) {
-    llvm::outs() << "Expanding input group with " << group.size()
-                 << " seed ops...\n";
+    bdbg() << "Expanding input group with " << group.size() << " seed ops...\n";
     for (auto* op : group) {
-      llvm::outs() << "  Seed op: " << *op << "\n";
+      bdbg() << "  Seed op: " << *op << "\n";
     }
   }
   for (auto& group : outputGroups) {
-    llvm::outs() << "Expanding output group with " << group.size()
-                 << " seed ops...\n";
+    bdbg() << "Expanding output group with " << group.size()
+           << " seed ops...\n";
     for (auto* op : group) {
-      llvm::outs() << "  Seed op: " << *op << "\n";
+      bdbg() << "  Seed op: " << *op << "\n";
     }
   }
 
@@ -430,16 +457,15 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
     llvm::errs() << "No operations to vectorize\n";
     return;
   }
-  llvm::errs() << "Found " << operations.size() << " operations total\n";
+  bdbg() << "Found " << operations.size() << " operations total\n";
 
   //==========================================================================
   // Step 1.a: Replicate multi-use loads
   //==========================================================================
   if (forcedLanes.size() == 0) {
-    llvm::errs() << "\n[1.a/9] Replicating multi-use loads...\n";
+    bdbg() << "\n[1.a/9] Replicating multi-use loads...\n";
     replicateMultiUseExtracts(operations, inputGroups);
-    llvm::errs() << "  Operations after replication: " << operations.size()
-                 << "\n";
+    bdbg() << "  Operations after replication: " << operations.size() << "\n";
     func.dump();
   }
 
@@ -448,9 +474,9 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //==========================================================================
   // Python Coyote scheduler: serialize circuit → call Python → get schedule
   //==========================================================================
-  llvm::errs() << "\n[2-8/9] Using Python Coyote scheduler...\n";
+  bdbg() << "\n[2-8/9] Using Python Coyote scheduler...\n";
   {
-    llvm::outs() << "WARP SIZE: " << forcedWarpSize << "\n";
+    bdbg() << "WARP SIZE: " << forcedWarpSize << "\n";
     auto pySchedule = runPythonScheduler(operations, inputGroups, forcedLanes,
                                          forcedWarpSize);
     if (!pySchedule) {
@@ -465,9 +491,9 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // Step 2: Build initial circuit graph
   // Python equivalent: graph = instr_sequence_to_nx_graph(comp.code)
   //==========================================================================
-  llvm::errs() << "\n[2/9] Building circuit graph...\n";
+  bdbg() << "\n[2/9] Building circuit graph...\n";
   CircuitGraph graph = buildCircuitGraph(operations);
-  llvm::errs() << "  Graph has " << graph.getVertices().size() << " vertices\n";
+  bdbg() << "  Graph has " << graph.getVertices().size() << " vertices\n";
 
   //==========================================================================
   // Step 3: Assign epochs (topological grading)
@@ -481,12 +507,12 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //
   // In Python, this happens inside the protoschedule search, not as a
   // separate step. We do it explicitly here for clarity.
-  llvm::errs() << "\n[3/9] Assigning epochs (grading graph)...\n";
+  bdbg() << "\n[3/9] Assigning epochs (grading graph)...\n";
   auto [inputEpochs, outputEpochs] =
       gradeGraph(graph, inputGroups, outputGroups);
-  llvm::outs() << inputEpochs.size() << " input epochs, " << outputEpochs.size()
-               << " output epochs\n";
-  llvm::errs() << "Assigned epochs to all nodes\n";
+  bdbg() << inputEpochs.size() << " input epochs, " << outputEpochs.size()
+         << " output epochs\n";
+  bdbg() << "Assigned epochs to all nodes\n";
 
   //==========================================================================
   // Step 4: Build lane constraint map
@@ -502,11 +528,11 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //
   // TODO: Extract forceLanes from operation attributes or pass options
   // For now, empty (no forced constraints)
-  llvm::errs() << "\n[4/9] Building lane constraints...\n";
+  bdbg() << "\n[4/9] Building lane constraints...\n";
   llvm::DenseMap<Operation*, int64_t> forceLanes;  // Empty for now
   // TODO: Check for heir.forced_lane attributes on operations
   // TODO: Add pass option for user-specified constraints
-  llvm::errs() << "  No forced lane constraints\n";
+  bdbg() << "  No forced lane constraints\n";
 
   //==========================================================================
   // Step 4.5: Columnize (bipartite matching for initial lane assignment)
@@ -516,11 +542,11 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // adjacent epoch pairs. This gives the annealer a structured starting
   // point rather than a flat/random one, dramatically reducing the search
   // burden in searchQuotients.
-  llvm::errs() << "\n[4.5/9] Columnizing (bipartite matching)...\n";
+  bdbg() << "\n[4.5/9] Columnizing (bipartite matching)...\n";
   ColumnAssigner columnizer(graph, forceLanes);
   columnizer.assignColumns();
   columnizer.printColumns();
-  llvm::errs() << "  Initial lane assignment done\n";
+  bdbg() << "  Initial lane assignment done\n";
 
   //==========================================================================
   // Step 5: Quotient search (best-first with edge grouping)
@@ -549,13 +575,13 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // - epoch: time step
   // - column: lane number
 
-  llvm::errs() << "\n[5/9] Quotient search...\n";
+  bdbg() << "\n[5/9] Quotient search...\n";
   unsigned searchRounds = 200;  // Match Python default (was 20, too low)
   auto bestSchedule = searchQuotients(graph, inputGroups, outputGroups,
                                       forceLanes, searchRounds);
-  llvm::errs() << "  Best cost: " << bestSchedule.cost << "\n";
-  llvm::errs() << "  (Rotation: " << bestSchedule.rotationCost
-               << ", Height: " << bestSchedule.heightCost << ")\n";
+  bdbg() << "  Best cost: " << bestSchedule.cost << "\n";
+  bdbg() << "  (Rotation: " << bestSchedule.rotationCost
+         << ", Height: " << bestSchedule.heightCost << ")\n";
   printGraph(bestSchedule.graph, "Best schedule graph after quotient search");
 
   //==========================================================================
@@ -574,7 +600,7 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   //
   // Note: In Python, quotient nodes may contain multiple operations, so we
   // need to extract per-operation lane assignments.
-  llvm::errs() << "\n[6/9] Normalizing and extracting lane assignments...\n";
+  bdbg() << "\n[6/9] Normalizing and extracting lane assignments...\n";
 
   // Find minimum column (should already be 0 after quotient search, but
   // check)
@@ -603,7 +629,7 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
       warpSize = normalizedColumn + 1;
     }
   }
-  llvm::errs() << "  Warp size: " << warpSize << " lanes\n";
+  bdbg() << "  Warp size: " << warpSize << " lanes\n";
 
   //==========================================================================
   // Step 7: Fine-grained instruction alignment (epoch-by-epoch)
@@ -627,8 +653,7 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // current epoch, so cross-epoch dependencies are implicitly satisfied
   // (they reference operations not present in the local dep graph, thus
   // treated as already-scheduled). Epochs are then stacked sequentially.
-  llvm::errs()
-      << "\n[7/9] Computing fine-grained alignment (epoch-by-epoch)...\n";
+  bdbg() << "\n[7/9] Computing fine-grained alignment (epoch-by-epoch)...\n";
 
   // Build op -> epoch map from the best quotient graph.
   llvm::DenseMap<Operation*, int64_t> opToEpoch;
@@ -664,7 +689,7 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   for (size_t i = 0; i < operations.size(); ++i)
     alignment[i] = alignmentMap.lookup(operations[i]);
 
-  llvm::errs() << "  Schedule height: " << programLength << " cycles\n";
+  bdbg() << "  Schedule height: " << programLength << " cycles\n";
 
   //==========================================================================
   // Step 8: Build complete Schedule object
@@ -696,9 +721,9 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // //
   // // IMPORTANT: In Python, this step produces a NEW schedule. We need to
   // // update our schedule in-place or regenerate it.
-  llvm::errs() << "\n[8/9] Optimizing blend operations...\n";
+  bdbg() << "\n[8/9] Optimizing blend operations...\n";
   optimizeBlends(schedule, 100);  // TODO: Match Python's iteration count
-  llvm::errs() << "  Blend optimization complete\n";
+  bdbg() << "  Blend optimization complete\n";
 
 #endif  // USE_PYTHON_COYOTE
 
@@ -713,14 +738,14 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // After lowering, scalar op results are replaced by tensor.extract from
   // the vectorized result tensors, and the original scalar ops are erased.
   for (auto op : schedule.instructions) {
-    llvm::errs() << "Op: " << *op << " lane: " << schedule.lanes[op]
-                 << " align: " << schedule.alignment[op] << "\n";
+    bdbg() << "Op: " << *op << " lane: " << schedule.lanes[op]
+           << " align: " << schedule.alignment[op] << "\n";
   }
 
   if (ShouldThisLowerToMLIR) {
-    llvm::errs() << "\n[9/9] Lowering schedule to MLIR tensor operations...\n";
+    bdbg() << "\n[9/9] Lowering schedule to MLIR tensor operations...\n";
     lowerToMLIR(func, schedule);
-    llvm::errs() << "  Lowering complete\n";
+    bdbg() << "  Lowering complete\n";
 
     // Canonicalize + DCE to clean up dead ops left behind by lowering.
     MLIRContext* ctx = func.getContext();
@@ -742,13 +767,13 @@ void coyoteVectorizer(func::FuncOp& func, Schedule& finalSchedule,
   // Output the final schedule for testing/verification
   finalSchedule = schedule;
 
-  llvm::errs() << "\n=== Generated MLIR ===\n";
-  func.print(llvm::errs());
-  llvm::errs() << "\n=====================\n";
+  bdbg() << "\n=== Generated MLIR ===\n";
+  if (::biscotti_dbg_detail::on()) func.print(llvm::errs());
+  bdbg() << "\n=====================\n";
 
-  llvm::errs() << "\n=== Coyote Vectorizer Complete ===\n";
-  llvm::errs() << "Final schedule: " << schedule.warpSize << " lanes, "
-               << schedule.maxStep() + 1 << " cycles\n\n";
+  bdbg() << "\n=== Coyote Vectorizer Complete ===\n";
+  bdbg() << "Final schedule: " << schedule.warpSize << " lanes, "
+         << schedule.maxStep() + 1 << " cycles\n\n";
 }
 
 struct CoyoteVectorizerPass

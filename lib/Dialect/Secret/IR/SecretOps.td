@@ -224,7 +224,7 @@ def Secret_GenericOp : Secret_Op<"generic", [
     //    ValueRange(modifiedGeneric.getResults()
     //                              .drop_back(newResults.size())));
     std::pair<GenericOp, ValueRange> addNewYieldedValues(
-      ValueRange newValuesToYield, PatternRewriter &rewriter);
+      ValueRange newValuesToYield, RewriterBase &rewriter);
 
     // Clones the current op with the yielded values in `yieldedValuesToRemove`
     // removed. Users can replace the current op with the result of this method
@@ -265,7 +265,7 @@ def Secret_GenericOp : Secret_Op<"generic", [
       inlineInPlaceDroppingSecrets(rewriter, getOperands());
     }
 
-    GenericOp cloneWithNewResultTypes(TypeRange newTypes, PatternRewriter &rewriter,
+    GenericOp cloneWithNewResultTypes(TypeRange newTypes, RewriterBase &rewriter,
                                       bool preserveAttrs = false);
 
     //===------------------------------------------------------------------===//

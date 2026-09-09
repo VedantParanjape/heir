@@ -36,6 +36,18 @@ std::vector<Plaintext> argmax_clone_0_0__preprocessing(CryptoContextT cc) {
   [[maybe_unused]] size_t v19 = 19;
   std::vector<int64_t> v20 = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+      0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0};
+  std::vector<int64_t> v21 = {
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -46,7 +58,7 @@ std::vector<Plaintext> argmax_clone_0_0__preprocessing(CryptoContextT cc) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  std::vector<int64_t> v21 = {
+  std::vector<int64_t> v22 = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
       0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -58,18 +70,6 @@ std::vector<Plaintext> argmax_clone_0_0__preprocessing(CryptoContextT cc) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
       0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
-  std::vector<int64_t> v22 = {
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-      0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0};
   std::vector<int64_t> v23 = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -107,18 +107,6 @@ std::vector<Plaintext> argmax_clone_0_0__preprocessing(CryptoContextT cc) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
       0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   std::vector<int64_t> v26 = {
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-      0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
-      1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0};
-  std::vector<int64_t> v27 = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -130,6 +118,18 @@ std::vector<Plaintext> argmax_clone_0_0__preprocessing(CryptoContextT cc) {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<int64_t> v27 = {
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+      0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0};
   std::vector<int64_t> v28 = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
@@ -488,9 +488,9 @@ argmax_clone_0_0__preprocessedStruct argmax_clone_0_0__preprocessed(
     std::vector<CiphertextT> v6, std::vector<CiphertextT> v7,
     std::vector<CiphertextT> v8, std::vector<CiphertextT> v9,
     const std::vector<Plaintext>& v10) {
-  std::vector<size_t> v11 = {40, 57};
-  std::vector<size_t> v12 = {33, 40};
-  std::vector<size_t> v13 = {57, 9};
+  std::vector<size_t> v11 = {57, 40};
+  std::vector<size_t> v12 = {40, 33};
+  std::vector<size_t> v13 = {9, 57};
   [[maybe_unused]] size_t v14 = 0;
   [[maybe_unused]] size_t v15 = 9;
   [[maybe_unused]] size_t v16 = 33;
@@ -523,136 +523,136 @@ argmax_clone_0_0__preprocessedStruct argmax_clone_0_0__preprocessed(
   auto ct6 = cc->EvalMultNoRelin(ct4, ct5);
   cc->RelinearizeInPlace(ct6);
   const auto& digit_decomp1 = cc->EvalFastRotationPrecompute(ct6);
-  const auto& ct8 =
-      cc->EvalFastRotation(ct6, 57, 2 * cc->GetRingDimension(), digit_decomp1);
   Plaintext pt = v10[0];
+  const auto& ct8 = v6[0];
   auto ct9 = cc->EvalMult(ct8, pt);
+  const auto& ct10 =
+      cc->EvalFastRotation(ct6, 57, 2 * cc->GetRingDimension(), digit_decomp1);
   Plaintext pt1 = v10[1];
-  const auto& ct10 = cc->EvalMult(ct6, pt1);
-  cc->EvalAddInPlace(ct9, ct10);
+  const auto& ct11 = cc->EvalMult(ct10, pt1);
+  cc->EvalAddInPlace(ct9, ct11);
   Plaintext pt2 = v10[2];
-  const auto& ct12 = v6[0];
-  const auto& ct13 = cc->EvalMult(ct12, pt2);
+  const auto& ct13 = cc->EvalMult(ct6, pt2);
   cc->EvalAddInPlace(ct9, ct13);
-  const auto& ct15 = v1[0];
-  auto ct16 = cc->EvalMult(ct15, pt2);
+  std::vector<CiphertextT> v36(2);
   Plaintext pt3 = v10[3];
   Plaintext pt4 = v10[4];
-  const auto& ct17 = cc->EvalMult(ct2, pt4);
-  std::vector<CiphertextT> v36(2);
-  auto v37 = v36;
-#pragma omp parallel for
-  for (auto v38 = 0; v38 < 2; ++v38) {
-    size_t v40 = v13[v38];
-    const auto& ct18 = cc->EvalFastRotation(
-        ct2, v40, 2 * cc->GetRingDimension(), digit_decomp);
-    const std::vector<CiphertextT> v41 = {ct18};
-    v37[v38] = v41[0];
-  }
-  const auto& ct19 = v37[0];
-  const auto& ct20 = v37[1];
+  const auto& ct15 = cc->EvalMult(ct2, pt4);
   Plaintext pt5 = v10[5];
-  const auto& ct21 = cc->EvalMult(ct20, pt5);
+  const auto& ct16 = v1[0];
+  const auto& ct17 = cc->EvalMult(ct16, pt);
   Plaintext pt6 = v10[6];
-  const auto& ct22 = v5[0];
-  auto ct23 = cc->EvalMult(ct22, pt6);
+  auto ct18 = cc->EvalMult(ct2, pt6);
   Plaintext pt7 = v10[7];
-  const auto& ct24 = cc->EvalMult(ct2, pt7);
+  const auto& ct19 = v5[0];
+  const auto& ct20 = cc->EvalMult(ct19, pt7);
+  cc->EvalAddInPlace(ct18, ct20);
+  const auto& ct22 = v2[0];
+  auto ct23 = cc->EvalMult(ct22, pt7);
+  const auto& ct24 = cc->EvalMult(ct6, pt6);
   cc->EvalAddInPlace(ct23, ct24);
-  auto ct26 = cc->EvalMult(ct6, pt7);
-  const auto& ct27 = v2[0];
-  const auto& ct28 = cc->EvalMult(ct27, pt6);
-  cc->EvalAddInPlace(ct26, ct28);
-  auto ct30 = cc->EvalMultNoRelin(ct23, ct26);
-  cc->RelinearizeInPlace(ct30);
-  const auto& ct32 = v4[0];
-  auto ct33 = cc->EvalMult(ct32, pt7);
-  const auto& ct34 =
-      cc->EvalFastRotation(ct6, 9, 2 * cc->GetRingDimension(), digit_decomp1);
-  const auto& ct35 = cc->EvalMult(ct34, pt);
-  cc->EvalAddInPlace(ct33, ct35);
-  const auto& ct37 = cc->EvalMult(ct30, pt3);
-  cc->EvalAddInPlace(ct33, ct37);
+  auto ct26 = cc->EvalMultNoRelin(ct18, ct23);
+  cc->RelinearizeInPlace(ct26);
   Plaintext pt8 = v10[8];
-  auto v42 = v36;
-#pragma omp parallel for
-  for (auto v43 = 0; v43 < 2; ++v43) {
-    size_t v45 = v12[v43];
-    const auto& ct39 = cc->EvalFastRotation(
-        ct2, v45, 2 * cc->GetRingDimension(), digit_decomp);
-    const std::vector<CiphertextT> v46 = {ct39};
-    v42[v43] = v46[0];
-  }
-  const auto& ct40 = v42[0];
-  const auto& ct41 = v42[1];
   Plaintext pt9 = v10[9];
-  const auto& ct42 = cc->EvalMult(ct41, pt9);
   Plaintext pt10 = v10[10];
-  const auto& ct43 = cc->EvalMult(ct2, pt10);
-  const auto& ct44 = cc->EvalRotate(ct30, 33);
+  const auto& ct28 = cc->EvalMult(ct2, pt10);
+  const auto& ct29 = v4[0];
+  const auto& ct30 = cc->EvalMult(ct29, pt6);
+  const auto& ct31 = cc->EvalMult(ct26, pt3);
+  const auto& ct32 =
+      cc->EvalFastRotation(ct6, 9, 2 * cc->GetRingDimension(), digit_decomp1);
+  const auto& ct33 = cc->EvalMult(ct32, pt1);
+  const auto& ct34 = v3[0];
+  auto ct35 = cc->EvalMult(ct34, pt6);
+  const auto& ct36 = cc->EvalRotate(ct26, 33);
   Plaintext pt11 = v10[11];
-  auto ct45 = cc->EvalMult(ct44, pt11);
+  const auto& ct37 = cc->EvalMult(ct36, pt11);
+  cc->EvalAddInPlace(ct35, ct37);
   Plaintext pt12 = v10[12];
-  const auto& ct46 = cc->EvalMult(ct30, pt12);
-  cc->EvalAddInPlace(ct45, ct46);
-  const auto& ct48 = v3[0];
-  const auto& ct49 = cc->EvalMult(ct48, pt7);
-  cc->EvalAddInPlace(ct45, ct49);
+  const auto& ct39 = cc->EvalMult(ct26, pt12);
+  cc->EvalAddInPlace(ct35, ct39);
   Plaintext pt13 = v10[13];
   Plaintext pt14 = v10[14];
   Plaintext pt15 = v10[15];
   Plaintext pt16 = v10[16];
   Plaintext pt17 = v10[17];
   Plaintext pt18 = v10[18];
-  std::vector<CiphertextT> v47(1);
+  std::vector<CiphertextT> v37(1);
   Plaintext pt19 = v10[19];
-  auto ct51 = cc->EvalMult(ct30, pt7);
-  const auto& ct52 = cc->EvalMult(ct19, pt3);
-  cc->EvalAddInPlace(ct16, ct52);
-  cc->EvalAddInPlace(ct16, ct17);
-  cc->EvalAddInPlace(ct16, ct21);
-  auto ct56 = cc->EvalMultNoRelin(ct9, ct16);
-  cc->RelinearizeInPlace(ct56);
-  const auto& digit_decomp2 = cc->EvalFastRotationPrecompute(ct56);
-  const auto& ct58 = cc->EvalMult(ct40, pt8);
-  cc->EvalAddInPlace(ct33, ct58);
-  cc->EvalAddInPlace(ct33, ct42);
-  cc->EvalAddInPlace(ct33, ct43);
-  auto ct62 = cc->EvalMultNoRelin(ct33, ct45);
+  auto ct41 = cc->EvalMult(ct26, pt6);
+  auto v38 = v36;
+#pragma omp parallel for
+  for (auto v39 = 0; v39 < 2; ++v39) {
+    size_t v41 = v13[v39];
+    const auto& ct42 = cc->EvalFastRotation(
+        ct2, v41, 2 * cc->GetRingDimension(), digit_decomp);
+    const std::vector<CiphertextT> v42 = {ct42};
+    v38[v39] = v42[0];
+  }
+  const auto& ct43 = v38[0];
+  const auto& ct44 = v38[1];
+  auto ct45 = cc->EvalMult(ct44, pt3);
+  cc->EvalAddInPlace(ct45, ct15);
+  const auto& ct47 = cc->EvalMult(ct43, pt5);
+  cc->EvalAddInPlace(ct45, ct47);
+  cc->EvalAddInPlace(ct45, ct17);
+  auto ct50 = cc->EvalMultNoRelin(ct9, ct45);
+  cc->RelinearizeInPlace(ct50);
+  const auto& digit_decomp2 = cc->EvalFastRotationPrecompute(ct50);
+  auto v43 = v36;
+#pragma omp parallel for
+  for (auto v44 = 0; v44 < 2; ++v44) {
+    size_t v46 = v12[v44];
+    const auto& ct52 = cc->EvalFastRotation(
+        ct2, v46, 2 * cc->GetRingDimension(), digit_decomp);
+    const std::vector<CiphertextT> v47 = {ct52};
+    v43[v44] = v47[0];
+  }
+  const auto& ct53 = v43[0];
+  const auto& ct54 = v43[1];
+  auto ct55 = cc->EvalMult(ct54, pt8);
+  const auto& ct56 = cc->EvalMult(ct53, pt9);
+  cc->EvalAddInPlace(ct55, ct56);
+  cc->EvalAddInPlace(ct55, ct28);
+  cc->EvalAddInPlace(ct55, ct30);
+  cc->EvalAddInPlace(ct55, ct31);
+  cc->EvalAddInPlace(ct55, ct33);
+  auto ct62 = cc->EvalMultNoRelin(ct55, ct35);
   cc->RelinearizeInPlace(ct62);
   auto ct64 = cc->EvalMult(ct62, pt13);
-  const auto& ct65 = cc->EvalMult(ct56, pt15);
-  auto ct66 = cc->EvalMult(ct62, pt16);
   auto v48 = v36;
 #pragma omp parallel for
   for (auto v49 = 0; v49 < 2; ++v49) {
     size_t v51 = v11[v49];
-    const auto& ct67 = cc->EvalFastRotation(
-        ct56, v51, 2 * cc->GetRingDimension(), digit_decomp2);
-    const std::vector<CiphertextT> v52 = {ct67};
+    const auto& ct65 = cc->EvalFastRotation(
+        ct50, v51, 2 * cc->GetRingDimension(), digit_decomp2);
+    const std::vector<CiphertextT> v52 = {ct65};
     v48[v49] = v52[0];
   }
-  const auto& ct68 = v48[0];
-  const auto& ct69 = v48[1];
-  const auto& ct70 = cc->EvalMult(ct69, pt17);
-  cc->EvalAddInPlace(ct66, ct70);
-  const auto& ct72 = cc->EvalMult(ct56, pt18);
-  cc->EvalAddInPlace(ct66, ct72);
-  auto ct74 = cc->EvalMult(ct62, pt19);
-  const auto& ct75 = cc->EvalMult(ct68, pt14);
-  cc->EvalAddInPlace(ct64, ct75);
-  cc->EvalAddInPlace(ct64, ct65);
-  auto ct78 = cc->EvalMultNoRelin(ct64, ct66);
-  cc->RelinearizeInPlace(ct78);
-  std::vector<CiphertextT> v53(v47);
-  v53[0] = ct78;
-  const auto& ct80 = cc->EvalMult(ct78, pt7);
-  cc->EvalAddInPlace(ct74, ct80);
-  const auto& ct82 = cc->EvalMult(ct78, pt19);
-  cc->EvalAddInPlace(ct51, ct82);
-  auto ct84 = cc->EvalMultNoRelin(ct74, ct51);
+  const auto& ct66 = v48[0];
+  const auto& ct67 = v48[1];
+  const auto& ct68 = cc->EvalMult(ct67, pt14);
+  cc->EvalAddInPlace(ct64, ct68);
+  const auto& ct70 = cc->EvalMult(ct50, pt15);
+  cc->EvalAddInPlace(ct64, ct70);
+  auto ct72 = cc->EvalMult(ct62, pt16);
+  const auto& ct73 = cc->EvalMult(ct66, pt17);
+  cc->EvalAddInPlace(ct72, ct73);
+  const auto& ct75 = cc->EvalMult(ct50, pt18);
+  cc->EvalAddInPlace(ct72, ct75);
+  auto ct77 = cc->EvalMultNoRelin(ct64, ct72);
+  cc->RelinearizeInPlace(ct77);
+  std::vector<CiphertextT> v53(v37);
+  v53[0] = ct77;
+  auto ct79 = cc->EvalMult(ct77, pt6);
+  const auto& ct80 = cc->EvalMult(ct62, pt19);
+  cc->EvalAddInPlace(ct79, ct80);
+  const auto& ct82 = cc->EvalMult(ct77, pt19);
+  cc->EvalAddInPlace(ct41, ct82);
+  auto ct84 = cc->EvalMultNoRelin(ct79, ct41);
   cc->RelinearizeInPlace(ct84);
-  std::vector<CiphertextT> v54(v47);
+  std::vector<CiphertextT> v54(v37);
   v54[0] = ct84;
   return {v53, v54};
 }

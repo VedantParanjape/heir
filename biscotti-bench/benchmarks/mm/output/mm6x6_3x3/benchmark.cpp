@@ -54,9 +54,30 @@ static void BM_mm_clone_0_0(benchmark::State& state) {
   // ct-ct compute is measured.
   auto preprocessed = mm_clone_0_0__preprocessing(cc);
 
+  auto __clone_ct_vec = [](const std::vector<CiphertextT>& v) {
+    std::vector<CiphertextT> out;
+    out.reserve(v.size());
+    for (const auto& ct : v) out.push_back(ct->Clone());
+    return out;
+  };
+
   for (auto _ : state) {
-    auto result = mm_clone_0_0__preprocessed(cc, arg0, arg1, arg2, arg3, arg4,
-                                             arg5, preprocessed);
+    // Deep-clone inputs so in-place kernel ops don't leak
+    // mutation across benchmark iterations. Cloning is cheap
+    // relative to the kernel body but not free, so pause the
+    // timer while we do it.
+    state.PauseTiming();
+    auto arg0_iter = __clone_ct_vec(arg0);
+    auto arg1_iter = __clone_ct_vec(arg1);
+    auto arg2_iter = __clone_ct_vec(arg2);
+    auto arg3_iter = __clone_ct_vec(arg3);
+    auto arg4_iter = __clone_ct_vec(arg4);
+    auto arg5_iter = __clone_ct_vec(arg5);
+    state.ResumeTiming();
+
+    auto result = mm_clone_0_0__preprocessed(cc, arg0_iter, arg1_iter,
+                                             arg2_iter, arg3_iter, arg4_iter,
+                                             arg5_iter, preprocessed);
     benchmark::DoNotOptimize(result);
 
     // Decrypt + verify excluded from timing. Timer must be
@@ -72,7 +93,6 @@ static void BM_mm_clone_0_0(benchmark::State& state) {
     }
     if (got != expected) {
       state.SkipWithError("decrypted output disagrees with reference");
-      state.ResumeTiming();
       break;
     }
     state.ResumeTiming();

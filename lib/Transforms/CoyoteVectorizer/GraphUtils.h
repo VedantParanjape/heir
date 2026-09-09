@@ -48,6 +48,34 @@
 // getInDegree/getOutDegree/hasEdge/getVertices.
 #include "lib/Utils/Graph/Graph.h"
 
+// ---------------------------------------------------------------------------
+// Biscotti debug gate. The verbose scheduling/vectorization traces below are
+// compiled in but silent by default; set BISCOTTI_DEBUG=1 in the environment
+// to turn them on at runtime (no rebuild needed). Genuine error diagnostics
+// are NOT routed through this and always print.
+// ---------------------------------------------------------------------------
+#ifndef BISCOTTI_DEBUG_GATE
+#define BISCOTTI_DEBUG_GATE
+#include <cstdlib>
+
+#include "llvm/include/llvm/Support/raw_ostream.h"  // from @llvm-project
+namespace biscotti_dbg_detail {
+inline bool on() {
+  static const bool v = (std::getenv("BISCOTTI_DEBUG") != nullptr);
+  return v;
+}
+}  // namespace biscotti_dbg_detail
+inline llvm::raw_ostream &bdbg() {
+  return ::biscotti_dbg_detail::on() ? llvm::errs() : llvm::nulls();
+}
+#define BDBG(...)                      \
+  do {                                 \
+    if (::biscotti_dbg_detail::on()) { \
+      __VA_ARGS__;                     \
+    }                                  \
+  } while (0)
+#endif  // BISCOTTI_DEBUG_GATE
+
 namespace mlir {
 namespace heir {
 
@@ -352,8 +380,8 @@ class EpochAssigner {
           return nodePtr;
         }
       }
-      llvm::outs() << "Warning: Operation " << *op
-                   << " not found in any graph node\n";
+      bdbg() << "Warning: Operation " << *op
+             << " not found in any graph node\n";
       return nullptr;
     };
 
@@ -369,7 +397,7 @@ class EpochAssigner {
         if (node) {
           node->epoch = i;
           inputEpochs.insert(i);
-          // llvm::outs() << "Op " << *op << " assigned to input epoch "
+          // bdbg() << "Op " << *op << " assigned to input epoch "
           //              << node->epoch << "\n";
         }
       }
@@ -400,7 +428,7 @@ class EpochAssigner {
           maxPredEpoch = std::max(maxPredEpoch, pred->epoch);
       }
       node->epoch = maxPredEpoch + 1;
-      // llvm::outs() << "Op " << *node->operations[0]
+      // bdbg() << "Op " << *node->operations[0]
       //              << " assigned to topoOrder epoch " << node->epoch << "\n";
     }
 
@@ -418,7 +446,7 @@ class EpochAssigner {
         if (node) {
           node->epoch = maxEpoch + 1 + i;
           outputEpochs.insert(maxEpoch + 1 + i);
-          // llvm::outs() << "Op " << *op << " assigned to output epoch "
+          // bdbg() << "Op " << *op << " assigned to output epoch "
           //              << node->epoch << "\n";
         }
       }

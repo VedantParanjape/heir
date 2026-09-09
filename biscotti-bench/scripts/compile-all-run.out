@@ -1,0 +1,25 @@
+master log: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/compile_all-20260907-214536.log
+build.sh:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh
+bazel mode: opt
+
+=== pre-building heir tools (-c opt) ===
+INFO: Invocation ID: 9d750486-b95c-49b0-99a3-48fe61661b36
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/9d750486-b95c-49b0-99a3-48fe61661b36
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+DEBUG: /local/scratch/a/paranjav/.cache/bazel/_bazel_paranjav/f7dbb49b215a4afd20f9b4ab1801bd06/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:211:14: No 'swiftc' executable found in $PATH. Not auto-generating a Linux Swift toolchain.
+INFO: Analyzed 2 targets (2 packages loaded, 60 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 1.269s, Critical Path: 0.06s
+INFO: 16 processes: 8740 action cache hit, 16 internal.
+INFO: Build completed successfully, 16 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/9d750486-b95c-49b0-99a3-48fe61661b36
+
+===================================================================
+>>> building conv/conv_34 [hoisted]  (cap 3600s)
+===================================================================

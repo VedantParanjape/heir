@@ -35,6 +35,36 @@ func.func @argmax(
     cf.cond_br %cond, ^base, ^recursive { biscotti.base_condition = 0 }
 
 ^base:
+    // Base case: k is 1 or 2 (base condition is k <= 2). An odd split
+    // (e.g. k=3 -> (1, 2)) produces k==1 leaves, so we MUST handle both.
+    // We branch on k at the cf level -- k is a static constant per
+    // specialized clone, so this cond_br folds and the dead arm is
+    // erased, leaving each leaf with exactly one straight-line body.
+    // (Doing this inside the secret.generic instead would NOT fold:
+    // constant operands don't propagate to generic block args, and the
+    // leftover select breaks tensor.generate unrolling.)
+    %c1v = arith.constant 1 : !val
+    %k_is_1 = arith.cmpi eq, %k, %c1v : !val
+    cf.cond_br %k_is_1, ^base_single, ^base_pair
+
+^base_single:
+    // k == 1: only ONE column exists (cols holds just N bits). The
+    // partial product of a single column IS that column, so return it
+    // unchanged. Reading a second column here would be out of bounds
+    // and fold the whole subtree to zero.
+    %result_single = secret.generic(%cols : !svec) {
+        ^bb0(%c: tensor<?x!val>):
+            %n_idx_s = arith.constant 256 : index
+            %col_s = tensor.generate %n_idx_s {
+                ^bb0(%i: index):
+                    %v = tensor.extract %c[%i] : tensor<?x!val>
+                    tensor.yield %v : !val
+            } : tensor<?x!val>
+            secret.yield %col_s : tensor<?x!val>
+    } -> (!svec)
+    return %result_single : !svec
+
+^base_pair:
     // k == 2: element-wise mul of the two contiguous columns.
     // cols contains 2*N = 512 bits: col0 = cols[0..N],
     // col1 = cols[N..2N]. Result is a length-N tensor

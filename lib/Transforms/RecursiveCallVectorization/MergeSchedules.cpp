@@ -23,6 +23,34 @@
 #include "mlir/include/mlir/IR/Builders.h"               // from @llvm-project
 #include "mlir/include/mlir/IR/IRMapping.h"              // from @llvm-project
 
+// ---------------------------------------------------------------------------
+// Biscotti debug gate. The verbose scheduling/vectorization traces below are
+// compiled in but silent by default; set BISCOTTI_DEBUG=1 in the environment
+// to turn them on at runtime (no rebuild needed). Genuine error diagnostics
+// are NOT routed through this and always print.
+// ---------------------------------------------------------------------------
+#ifndef BISCOTTI_DEBUG_GATE
+#define BISCOTTI_DEBUG_GATE
+#include <cstdlib>
+
+#include "llvm/include/llvm/Support/raw_ostream.h"  // from @llvm-project
+namespace biscotti_dbg_detail {
+inline bool on() {
+  static const bool v = (std::getenv("BISCOTTI_DEBUG") != nullptr);
+  return v;
+}
+}  // namespace biscotti_dbg_detail
+inline llvm::raw_ostream &bdbg() {
+  return ::biscotti_dbg_detail::on() ? llvm::errs() : llvm::nulls();
+}
+#define BDBG(...)                      \
+  do {                                 \
+    if (::biscotti_dbg_detail::on()) { \
+      __VA_ARGS__;                     \
+    }                                  \
+  } while (0)
+#endif  // BISCOTTI_DEBUG_GATE
+
 namespace mlir {
 namespace heir {
 
@@ -794,7 +822,7 @@ SmallVector<cipherTextSlot> createMergedCipherTextMappings(
     OpBuilder builder) {
   if (!mergedType.hasStaticShape()) return {};
 
-  llvm::outs() << "Rank: " << mergedType.getRank() << "\n";
+  bdbg() << "Rank: " << mergedType.getRank() << "\n";
   // do a sanity check that summation of dim-1 of all subArgs = dim-1 of
   // mergedType
   int mergedDim1 = mergedType.getDimSize(1);
@@ -825,7 +853,7 @@ SmallVector<cipherTextSlot> createMergedCipherTextMappings(
   for (auto a : insertChains) {
     for (auto c : a.second) c.dump();
 
-    llvm::outs() << "\n";
+    bdbg() << "\n";
   }
 
   int offset = 0;
@@ -859,7 +887,7 @@ Value createNewInsertOpsFromSeedOps(SmallVector<cipherTextSlot> &ctxt,
   Operation *seedOp =
       arith::ConstantOp::create(builder, builder.getUnknownLoc(), attr);
 
-  llvm::outs() << "Creating new insert ops from seed op:\n";
+  bdbg() << "Creating new insert ops from seed op:\n";
   seedOp->dump();
   for (int i = 0; i < ctxt.size(); i++) {
     auto &slot = ctxt[i];

@@ -1,0 +1,105 @@
+=================================================================
+>>> building argmax/argmax_7  (cap 3600s)  03:01:19
+=================================================================
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_7
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_7-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/argmax_7-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/argmax_7-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_7/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_7/compile-timing.txt
+=================================================================
+>>> building argmax/argmax_8  (cap 3600s)  03:07:56
+=================================================================
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_8
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_8.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_8-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/argmax_8-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/argmax_8-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_8/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_8/compile-timing.txt
+=================================================================
+>>> building argmax/argmax_9  (cap 3600s)  03:15:53
+=================================================================
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_9
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_9.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_9
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_9-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9/argmax_9-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9/argmax_9-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_9/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_9/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/output/argmax_9/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/build/argmax_9/compile-timing.txt
+
+================= SUMMARY =================
+OK      argmax/argmax_7  wall_seconds: 396.735
+OK      argmax/argmax_8  wall_seconds: 477.537
+OK      argmax/argmax_9  wall_seconds: 631.043
+===========================================
