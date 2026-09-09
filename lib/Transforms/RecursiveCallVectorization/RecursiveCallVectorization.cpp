@@ -672,6 +672,13 @@ struct RecursiveCallVectorization
           SmallVector<Value> newOperands;
           SmallVector<std::pair<BlockArgument, Value>> rauwList;
           SmallVector<unsigned> eraseIdx;
+          // Cursor over callOp's results, advanced only for merged operands.
+          // callOp holds ONLY the merged siblings' scalar results, grouped by
+          // arg (arg k's L results are consecutive) -- the layout HEAD's
+          // `callOp.getResult(k*L + j)` walk relied on. Threaded (non-merged)
+          // operands consume no results, so a plain k*L index overruns them;
+          // the cursor skips threaded args and stays aligned.
+          unsigned resultCursor = 0;
           for (unsigned k = 0; k < numOldArgs; ++k) {
             mlir::Value operand = commonGeneric->getOperand(k);
             BlockArgument oldArg = body.getArgument(k);
@@ -684,9 +691,16 @@ struct RecursiveCallVectorization
               auto tensorTy = cast<RankedTensorType>(oldArg.getType());
               unsigned L = tensorTy.getNumElements();
               Type elemTy = tensorTy.getElementType();
+              // Wire the L fresh scalar args to L DISTINCT consecutive callOp
+              // results (via the cursor) rather than to `operand` L times. The
+              // latter fills the tensor<L> with L copies of one value and drops
+              // L-1 of every L merged terms — equivalent only when L==1 (det's
+              // scalar recursion), which is why it silently regressed L>1
+              // kernels (mm8x8's contraction blocks: 8->4 terms, output
+              // collapse).
               SmallVector<Value> scalars;
               for (unsigned j = 0; j < L; ++j) {
-                newOperands.push_back(operand);
+                newOperands.push_back(callOp.getResult(resultCursor++));
                 scalars.push_back(body.addArgument(elemTy, loc));
               }
               Value rebuilt = tensor::FromElementsOp::create(builder, loc,
