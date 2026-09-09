@@ -1,0 +1,92 @@
+INFO: Invocation ID: a1fbd587-bf5f-484d-bd37-f640599e8185
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/a1fbd587-bf5f-484d-bd37-f640599e8185
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 0.931s, Critical Path: 0.02s
+INFO: 95 processes: 6894 action cache hit, 95 internal.
+INFO: Build completed successfully, 95 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/a1fbd587-bf5f-484d-bd37-f640599e8185
+=== HEIR pipeline ===
+  suite:       mm
+  kernel:      mm6x6_3x3
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm6x6_3x3
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 202: 17280 Aborted                 (core dumped) "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+  %168 = "tensor.insert"(%138, %167, %12) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %169 = "tensor.insert"(%130, %168, %11) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %170 = "tensor.insert"(%131, %169, %10) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %171 = "tensor.insert"(%132, %170, %9) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %172 = "tensor.insert"(%139, %171, %8) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %173 = "tensor.insert"(%140, %172, %7) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %174 = "tensor.insert"(%141, %173, %6) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %175 = "tensor.insert"(%133, %174, %5) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %176 = "tensor.insert"(%134, %175, %4) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %177 = "tensor.insert"(%135, %176, %3) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %178 = "tensor.insert"(%142, %177, %2) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %179 = "tensor.insert"(%143, %178, %1) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %180 = "tensor.insert"(%144, %179, %0) : (i32, tensor<36xi32>, index) -> tensor<36xi32>
+  %181 = "secret.conceal"(%180) : (tensor<36xi32>) -> !secret.secret<tensor<36xi32>>
+  "func.return"(%181) : (!secret.secret<tensor<36xi32>>) -> ()
+}) : () -> ()
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir:275:12: error: 'func.call' op using value defined outside the region
+    %c00 = secret.generic(%t0 : !svec, %t1 : !svec) {
+           ^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir:275:12: note: see current operation: %37 = "func.call"(<<UNKNOWN SSA VALUE>>) <{callee = @__coyote_load}> : (i32) -> i32
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir:16:1: note: required by region isolation constraints
+func.func @mm(
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir:16:1: error: 'secret.conceal' op using value defined outside the region
+func.func @mm(
+^
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir:16:1: note: see current operation: %0 = "secret.conceal"(<<UNKNOWN SSA VALUE>>) : (i32) -> !secret.secret<i32>
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir:16:1: note: required by region isolation constraints
+free(): invalid next size (fast)
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.  Program arguments: /local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir --recursive-call-vectorization=node-size-threshold=100 --canonicalize --cse --symbol-dce --mlir-timing -o /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3/mm6x6_3x3-recursed.mlir
+ #0 0x0000000003a619cb llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x3a619cb)
+ #1 0x0000000003a5f262 llvm::sys::RunSignalHandlers() (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x3a5f262)
+ #2 0x0000000003a6250c SignalHandler(int, siginfo_t*, void*) Signals.cpp:0:0
+ #3 0x00001464f32bb520 (/lib/x86_64-linux-gnu/libc.so.6+0x42520)
+ #4 0x00001464f330f9bc __pthread_kill_implementation ./nptl/pthread_kill.c:44:76
+ #5 0x00001464f330f9bc __pthread_kill_internal ./nptl/pthread_kill.c:78:10
+ #6 0x00001464f330f9bc pthread_kill ./nptl/pthread_kill.c:89:10
+ #7 0x00001464f32bb476 gsignal ./signal/../sysdeps/posix/raise.c:27:6
+ #8 0x00001464f32a17f3 abort ./stdlib/abort.c:81:7
+ #9 0x00001464f3302637 __libc_message ./libio/../sysdeps/posix/libc_fatal.c:156:5
+#10 0x00001464f3319cbc ./malloc/malloc.c:5670:3
+#11 0x00001464f331ba5d _int_free ./malloc/malloc.c:4522:4
+#12 0x00001464f331e413 __libc_free ./malloc/malloc.c:3394:3
+#13 0x00000000033f48c0 mlir::FrozenRewritePatternSet::Impl::~Impl() (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x33f48c0)
+#14 0x0000000000d8c171 mlir::ThreadLocalCache<mlir::StorageUniquer::StorageAllocator*>::~ThreadLocalCache() (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0xd8c171)
+#15 0x000000000339dceb (anonymous namespace)::Canonicalizer::~Canonicalizer() Canonicalizer.cpp:0:0
+#16 0x0000000003881ca0 std::__1::unique_ptr<mlir::detail::OpPassManagerImpl, std::__1::default_delete<mlir::detail::OpPassManagerImpl>>::reset[abi:nqe220107](mlir::detail::OpPassManagerImpl*) Pass.cpp:0:0
+#17 0x0000000002bff0e1 performActions(llvm::raw_ostream&, std::__1::shared_ptr<llvm::SourceMgr> const&, mlir::MLIRContext*, mlir::MlirOptMainConfig const&) MlirOptMain.cpp:0:0
+#18 0x0000000002bfe53b llvm::LogicalResult llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer>>, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>::callback_fn<mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer>>, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&)::$_0>(long, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer>>, llvm::MemoryBufferRef const&, llvm::raw_ostream&) MlirOptMain.cpp:0:0
+#19 0x00000000039c220a mlir::splitAndProcessBuffer(std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer>>, llvm::function_ref<llvm::LogicalResult (std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer>>, llvm::MemoryBufferRef const&, llvm::raw_ostream&)>, llvm::raw_ostream&, llvm::StringRef, llvm::StringRef) (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x39c220a)
+#20 0x0000000002bf67f9 mlir::MlirOptMain(llvm::raw_ostream&, std::__1::unique_ptr<llvm::MemoryBuffer, std::__1::default_delete<llvm::MemoryBuffer>>, mlir::DialectRegistry&, mlir::MlirOptMainConfig const&) (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x2bf67f9)
+#21 0x0000000002bf6c51 mlir::MlirOptMain(int, char**, llvm::StringRef, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x2bf6c51)
+#22 0x0000000002bf6fa0 mlir::MlirOptMain(int, char**, llvm::StringRef, mlir::DialectRegistry&) (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0x2bf6fa0)
+#23 0x0000000000cac0bf main (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0xcac0bf)
+#24 0x00001464f32a2d90 __libc_start_call_main ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+#25 0x00001464f32a2e40 call_init ./csu/../csu/libc-start.c:128:20
+#26 0x00001464f32a2e40 __libc_start_main ./csu/../csu/libc-start.c:379:5
+#27 0x0000000000ca902a _start (/local/scratch/a/paranjav/biscotti/heir/bazel-bin/tools/heir-opt+0xca902a)

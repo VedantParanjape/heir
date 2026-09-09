@@ -1,0 +1,92 @@
+INFO: Invocation ID: cad53bd9-9677-4c5d-b25a-0a56af3d2572
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/cad53bd9-9677-4c5d-b25a-0a56af3d2572
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 1.268s, Critical Path: 0.02s
+INFO: 95 processes: 6894 action cache hit, 95 internal.
+INFO: Build completed successfully, 95 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/cad53bd9-9677-4c5d-b25a-0a56af3d2572
+=== HEIR pipeline ===
+  suite:       dot
+  kernel:      dot_384
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/dot/src/dot_384.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_384_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_384_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_384_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_384_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 202: 12531 Killed                  "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+  [Python]   %1213 = %1209 + %1212
+  [Python]   %1214 = %225 * %609
+  [Python]   %1215 = %226 * %610
+  [Python]   %1216 = %227 * %611
+  [Python]   %1217 = %1215 + %1216
+  [Python]   %1218 = %1214 + %1217
+  [Python]   %1219 = %1213 + %1218
+  [Python]   %1220 = %1208 + %1219
+  [Python]   %1221 = %228 * %612
+  [Python]   %1222 = %229 * %613
+  [Python]   %1223 = %230 * %614
+  [Python]   %1224 = %1222 + %1223
+  [Python]   %1225 = %1221 + %1224
+  [Python]   %1226 = %231 * %615
+  [Python]   %1227 = %232 * %616
+  [Python]   %1228 = %233 * %617
+  [Python]   %1229 = %1227 + %1228
+  [Python]   %1230 = %1226 + %1229
+  [Python]   %1231 = %1225 + %1230
+  [Python]   %1232 = %234 * %618
+  [Python]   %1233 = %235 * %619
+  [Python]   %1234 = %236 * %620
+  [Python]   %1235 = %1233 + %1234
+  [Python]   %1236 = %1232 + %1235
+  [Python]   %1237 = %237 * %621
+  [Python]   %1238 = %238 * %622
+  [Python]   %1239 = %239 * %623
+  [Python]   %1240 = %1238 + %1239
+  [Python]   %1241 = %1237 + %1240
+  [Python]   %1242 = %1236 + %1241
+  [Python]   %1243 = %1231 + %1242
+  [Python]   %1244 = %1220 + %1243
+  [Python]   %1245 = %1197 + %1244
+  [Python]   %1246 = %240 * %624
+  [Python]   %1247 = %241 * %625
+  [Python]   %1248 = %242 * %626
+  [Python]   %1249 = %1247 + %1248
+  [Python]   %1250 = %1246 + %1249
+  [Python]   %1251 = %243 * %627
+  [Python]   %1252 = %244 * %628
+  [Python]   %1253 = %245 * %629
+  [Python]   %1254 = %1252 + %1253
+  [Python]   %1255 = %1251 + %1254
+  [Python]   %1256 = %1250 + %1255
+  [Python]   %1257 = %246 * %630
+  [Python]   %1258 = %247 * %631
+  [Python]   %1259 = %248 * %632
+  [Python]   %1260 = %1258 + %1259
+  [Python]   %1261 = %1257 + %1260
+  [Python]   %1262 = %249 * %633
+  [Python]   %1263 = %250 * %634
+  [Python]   %1264 = %251 * %635
+  [Python]   %1265 = %1263 + %1264
+  [Python]   %1266 = %1262 + %1265
+  [Python]   %1267 = %1261 + %1266
+  [Python]   %1268 = %1256 + %1267
+  [Python]   %1269 = %252 * %636
+  [Python]   %1270 = %253 * %637
+  [Python]   %1271 = %254 * %638
+  [Python]   %1272 = %1270 + %1271

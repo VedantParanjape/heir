@@ -1,0 +1,45 @@
+INFO: Invocation ID: cf13cc59-2d04-405a-92d1-4ced33258bf3
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/cf13cc59-2d04-405a-92d1-4ced33258bf3
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 0.928s, Critical Path: 0.02s
+INFO: 95 processes: 6894 action cache hit, 95 internal.
+INFO: Build completed successfully, 95 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/cf13cc59-2d04-405a-92d1-4ced33258bf3
+=== HEIR pipeline ===
+  suite:       dot
+  kernel:      dot_48
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/dot/src/dot_48.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_48_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from dot_48-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla/dot_48-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla/dot_48-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_48_baseline_vanilla/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_48_baseline_vanilla/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_48_baseline_vanilla/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_48_baseline_vanilla/compile-timing.txt

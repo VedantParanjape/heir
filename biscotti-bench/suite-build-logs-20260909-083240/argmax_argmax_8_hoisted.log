@@ -1,0 +1,58 @@
+INFO: Invocation ID: 59f48ccd-c67e-4f06-a1bd-26ac8a671a49
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/59f48ccd-c67e-4f06-a1bd-26ac8a671a49
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[5,879 / 10,529] Compiling ortools/sat/parameters_validation.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,012 / 10,529] Compiling passes/memory/memlib.cc; 0s remote-cache ... (15 actions, 0 running)
+[9,128 / 10,529] Compiling external/yosys+/frontends/verilog/verilog_lexer.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,265 / 10,529] Compiling passes/techmap/tribuf.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,402 / 10,529] Compiling passes/cmds/tee.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,540 / 10,529] Compiling passes/cmds/sort.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,673 / 10,529] Compiling passes/cmds/select.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,801 / 10,529] Compiling passes/cmds/linux_perf.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,948 / 10,529] Compiling src/misc/extra/extraUtilMisc.c; 0s remote-cache ... (15 actions, 0 running)
+[10,089 / 10,529] Compiling src/opt/fxu/fxuSingle.c; 0s remote-cache ... (15 actions, 0 running)
+[10,231 / 10,529] Compiling src/proof/acec/acecXor.c; 0s remote-cache ... (15 actions, 0 running)
+[10,375 / 10,529] Compiling src/sat/bmc/bmcICheck.c; 0s remote-cache ... (16 actions, 0 running)
+[10,465 / 10,529] Compiling src/sat/cadical/cadical_options.cpp; 0s remote-cache ... (16 actions, 0 running)
+INFO: Found 2 targets...
+INFO: Elapsed time: 14.073s, Critical Path: 0.41s
+INFO: 1724 processes: 3540 action cache hit, 1639 remote cache hit, 85 internal.
+INFO: Build completed successfully, 1724 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/59f48ccd-c67e-4f06-a1bd-26ac8a671a49
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_8
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_8.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_8
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_8-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8/argmax_8-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8/argmax_8-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_8/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_8/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_8/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_8/compile-timing.txt

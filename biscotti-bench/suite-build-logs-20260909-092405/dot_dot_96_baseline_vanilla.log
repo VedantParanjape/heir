@@ -1,0 +1,84 @@
+INFO: Invocation ID: 4cba4898-8e8a-4c2d-b402-a840d331c9ee
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/4cba4898-8e8a-4c2d-b402-a840d331c9ee
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[862 / 10,529] Compiling upb/message/map_sorter.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[1,042 / 10,529] Compiling zutil.c; 0s remote-cache ... (16 actions, 0 running)
+[1,458 / 10,529] Compiling ortools/glop/variables_info.cc; 0s remote-cache ... (16 actions, 0 running)
+[1,662 / 10,529] Compiling ortools/util/time_limit.cc; 0s remote-cache ... (15 actions, 0 running)
+[1,854 / 10,529] Compiling generic/regexec.c; 0s remote-cache ... (16 actions, 0 running)
+[3,378 / 10,529] Compiling src/google/protobuf/descriptor.pb.cc [for tool]; 0s remote-cache ... (15 actions, 0 running)
+[3,622 / 10,529] Compiling src/google/protobuf/compiler/rust/generator.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[3,735 / 10,529] Compiling src/google/protobuf/compiler/java/full/message_field.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[6,437 / 10,529] Compiling isl_flow.c; 0s remote-cache ... (15 actions, 0 running)
+[6,901 / 10,529] Compiling src/google/protobuf/compiler/parser.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,067 / 10,529] Compiling src/scip/compr_weakcompr.c; 0s remote-cache ... (15 actions, 0 running)
+[7,223 / 10,529] Compiling absl/base/internal/throw_delegate.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,355 / 10,529] Compiling ortools/math_opt/cpp/basis_status.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,452 / 10,529] Compiling ncurses/base/lib_getstr.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,574 / 10,529] Compiling ortools/math_opt/core/sparse_submatrix.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,691 / 10,529] Compiling absl/strings/internal/str_format/extension.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,818 / 10,529] Compiling ortools/math_opt/constraints/util/model_util.cc; 0s remote-cache ... (15 actions, 0 running)
+[7,936 / 10,529] Compiling absl/time/internal/cctz/src/time_zone_fixed.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,054 / 10,529] Compiling src/soplex/usertimer.cpp; 0s remote-cache ... (15 actions, 0 running)
+[8,162 / 10,529] Compiling src/polymorphic_xml_wiarchive.cpp; 0s remote-cache ... (16 actions, 0 running)
+[8,355 / 10,529] Compiling ortools/math_opt/validators/bounds_and_status_validator.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,466 / 10,529] Compiling ortools/math_opt/validators/result_validator.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,582 / 10,529] Compiling absl/strings/internal/cordz_info.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,696 / 10,529] Compiling ortools/math_opt/core/solver.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,831 / 10,529] Compiling ortools/sat/simplification.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,954 / 10,529] Compiling ortools/sat/cp_model_checker.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,082 / 10,529] Compiling ortools/sat/feasibility_pump.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,201 / 10,529] Compiling ortools/sat/cp_model_loader.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,301 / 10,529] Compiling ortools/sat/cp_model_solver_helpers.cc; 0s remote-cache ... (11 actions, 0 running)
+[9,432 / 10,529] Compiling src/base/wln/wlnNdr.c; 0s remote-cache ... (16 actions, 0 running)
+[9,562 / 10,529] Compiling passes/sat/formalff.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,696 / 10,529] Compiling backends/rtlil/rtlil_backend.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,825 / 10,529] Compiling src/misc/util/utilAigSim.c; 0s remote-cache ... (15 actions, 0 running)
+[9,949 / 10,529] Compiling passes/cmds/sta.cc; 0s remote-cache ... (15 actions, 0 running)
+[10,072 / 10,529] Compiling src/sat/cadical/cadical_watch.cpp; 0s remote-cache ... (16 actions, 0 running)
+[10,197 / 10,529] Compiling passes/fsm/fsm_expand.cc; 0s remote-cache ... (15 actions, 0 running)
+[10,318 / 10,529] Compiling passes/proc/proc_init.cc; 0s remote-cache ... (16 actions, 0 running)
+[10,414 / 10,529] Compiling kernel/ff.cc; 0s remote-cache ... (16 actions, 0 running)
+[10,508 / 10,529] Compiling passes/techmap/extract_counter.cc; 0s remote-cache ... (16 actions, 0 running)
+INFO: Found 2 targets...
+INFO: Elapsed time: 40.218s, Critical Path: 1.03s
+INFO: 4586 processes: 2403 action cache hit, 4491 remote cache hit, 95 internal.
+INFO: Build completed successfully, 4586 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/4cba4898-8e8a-4c2d-b402-a840d331c9ee
+=== HEIR pipeline ===
+  suite:       dot
+  kernel:      dot_96
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/dot/src/dot_96.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_96_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=512 from dot_96-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla/dot_96-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla/dot_96-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_96_baseline_vanilla/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_96_baseline_vanilla/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_96_baseline_vanilla/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_96_baseline_vanilla/compile-timing.txt

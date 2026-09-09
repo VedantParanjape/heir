@@ -1,0 +1,45 @@
+INFO: Invocation ID: cccaf0c1-0873-4900-a855-8a1dedba5fa0
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/cccaf0c1-0873-4900-a855-8a1dedba5fa0
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 0.474s, Critical Path: 0.03s
+INFO: 12 processes: 662 action cache hit, 12 internal.
+INFO: Build completed successfully, 12 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/cccaf0c1-0873-4900-a855-8a1dedba5fa0
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_9
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_9.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_9
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=512 from argmax_9-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/argmax_9-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/argmax_9-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_9/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_9/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_9/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/compile-timing.txt

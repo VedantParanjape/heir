@@ -1,0 +1,111 @@
+INFO: Invocation ID: 47c6762b-3c61-4290-b594-287d70459921
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/47c6762b-3c61-4290-b594-287d70459921
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[254 / 10,388] CcStage0Compile external/llvm+/runtimes/crtn.o; 0s remote-cache ... (16 actions, 0 running)
+[408 / 10,492] Compiling compiler-rt/lib/builtins/clzsi2.c; 0s remote-cache ... (16 actions, 0 running)
+[579 / 10,529] Compiling compiler-rt/lib/builtins/subtf3.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[732 / 10,529] Compiling compiler-rt/lib/builtins/udivdi3.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[4,939 / 10,529] Compiling src/pke/lib/encoding/ckkspackedencoding.cpp; 0s remote-cache ... (16 actions, 0 running)
+[5,415 / 10,529] Compiling src/pke/lib/scheme/scheme-id-impl.cpp; 0s remote-cache ... (15 actions, 0 running)
+[6,697 / 10,529] Compiling src/soplex/spxlpbase_rational.cpp; 0s remote-cache ... (14 actions, 0 running)
+[7,078 / 10,529] CcAutoconfCheck @@readline+//:autoconf - ac_cv_func_pselect; 0s remote-cache ... (16 actions, 0 running)
+[8,883 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/idpriv:idpriv - ac_cv_func_geteuid [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,054 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/fdopendir:gl_FUNC_FDOPENDIR - ac_cv_func_fdopendir [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,208 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/stdckdint_h:stdckdint_h - ac_cv_subst_HAVE_CXX_STDCKDINT_H [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,358 / 10,529] CcAutoconfSrc external/m4+/lib/wctype.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,501 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/freelocale:gl_FUNC_FREELOCALE - ac_cv_subst_REPLACE_FREELOCALE [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,648 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/sys_socket_h:gl_PREREQ_SYS_SA_FAMILY - ac_cv_try_compile_HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,801 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/ctype_h:gl_CTYPE_H_DEFAULTS - ac_cv_subst_HAVE_ISALNUM_L [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,960 / 10,529] CcAutoconfHdr external/bison+/lib/fcntl.h [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[10,513 / 10,529] [Prepa] Bison external/yosys+/frontends/verilog/verilog_parser.tab.cc
+INFO: Found 2 targets...
+INFO: Elapsed time: 17.724s, Critical Path: 1.85s
+INFO: 2469 processes: 4520 action cache hit, 2374 remote cache hit, 95 internal.
+INFO: Build completed successfully, 2469 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/47c6762b-3c61-4290-b594-287d70459921
+=== HEIR pipeline ===
+  suite:       dot
+  kernel:      dot_384
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/dot/src/dot_384.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_384_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/output/dot_384_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_384_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/dot/build/dot_384_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=1024 from dot_384-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+error: step failed; tail of log:
+    %1877 = "arith.addi"(%1875, %1876) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1878 = "arith.addi"(%1874, %1877) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1879 = "arith.addi"(%1873, %1878) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1880 = "arith.muli"(%751, %1135) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1881 = "arith.muli"(%752, %1136) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1882 = "arith.muli"(%753, %1137) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1883 = "arith.addi"(%1881, %1882) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1884 = "arith.addi"(%1880, %1883) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1885 = "arith.muli"(%754, %1138) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1886 = "arith.muli"(%755, %1139) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1887 = "arith.muli"(%756, %1140) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1888 = "arith.addi"(%1886, %1887) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1889 = "arith.addi"(%1885, %1888) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1890 = "arith.addi"(%1884, %1889) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1891 = "arith.addi"(%1879, %1890) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1892 = "arith.muli"(%757, %1141) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1893 = "arith.muli"(%758, %1142) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1894 = "arith.muli"(%759, %1143) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1895 = "arith.addi"(%1893, %1894) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1896 = "arith.addi"(%1892, %1895) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1897 = "arith.muli"(%760, %1144) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1898 = "arith.muli"(%761, %1145) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1899 = "arith.muli"(%762, %1146) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1900 = "arith.addi"(%1898, %1899) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1901 = "arith.addi"(%1897, %1900) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1902 = "arith.addi"(%1896, %1901) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1903 = "arith.muli"(%763, %1147) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1904 = "arith.muli"(%764, %1148) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1905 = "arith.muli"(%765, %1149) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1906 = "arith.addi"(%1904, %1905) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1907 = "arith.addi"(%1903, %1906) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1908 = "arith.muli"(%766, %1150) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1909 = "arith.muli"(%767, %1151) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1910 = "arith.muli"(%768, %1152) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1911 = "arith.addi"(%1909, %1910) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1912 = "arith.addi"(%1908, %1911) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1913 = "arith.addi"(%1907, %1912) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1914 = "arith.addi"(%1902, %1913) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1915 = "arith.addi"(%1891, %1914) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1916 = "arith.addi"(%1868, %1915) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1917 = "arith.addi"(%1821, %1916) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1918 = "arith.addi"(%1726, %1917) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1919 = "arith.addi"(%1535, %1918) <{overflowFlags = #arith.overflow<none>}> : (i32, i32) -> i32
+    %1920 = "tensor.from_elements"(%1919) : (i32) -> tensor<1xi32>
+    "secret.yield"(%1920) : (tensor<1xi32>) -> ()
+  }) : (!secret.secret<tensor<384xi32>>, !secret.secret<tensor<384xi32>>) -> !secret.secret<tensor<1xi32>>
+  "func.return"(%384) : (!secret.secret<tensor<1xi32>>) -> ()
+}) : () -> ()
+===-------------------------------------------------------------------------===
+                         ... Execution time report ...
+===-------------------------------------------------------------------------===
+  Total Execution Time: 0.0205 seconds
+
+  ----Wall Time----  ----Name----
+    0.0085 ( 41.6%)  Parser
+    0.0010 (  5.1%)  DebugValidateNames
+    0.0011 (  5.4%)  WrapGeneric
+    0.0067 ( 32.7%)  AddClientInterface
+    0.0031 ( 15.2%)  Rest
+    0.0205 (100.0%)  Total

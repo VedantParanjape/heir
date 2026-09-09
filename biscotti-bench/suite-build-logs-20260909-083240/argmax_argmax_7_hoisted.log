@@ -1,0 +1,69 @@
+INFO: Invocation ID: 422f65d7-e508-4885-b3f7-62c84d50e20d
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/422f65d7-e508-4885-b3f7-62c84d50e20d
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[1,046 / 7,322] Compiling isl_bound.c; 0s remote-cache ... (15 actions, 0 running)
+[3,857 / 9,816] Compiling ortools/util/rational_approximation.cc; 0s remote-cache ... (15 actions, 0 running)
+[5,709 / 9,816] Compiling ortools/util/sigint.cc; 0s remote-cache ... (16 actions, 0 running)
+[6,094 / 10,356] Compiling lib/c-ctype.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[6,257 / 10,388] Compiling absl/time/internal/cctz/src/time_zone_libc.cc; 0s remote-cache ... (16 actions, 0 running)
+[6,419 / 10,388] Compiling libtommath/bn_mp_zero.c; 0s remote-cache ... (16 actions, 0 running)
+[6,618 / 10,438] Compiling lib/cloexec.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[6,747 / 10,446] Compiling absl/debugging/internal/elf_mem_image.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,078 / 10,529] Compiling src/scip/expr.c; 0s remote-cache ... (16 actions, 0 running)
+[7,209 / 10,529] Compiling src/scip/heur_nlpdiving.c; 0s remote-cache ... (16 actions, 0 running)
+[7,329 / 10,529] Compiling lib/pipe2-safer.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,424 / 10,529] Compiling src/google/protobuf/compiler/cpp/message_layout_helper.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,554 / 10,529] Compiling src/scip/reader_wbo.c; 0s remote-cache ... (16 actions, 0 running)
+[7,671 / 10,529] Compiling src/google/protobuf/compiler/kotlin/file.cc [for tool]; 0s remote-cache ... (12 actions, 0 running)
+[7,783 / 10,529] Compiling src/lpi/lpi_spx2.cpp; 0s remote-cache ... (16 actions, 0 running)
+[7,884 / 10,529] Compiling src/polymorphic_text_woarchive.cpp; 0s remote-cache ... (16 actions, 0 running)
+[8,030 / 10,529] Compiling src/google/protobuf/generated_message_bases.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,147 / 10,529] Compiling absl/synchronization/internal/stdcpp_waiter.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,169 / 10,529] Compiling ncurses/tinfo/comp_error.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,974 / 10,529] Compiling ncurses/base/lib_colorset.c; 0s remote-cache ... (16 actions, 0 running)
+[10,109 / 10,529] Compiling gzclose.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[10,280 / 10,529] Compiling external/protobuf+/src/google/protobuf/_virtual_imports/timestamp_proto/google/protobuf/timestamp.pb.cc; 0s remote-cache ... (16 actions, 0 running)
+[10,386 / 10,529] Compiling ortools/math_opt/core/math_opt_proto_utils.cc; 0s remote-cache ... (16 actions, 0 running)
+[10,471 / 10,529] Compiling ortools/sat/implied_bounds.cc; 0s remote-cache ... (16 actions, 0 running)
+INFO: Found 2 targets...
+INFO: Elapsed time: 25.276s, Critical Path: 0.56s
+INFO: 2937 processes: 2228 action cache hit, 2852 remote cache hit, 85 internal.
+INFO: Build completed successfully, 2937 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/422f65d7-e508-4885-b3f7-62c84d50e20d
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_7
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_7.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_7
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from argmax_7-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7/argmax_7-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7/argmax_7-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_7/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_7/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_7/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_7/compile-timing.txt

@@ -1,0 +1,67 @@
+INFO: Invocation ID: 00b5ee7d-5e19-4020-9b1a-4761a5e5739a
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/00b5ee7d-5e19-4020-9b1a-4761a5e5739a
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[832 / 10,529] Compiling autoconf/private/checker/condition_evaluator.cc [for tool]; 0s remote-cache ... (15 actions, 0 running)
+[2,618 / 10,529] Compiling lib/stdio-read.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[2,868 / 10,529] Compiling ortools/lp_data/matrix_utils.cc; 0s remote-cache ... (16 actions, 0 running)
+[3,170 / 10,529] Compiling generic/tclEnsemble.c; 0s remote-cache ... (16 actions, 0 running)
+[3,308 / 10,529] Compiling src/google/protobuf/compiler/parser.cc; 0s remote-cache ... (16 actions, 0 running)
+[3,422 / 10,529] Compiling src/google/protobuf/compiler/cpp/field_generators/enum_field.cc [for tool]; 0s remote-cache ... (15 actions, 0 running)
+[3,533 / 10,529] Compiling src/google/protobuf/compiler/csharp/csharp_primitive_field.cc [for tool]; 0s remote-cache ... (14 actions, 0 running)
+[3,639 / 10,529] Compiling src/google/protobuf/compiler/java/lite/message.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[3,745 / 10,529] Compiling src/google/protobuf/compiler/objectivec/tf_decode_data.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[3,857 / 10,529] Compiling absl/strings/internal/charconv_bigint.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[3,969 / 10,529] Compiling absl/time/internal/cctz/src/time_zone_fixed.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[4,081 / 10,529] Compiling src/soplex/spxdefines.cpp; 0s remote-cache ... (16 actions, 0 running)
+[4,212 / 10,529] Compiling src/google/protobuf/text_format.cc [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[4,308 / 10,529] Compiling src/google/protobuf/generated_message_tctable_full.cc; 0s remote-cache ... (16 actions, 0 running)
+[4,452 / 10,529] Compiling ortools/base/constant_divisor.cc; 0s remote-cache ... (15 actions, 0 running)
+[7,664 / 10,529] Compiling absl/container/internal/hashtablez_sampler_force_weak_definition.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,801 / 10,529] Compiling absl/time/time.cc; 0s remote-cache ... (16 actions, 0 running)
+[7,958 / 10,529] Compiling external/or-tools+/ortools/sat/cp_model.pb.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,116 / 10,529] Compiling ortools/graph/max_flow.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,257 / 10,529] Compiling ortools/algorithms/set_cover_heuristics.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,408 / 10,529] Compiling external/or-tools+/ortools/math_opt/solution.pb.cc; 0s remote-cache ... (15 actions, 0 running)
+[8,565 / 10,529] Compiling src/google/protobuf/json/internal/parser.cc; 0s remote-cache ... (13 actions, 0 running)
+[8,702 / 10,529] Compiling passes/opt/opt_share.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,827 / 10,529] Compiling ortools/sat/drat_proof_handler.cc; 0s remote-cache ... (16 actions, 0 running)
+[8,957 / 10,529] Compiling kernel/fstdata.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,072 / 10,529] Compiling ortools/math_opt/constraints/util/model_util.cc; 0s remote-cache ... (15 actions, 0 running)
+[9,190 / 10,529] Compiling ortools/gscip/gscip_event_handler.cc; 0s remote-cache ... (15 actions, 0 running)
+[9,308 / 10,529] Compiling ortools/sat/sat_solver.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,424 / 10,529] Compiling passes/cmds/abstract.cc; 0s remote-cache ... (15 actions, 0 running)
+[9,534 / 10,529] Compiling passes/cmds/setattr.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,644 / 10,529] Compiling ortools/sat/linear_programming_constraint.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,764 / 10,529] Compiling ortools/sat/max_hs.cc; 0s remote-cache ... (16 actions, 0 running)
+[9,901 / 10,529] Compiling src/map/amap/amapPerm.c; 0s remote-cache ... (16 actions, 0 running)
+[10,038 / 10,529] Compiling src/misc/mvc/mvcList.c; 0s remote-cache ... (16 actions, 0 running)
+[10,158 / 10,529] Compiling src/sat/cadical/cadical_score.cpp; 0s remote-cache ... (5 actions, 0 running)
+[10,287 / 10,529] Compiling src/proof/acec/acecNorm.c; 0s remote-cache ... (16 actions, 0 running)
+[10,427 / 10,529] Compiling src/sat/bmc/bmcCexCut.c; 0s remote-cache ... (16 actions, 0 running)
+INFO: Found 2 targets...
+INFO: Elapsed time: 39.280s, Critical Path: 0.86s
+INFO: 4586 processes: 2401 action cache hit, 4491 remote cache hit, 95 internal.
+INFO: Build completed successfully, 4586 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/00b5ee7d-5e19-4020-9b1a-4761a5e5739a
+=== HEIR pipeline ===
+  suite:       conv
+  kernel:      conv_10
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/conv/src/conv_10.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/conv/build/conv_10_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/conv/output/conv_10_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/conv/build/conv_10_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/conv/build/conv_10_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===

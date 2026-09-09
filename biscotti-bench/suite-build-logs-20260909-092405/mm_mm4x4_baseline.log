@@ -1,0 +1,30 @@
+INFO: Invocation ID: 65fa4dc9-0aed-4490-b500-4a6286d00a5a
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/65fa4dc9-0aed-4490-b500-4a6286d00a5a
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 1.111s, Critical Path: 0.03s
+INFO: 95 processes: 6894 action cache hit, 95 internal.
+INFO: Build completed successfully, 95 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/65fa4dc9-0aed-4490-b500-4a6286d00a5a
+=== HEIR pipeline ===
+  suite:       mm
+  kernel:      mm4x4
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm4x4.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm4x4_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===

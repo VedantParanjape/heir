@@ -1,0 +1,30 @@
+INFO: Invocation ID: 49cdbb43-1d11-4705-9a76-f9cb667f1b84
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/49cdbb43-1d11-4705-9a76-f9cb667f1b84
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 1.262s, Critical Path: 0.03s
+INFO: 85 processes: 3640 action cache hit, 85 internal.
+INFO: Build completed successfully, 85 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/49cdbb43-1d11-4705-9a76-f9cb667f1b84
+=== HEIR pipeline ===
+  suite:       argmax
+  kernel:      argmax_9
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/argmax/src/argmax_9.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/output/argmax_9
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=100
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/argmax/build/argmax_9/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===

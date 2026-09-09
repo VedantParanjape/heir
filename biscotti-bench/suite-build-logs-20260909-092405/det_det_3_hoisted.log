@@ -1,0 +1,64 @@
+INFO: Invocation ID: ca103787-7dc8-4468-9629-3bcf3043d49a
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/ca103787-7dc8-4468-9629-3bcf3043d49a
+Computing main repo mapping:
+Loading:
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+[24 / 7,835] Compiling openmp/runtime/src/z_Linux_util.cpp; 0s remote-cache ... (16 actions, 0 running)
+[264 / 10,110] Linking external/llvm+/runtimes/glibc/libutil.so.1; 0s remote-cache ... (16 actions, 0 running)
+[410 / 10,499] Compiling runtimes/empty.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[566 / 10,529] Compiling compiler-rt/lib/builtins/divxc3.c; 0s remote-cache ... (16 actions, 0 running)
+[684 / 10,529] Compiling libcxx/src/barrier.cpp; 0s remote-cache ... (16 actions, 0 running)
+[807 / 10,529] [Prepa] Copying file external/llvm++llvm+llvm-project/compiler-rt/clang_rt.builtins.static_/libclang_rt.builtins.static.a [for tool]
+[5,072 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/wait-process:wait-process - ac_cv_func_waitid [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[5,191 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/secure_getenv:secure_getenv - ac_cv_func_secure_getenv [for tool]; 0s remote-cache ... (15 actions, 0 running)
+[6,706 / 10,529] Compiling src/core/lib/math/chebyshev.cpp; 0s remote-cache ... (16 actions, 0 running)
+[7,073 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/regex:gl_PREREQ_REGEX - ac_cv_header_libintl_h [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,207 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/exponentl:exponentl - ac_cv_define_LDBL_EXPBIT0_WORD [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,342 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/assert_h:gl_ASSERT_H - ac_cv_try_compile_HAVE_C_STATIC_ASSERT [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,486 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/mkfifo:mkfifo - ac_cv_subst_HAVE_MKFIFO [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,621 / 10,529] CcAutoconfCheck @@readline+//:autoconf - ac_cv_func_wctype; 0s remote-cache ... (16 actions, 0 running)
+[7,758 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/unistd_h:gl_UNISTD_H - ac_cv_have_decl_execvpe [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[7,905 / 10,529] CcAutoconfCheck @@rules_cc_autoconf+//gnulib/m4/lstat:HAVE_LSTAT - ac_cv_subst_HAVE_LSTAT [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[8,051 / 10,529] CcAutoconfCheck @bison//:m4_gnulib-comp - ac_cv_define_USE_UNLOCKED_IO [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[9,856 / 10,529] CcAutoconfCheck @@flex+//:autoconf - ac_cv_func_memset [for tool]; 0s remote-cache ... (16 actions, 0 running)
+[10,403 / 10,529] Compiling external/bison+/lib/readlink.c [for tool]; 0s remote-cache ... (16 actions, 0 running)
+INFO: Found 2 targets...
+INFO: Elapsed time: 20.614s, Critical Path: 2.34s
+INFO: 2469 processes: 4520 action cache hit, 2374 remote cache hit, 95 internal.
+INFO: Build completed successfully, 2469 total actions
+INFO:
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/ca103787-7dc8-4468-9629-3bcf3043d49a
+=== HEIR pipeline ===
+  suite:       det
+  kernel:      det_3
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/det/src/det_3.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/output/det_3
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=8
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=32 from det_3-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3/det_3-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3/det_3-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/output/det_3/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/output/det_3/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/output/det_3/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/det/build/det_3/compile-timing.txt

@@ -136,8 +136,14 @@ INPUT="${SUITE_DIR}/src/${KERNEL}.mlir"
 VARIANT_SUFFIX=""
 if [[ $BASELINE -eq 1 ]]; then VARIANT_SUFFIX="_baseline"; fi
 if [[ $VANILLA -eq 1 ]]; then VARIANT_SUFFIX="_baseline_vanilla"; fi
-BUILD_DIR="${SUITE_DIR}/build/${KERNEL}${VARIANT_SUFFIX}"
-OUT_DIR="${SUITE_DIR}/output/${KERNEL}${VARIANT_SUFFIX}"
+# Artifacts (build/ and output/) normally live next to the source under
+# benchmarks/<suite>/. Set BENCH_ARTIFACT_ROOT to redirect them elsewhere
+# (e.g. an overnight run that must not clobber the known-good build/output).
+# Source (INPUT) is always read from the original SUITE_DIR/src regardless.
+# The <suite>/ level is preserved under the root so suites stay separated.
+ART_BASE="${BENCH_ARTIFACT_ROOT:-${BENCH_REPO}/benchmarks}"
+BUILD_DIR="${ART_BASE}/${SUITE}/build/${KERNEL}${VARIANT_SUFFIX}"
+OUT_DIR="${ART_BASE}/${SUITE}/output/${KERNEL}${VARIANT_SUFFIX}"
 
 if [[ ! -f "$INPUT" ]]; then
   echo "error: input file not found: $INPUT" >&2

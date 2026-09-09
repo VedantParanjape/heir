@@ -1,0 +1,92 @@
+09:24:05  === suite overnight build START ===
+09:24:05  logs:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405
+09:24:05  artifacts: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts  (build/ + output/ redirected here)
+09:24:05  START    argmax/argmax_7/hoisted
+09:30:25  OK       argmax/argmax_7/hoisted  (380s)
+09:30:25  START    argmax/argmax_8/hoisted
+09:38:07  OK       argmax/argmax_8/hoisted  (462s)
+09:38:07  START    argmax/argmax_9/hoisted
+09:48:27  OK       argmax/argmax_9/hoisted  (620s)
+09:48:27  START    argmax/argmax_7/baseline
+09:54:52  OK       argmax/argmax_7/baseline  (385s)
+09:54:52  START    argmax/argmax_8/baseline
+10:02:28  OK       argmax/argmax_8/baseline  (456s)
+10:02:28  START    argmax/argmax_9/baseline
+10:12:36  OK       argmax/argmax_9/baseline  (608s)
+10:12:36  START    argmax/argmax_7/baseline_vanilla
+10:17:55  OK       argmax/argmax_7/baseline_vanilla  (319s)
+10:17:55  START    argmax/argmax_8/baseline_vanilla
+10:24:44  OK       argmax/argmax_8/baseline_vanilla  (409s)
+10:24:44  START    argmax/argmax_9/baseline_vanilla
+10:33:33  OK       argmax/argmax_9/baseline_vanilla  (529s)
+10:33:33  START    conv/conv_4/hoisted
+10:36:33  OK       conv/conv_4/hoisted  (180s)
+10:36:33  START    conv/conv_6/hoisted
+10:39:35  OK       conv/conv_6/hoisted  (182s)
+10:39:35  START    conv/conv_10/hoisted
+10:43:05  OK       conv/conv_10/hoisted  (210s)
+10:43:05  START    conv/conv_18/hoisted
+10:54:03  OK       conv/conv_18/hoisted  (658s)
+10:54:03  START    conv/conv_4/baseline
+11:04:39  OK       conv/conv_4/baseline  (636s)
+11:04:39  START    conv/conv_6/baseline
+11:44:21  OK       conv/conv_6/baseline  (2382s)
+11:44:21  START    conv/conv_10/baseline
+12:44:21  TIMEOUT  conv/conv_10/baseline  (3600s >1hr) -> skipping larger kernels in this lane
+12:44:21  SKIP     conv/conv_18/baseline  (larger than a timed-out kernel in this lane)
+12:44:21  START    conv/conv_4/baseline_vanilla
+12:52:21  OK       conv/conv_4/baseline_vanilla  (480s)
+12:52:21  START    conv/conv_6/baseline_vanilla
+13:22:19  OK       conv/conv_6/baseline_vanilla  (1798s)
+13:22:19  START    conv/conv_10/baseline_vanilla
+14:22:19  TIMEOUT  conv/conv_10/baseline_vanilla  (3600s >1hr) -> skipping larger kernels in this lane
+14:22:19  SKIP     conv/conv_18/baseline_vanilla  (larger than a timed-out kernel in this lane)
+14:22:19  START    det/det_3/hoisted
+14:22:46  OK       det/det_3/hoisted  (27s)
+14:22:46  START    det/det_4/hoisted
+14:24:18  OK       det/det_4/hoisted  (92s)
+14:24:18  START    det/det_5/hoisted
+14:30:31  OK       det/det_5/hoisted  (373s)
+14:30:31  START    det/det_3/baseline
+14:33:11  OK       det/det_3/baseline  (160s)
+14:33:11  START    det/det_4/baseline
+14:42:08  OK       det/det_4/baseline  (537s)
+14:42:08  START    det/det_5/baseline
+15:28:41  OK       det/det_5/baseline  (2793s)
+15:28:41  START    det/det_3/baseline_vanilla
+15:31:35  OK       det/det_3/baseline_vanilla  (174s)
+15:31:35  START    det/det_4/baseline_vanilla
+15:39:10  OK       det/det_4/baseline_vanilla  (455s)
+15:39:10  START    det/det_5/baseline_vanilla
+16:15:00  OK       det/det_5/baseline_vanilla  (2150s)
+16:15:00  START    dot/dot_48/hoisted
+16:18:38  OK       dot/dot_48/hoisted  (218s)
+16:18:38  START    dot/dot_96/hoisted
+16:22:17  OK       dot/dot_96/hoisted  (219s)
+16:22:17  START    dot/dot_192/hoisted
+16:26:02  OK       dot/dot_192/hoisted  (225s)
+16:26:02  START    dot/dot_384/hoisted
+16:30:06  OK       dot/dot_384/hoisted  (244s)
+16:30:06  START    dot/dot_48/baseline
+16:43:55  OK       dot/dot_48/baseline  (829s)
+16:43:55  START    dot/dot_96/baseline
+17:11:24  OK       dot/dot_96/baseline  (1649s)
+17:11:24  START    dot/dot_192/baseline
+18:05:18  OK       dot/dot_192/baseline  (3234s)
+18:05:18  START    dot/dot_384/baseline
+18:23:23  FAIL     dot/dot_384/baseline  rc=1  (1085s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/dot_dot_384_baseline.log]
+18:23:23  START    dot/dot_48/baseline_vanilla
+18:34:14  OK       dot/dot_48/baseline_vanilla  (651s)
+18:34:14  START    dot/dot_96/baseline_vanilla
+18:55:44  OK       dot/dot_96/baseline_vanilla  (1290s)
+18:55:44  START    dot/dot_192/baseline_vanilla
+19:37:59  OK       dot/dot_192/baseline_vanilla  (2535s)
+19:37:59  START    dot/dot_384/baseline_vanilla
+19:45:23  FAIL     dot/dot_384/baseline_vanilla  rc=1  (444s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/dot_dot_384_baseline_vanilla.log]
+19:45:23  START    mm/mm4x4/hoisted
+19:45:28  OK       mm/mm4x4/hoisted  (5s)
+19:45:28  START    mm/mm6x6_3x3/hoisted
+19:45:40  FAIL     mm/mm6x6_3x3/hoisted  rc=1  (12s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/mm_mm6x6_3x3_hoisted.log]
+19:45:40  START    mm/mm8x8/hoisted
+19:46:19  OK       mm/mm8x8/hoisted  (39s)
+19:46:19  START    mm/mm4x4/baseline
