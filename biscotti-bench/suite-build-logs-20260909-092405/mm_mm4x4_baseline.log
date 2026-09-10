@@ -28,3 +28,18 @@ INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/65fa4dc9
   timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/compile-timing.txt
 
 === Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+=== Step 0b: strip biscotti scaffold ===
+=== Auto-detected ciphertext-degree=256 from mm4x4-recursed.mlir ===
+=== Step 1: heir-opt (--mlir-to-bfv, --scheme-to-openfhe) ===
+=== Step 2: heir-translate --emit-openfhe-pke → kernel.cpp ===
+=== Step 3: heir-translate --emit-openfhe-pke-header → kernel.h ===
+=== Step 4: heir-translate --emit-openfhe-pke-harness → benchmark.cpp ===
+
+=== Done ===
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/mm4x4-recursed.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/mm4x4-openfhe.mlir
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm4x4_baseline/kernel.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm4x4_baseline/kernel.h
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm4x4_baseline/benchmark.cpp
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/build.log
+  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm4x4_baseline/compile-timing.txt

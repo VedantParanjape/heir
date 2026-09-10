@@ -1,0 +1,17 @@
+20:23:15  === suite RETRY start ===
+20:23:15  source summary: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/summary.txt
+20:23:15  logs:           /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-retry-logs-20260909-202315
+20:23:15  artifacts:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts
+20:23:15  retrying 11 job(s): conv/conv_10/baseline conv/conv_10/baseline_vanilla conv/conv_18/baseline conv/conv_18/baseline_vanilla dot/dot_384/baseline dot/dot_384/baseline_vanilla mm/mm6x6_3x3/baseline mm/mm6x6_3x3/baseline_vanilla mm/mm6x6_3x3/hoisted mm/mm8x8/baseline mm/mm8x8/baseline_vanilla
+20:23:15  WOULD BUILD  conv/conv_10/baseline  ->  timeout 3600 build.sh --baseline  conv conv_10
+20:23:15  WOULD BUILD  conv/conv_10/baseline_vanilla  ->  timeout 3600 build.sh --baseline-vanilla  conv conv_10
+20:23:15  WOULD BUILD  conv/conv_18/baseline  ->  timeout 3600 build.sh --baseline  conv conv_18
+20:23:15  WOULD BUILD  conv/conv_18/baseline_vanilla  ->  timeout 3600 build.sh --baseline-vanilla  conv conv_18
+20:23:15  WOULD BUILD  dot/dot_384/baseline  ->  timeout 3600 build.sh --baseline  dot dot_384
+20:23:15  WOULD BUILD  dot/dot_384/baseline_vanilla  ->  timeout 3600 build.sh --baseline-vanilla  dot dot_384
+20:23:15  WOULD BUILD  mm/mm6x6_3x3/baseline  ->  timeout 3600 build.sh --baseline  mm mm6x6_3x3
+20:23:15  WOULD BUILD  mm/mm6x6_3x3/baseline_vanilla  ->  timeout 3600 build.sh --baseline-vanilla  mm mm6x6_3x3
+20:23:15  WOULD BUILD  mm/mm6x6_3x3/hoisted  ->  timeout 3600 build.sh   mm mm6x6_3x3
+20:23:15  WOULD BUILD  mm/mm8x8/baseline  ->  timeout 3600 build.sh --baseline  mm mm8x8
+20:23:15  WOULD BUILD  mm/mm8x8/baseline_vanilla  ->  timeout 3600 build.sh --baseline-vanilla  mm mm8x8
+20:23:15  === DONE  total=0 min ===

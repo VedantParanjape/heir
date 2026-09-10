@@ -90,3 +90,15 @@
 19:45:40  START    mm/mm8x8/hoisted
 19:46:19  OK       mm/mm8x8/hoisted  (39s)
 19:46:19  START    mm/mm4x4/baseline
+20:02:48  OK       mm/mm4x4/baseline  (989s)
+20:02:48  START    mm/mm6x6_3x3/baseline
+20:04:34  FAIL     mm/mm6x6_3x3/baseline  rc=1  (106s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/mm_mm6x6_3x3_baseline.log]
+20:04:34  START    mm/mm8x8/baseline
+20:05:36  FAIL     mm/mm8x8/baseline  rc=1  (62s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/mm_mm8x8_baseline.log]
+20:05:36  START    mm/mm4x4/baseline_vanilla
+20:18:07  OK       mm/mm4x4/baseline_vanilla  (751s)
+20:18:07  START    mm/mm6x6_3x3/baseline_vanilla
+20:18:52  FAIL     mm/mm6x6_3x3/baseline_vanilla  rc=1  (45s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/mm_mm6x6_3x3_baseline_vanilla.log]
+20:18:52  START    mm/mm8x8/baseline_vanilla
+20:19:23  FAIL     mm/mm8x8/baseline_vanilla  rc=1  (31s)  [tail: /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-logs-20260909-092405/mm_mm8x8_baseline_vanilla.log]
+20:19:23  === DONE  total=655 min ===

@@ -1,0 +1,92 @@
+INFO: Invocation ID: dc274c2c-7ed7-49f9-b1f5-54502f2d3d66
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/dc274c2c-7ed7-49f9-b1f5-54502f2d3d66
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 1.024s, Critical Path: 0.03s
+INFO: 95 processes: 6894 action cache hit, 95 internal.
+INFO: Build completed successfully, 95 total actions
+INFO: 
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/dc274c2c-7ed7-49f9-b1f5-54502f2d3d66
+=== HEIR pipeline ===
+  suite:       mm
+  kernel:      mm6x6_3x3
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm6x6_3x3.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3_baseline_vanilla
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm6x6_3x3_baseline_vanilla
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote-vanilla  (vanilla)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3_baseline_vanilla/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm6x6_3x3_baseline_vanilla/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 202: 34763 Killed                  "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+  [Python]   %574 = %127 * %426
+  [Python]   %575 = %572 + %573
+  [Python]   %576 = %575 + %574
+  [Python]   %577 = %118 * %399
+  [Python]   %578 = %10 * %416
+  [Python]   %579 = %128 * %429
+  [Python]   %580 = %577 + %578
+  [Python]   %581 = %580 + %579
+  [Python]   %582 = %133 * %390
+  [Python]   %583 = %13 * %405
+  [Python]   %584 = %143 * %420
+  [Python]   %585 = %582 + %583
+  [Python]   %586 = %585 + %584
+  [Python]   %587 = %132 * %395
+  [Python]   %588 = %137 * %410
+  [Python]   %589 = %142 * %425
+  [Python]   %590 = %587 + %588
+  [Python]   %591 = %590 + %589
+  [Python]   %592 = %12 * %400
+  [Python]   %593 = %138 * %415
+  [Python]   %594 = %14 * %430
+  [Python]   %595 = %592 + %593
+  [Python]   %596 = %595 + %594
+  [Python]   %597 = %15 * %391
+  [Python]   %598 = %153 * %404
+  [Python]   %599 = %17 * %421
+  [Python]   %600 = %597 + %598
+  [Python]   %601 = %600 + %599
+  [Python]   %602 = %147 * %394
+  [Python]   %603 = %152 * %411
+  [Python]   %604 = %157 * %424
+  [Python]   %605 = %602 + %603
+  [Python]   %606 = %605 + %604
+  [Python]   %607 = %148 * %401
+  [Python]   %608 = %16 * %414
+  [Python]   %609 = %158 * %431
+  [Python]   %610 = %607 + %608
+  [Python]   %611 = %610 + %609
+  [Python]   %612 = %164 * %36
+  [Python]   %613 = %171 * %268
+  [Python]   %614 = %174 * %42
+  [Python]   %615 = %612 + %613
+  [Python]   %616 = %615 + %614
+  [Python]   %617 = %165 * %258
+  [Python]   %618 = %170 * %40
+  [Python]   %619 = %175 * %288
+  [Python]   %620 = %617 + %618
+  [Python]   %621 = %620 + %619
+  [Python]   %622 = %166 * %38
+  [Python]   %623 = %169 * %278
+  [Python]   %624 = %176 * %44
+  [Python]   %625 = %622 + %623
+  [Python]   %626 = %625 + %624
+  [Python]   %627 = %181 * %252
+  [Python]   %628 = %184 * %267
+  [Python]   %629 = %191 * %282
+  [Python]   %630 = %627 + %628
+  [Python]   %631 = %630 + %629
+  [Python]   %632 = %180 * %257
+  [Python]   %633 = %185 * %272

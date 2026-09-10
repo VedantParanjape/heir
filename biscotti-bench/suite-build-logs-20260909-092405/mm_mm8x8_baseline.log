@@ -1,0 +1,92 @@
+INFO: Invocation ID: 2184ad05-8212-44cf-acbf-cb82490b9975
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/2184ad05-8212-44cf-acbf-cb82490b9975
+Computing main repo mapping: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+Analyzing: 2 targets (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed 2 targets (0 packages loaded, 0 targets configured).
+INFO: Found 2 targets...
+INFO: Elapsed time: 0.915s, Critical Path: 0.03s
+INFO: 95 processes: 6894 action cache hit, 95 internal.
+INFO: Build completed successfully, 95 total actions
+INFO: 
+INFO: Streaming build results to: https://heir.buildbuddy.io/invocation/2184ad05-8212-44cf-acbf-cb82490b9975
+=== HEIR pipeline ===
+  suite:       mm
+  kernel:      mm8x8
+  input:       /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/benchmarks/mm/src/mm8x8.mlir
+  build dir:   /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm8x8_baseline
+  output dir:  /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/output/mm8x8_baseline
+  heir root:   /local/scratch/a/paranjav/biscotti/heir
+  coyote:      /local/scratch/a/paranjav/biscotti/heir/lib/Transforms/CoyoteVectorizer/coyote  (biscotti)
+  ct_degree:   auto-detect (from post-recursed MLIR)
+  recursive-call-vectorization: node-size-threshold=-1
+
+  log:         /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm8x8_baseline/build.log
+  timing:      /local/scratch/a/paranjav/biscotti/heir/biscotti-bench/suite-build-artifacts/mm/build/mm8x8_baseline/compile-timing.txt
+
+=== Step 0: heir-opt --recursive-call-vectorization + strip scaffold ===
+/local/scratch/a/paranjav/biscotti/heir/biscotti-bench/scripts/build.sh: line 202: 29089 Killed                  "$@" >> "$LOG_FILE" 2>&1
+error: step failed; tail of log:
+  [Python]   %1863 = %556 * %117
+  [Python]   %1864 = %1856 + %1857
+  [Python]   %1865 = %1858 + %1859
+  [Python]   %1866 = %1860 + %1861
+  [Python]   %1867 = %1862 + %1863
+  [Python]   %1868 = %536 * %968
+  [Python]   %1869 = %543 * %996
+  [Python]   %1870 = %535 * %975
+  [Python]   %1871 = %542 * %1003
+  [Python]   %1872 = %564 * %120
+  [Python]   %1873 = %571 * %124
+  [Python]   %1874 = %563 * %121
+  [Python]   %1875 = %570 * %125
+  [Python]   %1876 = %1868 + %1869
+  [Python]   %1877 = %1870 + %1871
+  [Python]   %1878 = %1872 + %1873
+  [Python]   %1879 = %1874 + %1875
+  [Python]   %1880 = %520 * %926
+  [Python]   %1881 = %527 * %954
+  [Python]   %1882 = %56 * %933
+  [Python]   %1883 = %57 * %961
+  [Python]   %1884 = %548 * %114
+  [Python]   %1885 = %555 * %118
+  [Python]   %1886 = %60 * %115
+  [Python]   %1887 = %61 * %119
+  [Python]   %1888 = %1880 + %1881
+  [Python]   %1889 = %1882 + %1883
+  [Python]   %1890 = %1884 + %1885
+  [Python]   %1891 = %1886 + %1887
+  [Python]   %1892 = %534 * %982
+  [Python]   %1893 = %541 * %1010
+  [Python]   %1894 = %58 * %989
+  [Python]   %1895 = %59 * %1017
+  [Python]   %1896 = %562 * %122
+  [Python]   %1897 = %569 * %126
+  [Python]   %1898 = %62 * %123
+  [Python]   %1899 = %63 * %127
+  [Python]   %1900 = %1892 + %1893
+  [Python]   %1901 = %1894 + %1895
+  [Python]   %1902 = %1896 + %1897
+  [Python]   %1903 = %1898 + %1899
+  [Python]   %1904 = %1816 + %1828
+  [Python]   %1905 = %1817 + %1829
+  [Python]   %1906 = %1818 + %1830
+  [Python]   %1907 = %1819 + %1831
+  [Python]   %1908 = %1840 + %1852
+  [Python]   %1909 = %1841 + %1853
+  [Python]   %1910 = %1842 + %1854
+  [Python]   %1911 = %1843 + %1855
+  [Python]   %1912 = %1864 + %1876
+  [Python]   %1913 = %1865 + %1877
+  [Python]   %1914 = %1866 + %1878
+  [Python]   %1915 = %1867 + %1879
+  [Python]   %1916 = %1888 + %1900
+  [Python]   %1917 = %1889 + %1901
+  [Python]   %1918 = %1890 + %1902
+  [Python]   %1919 = %1891 + %1903
+  [Python]   %1920 = %1120 + %1232
+  [Python]   %1921 = %1121 + %1233
+  [Python]   %1922 = %1124 + %1236
