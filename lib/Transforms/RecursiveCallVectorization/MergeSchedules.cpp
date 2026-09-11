@@ -704,6 +704,15 @@ void widenFunctionArgAndPropagate(func::FuncOp func, unsigned argIdx,
 //===----------------------------------------------------------------------===//
 
 void prettyPrintSchedule(const Schedule &schedule, llvm::raw_ostream &os) {
+  // Guard the entire body behind the debug switch. Even when `os` is a null
+  // stream (BISCOTTI_DEBUG unset), the per-op `op->print(os)` below still
+  // constructs an AsmState that renumbers and *fully verifies* the enclosing
+  // module on every call -- O(#ops * module-verify) per invocation, which is
+  // quadratic and dominates compile time on large kernels (e.g. mm16x16's
+  // 768-op last-level reduction). Bail out before doing any of that work when
+  // debug output is off.
+  if (!::biscotti_dbg_detail::on()) return;
+
   if (schedule.instructions.empty()) {
     os << "=== Schedule (empty) ===\n";
     return;
